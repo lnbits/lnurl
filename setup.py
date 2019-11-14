@@ -11,7 +11,7 @@ setup(
     long_description=README,
     long_description_content_type="text/markdown",
     maintainer="jogco",
-    maintainer_email="",
+    maintainer_email="jogco@lnsms.world",
     url="https://github.com/jogco/lnurl",
     license="MIT",
     classifiers=[
