@@ -7,6 +7,10 @@ Usage
 -----
 
 ```
+pip install lnurl
+```
+
+```
 import lnurl
 
 lnurl.encode('https://example.com/c?p=a8dw93x2h39s1f')
