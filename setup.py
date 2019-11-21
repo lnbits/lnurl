@@ -6,7 +6,7 @@ README = (HERE / "README.md").read_text()
 
 setup(
     name="lnurl",
-    version="0.0.1",
+    version="0.0.2",
     description="Simple implementation of LNURL for Python 3.5+",
     long_description=README,
     long_description_content_type="text/markdown",
@@ -21,5 +21,5 @@ setup(
     ],
     packages=["lnurl"],
     include_package_data=True,
-    install_requires=[],
+    install_requires=['bech32'],
 )
