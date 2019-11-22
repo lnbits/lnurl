@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[requires]
+python_version = "3.7"
+
+[packages]
+lnurl = {editable = true, path = "."}
+
+[dev-packages]
+coverage = "*"
+flake8 = "*"
+flake8-mypy = "*"
+pytest = "*"
+pytest-cov = "*"
+tox = "*"
+twine = "*"

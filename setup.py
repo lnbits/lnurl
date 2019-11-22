@@ -1,25 +1,37 @@
-import pathlib
+from os import path
 from setuptools import setup
 
-HERE = pathlib.Path(__file__).parent
-README = (HERE / "README.md").read_text()
+
+with open(path.join(path.abspath(path.dirname(__file__)), 'README.md')) as f:
+    long_description = f.read()
+
 
 setup(
-    name="lnurl",
-    version="0.0.2",
-    description="Simple implementation of LNURL for Python 3.5+",
-    long_description=README,
-    long_description_content_type="text/markdown",
-    maintainer="jogco",
-    maintainer_email="jogco@lnsms.world",
-    url="https://github.com/jogco/lnurl",
-    license="MIT",
+    name='lnurl',
+    version='0.1.0',
+    url='https://github.com/python-ln/lnurl',
+    author="jogco",
+    author_email="jogco@lnsms.world",
+    license='MIT',
+    description='LNURL implementation for Python.',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
+    keywords='bitcoin lightning-network lnurl',
     classifiers=[
-        "License :: OSI Approved :: MIT License",
-        "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Topic :: Utilities',
     ],
-    packages=["lnurl"],
-    include_package_data=True,
-    install_requires=['bech32'],
+    packages=['lnurl'],
+    install_requires=[
+        'bech32',
+    ],
+    zip_safe=False
 )
