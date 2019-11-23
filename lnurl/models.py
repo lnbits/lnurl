@@ -1,7 +1,7 @@
 import json
 import math
 
-from typing import List, NoReturn, Optional, Tuple
+from typing import List, Optional, Tuple
 from urllib.parse import urlparse, parse_qs
 
 from .exceptions import LnurlResponseException, InvalidLnurlTag, InvalidLnurlPayMetadata
@@ -9,7 +9,7 @@ from .utils import decode, snake_keys
 
 
 class ParsedUrl:
-    def __init__(self, url: str) -> NoReturn:
+    def __init__(self, url: str) -> None:
         self._parsed_url = urlparse(url)
         self.full = url
         self.base = f'{self._parsed_url.scheme}://{self._parsed_url.netloc}{self._parsed_url.path}'
@@ -23,7 +23,7 @@ class ParsedUrl:
 
 
 class Lnurl:
-    def __init__(self, lnurl: str, *, force_https: bool = True) -> NoReturn:
+    def __init__(self, lnurl: str, *, force_https: bool = True) -> None:
         self.bech32 = lnurl
         self.url = ParsedUrl(decode(lnurl, force_https=force_https))
 
@@ -41,7 +41,7 @@ class Lnurl:
 class LnurlResponse:
     _tag = None
 
-    def __init__(self, d: dict) -> NoReturn:
+    def __init__(self, d: dict) -> None:
         self.__dict__ = snake_keys(d)
 
         if 'callback' in self.__dict__:
@@ -66,7 +66,7 @@ class LnurlResponse:
             return self.reason
         return None
 
-    def raise_for_status(self) -> NoReturn:
+    def raise_for_status(self) -> None:
         if self.error_msg:
             raise LnurlResponseException(self.error_msg)
 
@@ -74,7 +74,7 @@ class LnurlResponse:
 class LnurlAuthResponse(LnurlResponse):
     _tag = 'login'
 
-    def __init__(self, d) -> NoReturn:
+    def __init__(self, d) -> None:
         raise NotImplementedError
 
 
@@ -90,7 +90,7 @@ class LnurlPayResponse(LnurlResponse):
     _tag = 'payRequest'
     _valid_metadata_mime_types = ['text/plain']
 
-    def __init__(self, d: dict) -> NoReturn:
+    def __init__(self, d: dict) -> None:
         super().__init__(d)
 
         if 'metadata' in self.__dict__:

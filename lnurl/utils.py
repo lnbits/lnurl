@@ -1,16 +1,15 @@
 import re
 
 from bech32 import bech32_decode, bech32_encode, convertbits
-from typing import NoReturn
 from urllib.parse import urlparse
 
 from .exceptions import InvalidLnurl, InvalidScheme, InvalidUrl
 
 
-def validate_url(url: str, force_https: bool = True) -> NoReturn:
+def validate_url(url: str, force_https: bool = True) -> None:
     try:
         parsed = urlparse(url)
-    except ValueError:
+    except ValueError:  # pragma: nocover
         raise InvalidUrl
 
     if force_https and parsed.scheme != 'https':
@@ -26,7 +25,7 @@ def decode(lnurl: str, *, force_https: bool = True) -> str:
 
     try:
         url = bytes(convertbits(data, 5, 8, False)).decode('utf-8')
-    except UnicodeDecodeError:
+    except UnicodeDecodeError:  # pragma: nocover
         raise InvalidLnurl
 
     validate_url(url, force_https)
@@ -38,7 +37,7 @@ def encode(url: str, *, force_https: bool = True) -> str:
 
     try:
         lnurl = bech32_encode('lnurl', convertbits(url.encode('utf-8'), 8, 5, True))
-    except UnicodeEncodeError:
+    except UnicodeEncodeError:  # pragma: nocover
         raise InvalidUrl
 
     return lnurl.upper()
