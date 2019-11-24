@@ -22,9 +22,6 @@ class TestUtils:
     def test_encode(self):
         assert encode(self.lnurl[0]) == self.lnurl[1]
 
-        # https is enforced by default...
+        # https is enforced by default
         with pytest.raises(InvalidScheme):
             encode('http://lndhub.io/')
-
-        # ...but it can be ignored
-        encode('http://lndhub.io/', force_https=False)

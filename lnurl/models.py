@@ -23,9 +23,9 @@ class ParsedUrl:
 
 
 class Lnurl:
-    def __init__(self, lnurl: str, *, force_https: bool = True) -> None:
+    def __init__(self, lnurl: str) -> None:
         self.bech32 = lnurl
-        self.url = ParsedUrl(decode(lnurl, force_https=force_https))
+        self.url = ParsedUrl(decode(lnurl))
 
     def __repr__(self) -> str:
         return f'<Lnurl [{self.bech32}]>'

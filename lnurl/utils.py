@@ -6,17 +6,17 @@ from urllib.parse import urlparse
 from .exceptions import InvalidLnurl, InvalidScheme, InvalidUrl
 
 
-def validate_url(url: str, force_https: bool = True) -> None:
+def validate_url(url: str) -> None:
     try:
         parsed = urlparse(url)
     except ValueError:  # pragma: nocover
         raise InvalidUrl
 
-    if force_https and parsed.scheme != 'https':
+    if parsed.scheme != 'https':
         raise InvalidScheme
 
 
-def decode(lnurl: str, *, force_https: bool = True) -> str:
+def decode(lnurl: str) -> str:
     lnurl = lnurl.replace('lightning:', '') if lnurl.startswith('lightning:') else lnurl
     hrp, data = bech32_decode(lnurl)
 
@@ -28,12 +28,12 @@ def decode(lnurl: str, *, force_https: bool = True) -> str:
     except UnicodeDecodeError:  # pragma: nocover
         raise InvalidLnurl
 
-    validate_url(url, force_https)
+    validate_url(url)
     return url
 
 
-def encode(url: str, *, force_https: bool = True) -> str:
-    validate_url(url, force_https)
+def encode(url: str) -> str:
+    validate_url(url)
 
     try:
         lnurl = bech32_encode('lnurl', convertbits(url.encode('utf-8'), 8, 5, True))
