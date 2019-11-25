@@ -1,7 +1,7 @@
 import pytest
 
-from lnurl.exceptions import InvalidLnurl, InvalidScheme
-from lnurl.utils import decode, encode
+from lnurl.exceptions import InvalidLnurl, InvalidScheme, InvalidUrl
+from lnurl.utils import decode, encode, validate_url
 
 
 class TestUtils:
@@ -25,3 +25,23 @@ class TestUtils:
         # https is enforced by default
         with pytest.raises(InvalidScheme):
             encode('http://lndhub.io/')
+
+    @pytest.mark.parametrize('url', [
+        f'https://service.com/?hash={"x" * 4096}',
+    ])
+    def test_validate_too_long(self, url):
+        with pytest.raises(InvalidUrl):
+            validate_url(url)
+
+    @pytest.mark.skip('Need some examples to test')
+    def test_validate_ctrl_characters(self, url):
+        with pytest.raises(InvalidUrl):
+            validate_url(url)
+
+    @pytest.mark.parametrize('url', [
+        'http://📙.la/⚡',  # https://emojipedia.org/high-voltage-sign/
+        'http://xn--yt8h.la/%E2%9A%A1',
+    ])
+    def test_validate_strict_rfc3986(self, url):
+        with pytest.raises(InvalidUrl):
+            validate_url(url)
