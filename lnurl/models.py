@@ -62,7 +62,7 @@ class LnurlResponse:
 
     @property
     def error_msg(self) -> Optional[str]:
-        if 'status' in self.__dict__ and self.status == 'ERROR':
+        if 'status' in self.__dict__ and self.status.lower() == 'error':
             return self.reason
         return None
 
