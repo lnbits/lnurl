@@ -8,7 +8,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), 'README.md')) as f:
 
 setup(
     name='lnurl',
-    version='0.1.1',
+    version='0.2.0',
     url='https://github.com/python-ln/lnurl',
     author="jogco",
     author_email="jogco@lnsms.world",
@@ -32,6 +32,7 @@ setup(
     packages=['lnurl'],
     install_requires=[
         'bech32',
+        'pydantic',
     ],
     zip_safe=False
 )

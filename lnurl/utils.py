@@ -60,3 +60,8 @@ def validate_url(url: str, *, strict_rfc3986: bool = False, allow_long: bool = F
 
 def snake_keys(d: dict) -> dict:
     return {re.sub('([A-Z]+)', r'_\1', k).lower(): v for k, v in d.items()}
+
+
+def to_camel(string: str) -> str:
+    first, *others = string.split('_')
+    return first.lower() + ''.join(x.title() for x in others)
