@@ -2,7 +2,7 @@ import json
 import math
 
 from hashlib import sha256
-from pydantic import BaseModel, AnyUrl, HttpUrl, PositiveInt
+from pydantic import BaseModel
 from pydantic.validators import str_validator
 from typing import List, Optional, Tuple, Union
 
@@ -123,7 +123,7 @@ class LnurlWithdrawResponse(LnurlResponseModel):
 class LnurlResponse:
 
     @staticmethod
-    def from_dict(d) -> Union[LnurlSuccessResponse, LnurlErrorResponse]:
+    def from_dict(d) -> LnurlResponseModel:
         try:
             if 'status' in d and d['status'].lower() == 'error':
                 return LnurlErrorResponse(**d)

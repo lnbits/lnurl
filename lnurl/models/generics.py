@@ -31,7 +31,7 @@ class HttpsUrl(HttpUrl):
 
 
 class MilliSatoshi(PositiveInt):
-    pass
+    """A thousandth of a satoshi."""
 
 
 class LightningNodeUri(AnyUrl):

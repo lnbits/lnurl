@@ -38,11 +38,11 @@ with different properties (see `models.py`):
 ```python
 import requests
 
-from lnurl import Lnurl, LnurlWithdrawResponse
+from lnurl import Lnurl, LnurlResponse
 
 lnurl = Lnurl('LNURL1DP68GURN8GHJ7UM9WFMXJCM99E3K7MF0V9CXJ0M384EKZAR0WD5XJ0JELRS')
 res = requests.get(lnurl.decoded)
-withdraw = LnurlWithdrawResponse(res.json())
+withdraw = LnurlResponse.from_dict(res.json())
 withdraw.max_sats  # int
 withdraw.callback.base  # str
 withdraw.callback.query_params # dict
