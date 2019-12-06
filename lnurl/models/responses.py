@@ -105,7 +105,7 @@ class LnurlPayResponse(LnurlResponseModel):
         return int(math.floor(self.max_sendable / 1000))
 
 
-class LnurlPaySuccessResponse(LnurlResponseModel):
+class LnurlPayActionResponse(LnurlResponseModel):
     pr: Bech32Invoice
     success_action: Optional[LnurlPaySuccessAction] = Field(None, alias='successAction')
     routes: List[LnurlPayRoute] = []
@@ -151,7 +151,7 @@ class LnurlResponse:
                 }[d['tag']](**d)
 
             elif 'success_action' in d:
-                return LnurlPaySuccessResponse(**d)
+                return LnurlPayActionResponse(**d)
 
             else:
                 return LnurlSuccessResponse(**d)
