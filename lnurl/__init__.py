@@ -5,7 +5,6 @@ from .models.responses import (
     LnurlResponse,
     LnurlErrorResponse,
     LnurlSuccessResponse,
-    LnurlAuthResponse,
     LnurlChannelResponse,
     LnurlHostedChannelResponse,
     LnurlPayResponse,

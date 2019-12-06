@@ -45,13 +45,6 @@
                 "sha256:fb6a5ddf762c594e6038af30fd3dc843f1238d60b5d477734fbc4b24cc1b87b9"
             ],
             "version": "==1.2"
-        },
-        "pyhumps": {
-            "hashes": [
-                "sha256:32452d75ec3c9e44b845c3591fc54ab4734338fcf88a34d7cb1f42017faeffc3",
-                "sha256:71aaf4069eae682274dc7f33dfe24dff1f955bbcaa58f4d83d3853eb775116bc"
-            ],
-            "version": "==1.3.1"
         }
     },
     "develop": {

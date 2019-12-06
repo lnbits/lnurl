@@ -2,20 +2,16 @@ import json
 import math
 
 from hashlib import sha256
-from humps import camelize
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validator
 from pydantic.validators import str_validator
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 from lnurl.exceptions import LnurlResponseException, InvalidLnurlPayMetadata
 from .generics import Bech32Invoice, HttpsUrl, LightningNodeUri, MilliSatoshi
 
 
-def camel_dumps(d, default=None, **kwargs):
-    return json.dumps(camelize(d), default=default)
-
-
 class LnurlPayMetadata(str):
+    valid_metadata_mime_types = ['text/plain']
 
     @classmethod
     def __get_validators__(cls) -> 'LnurlPayMetadata':
@@ -27,8 +23,7 @@ class LnurlPayMetadata(str):
         return cls(value)
 
     def load(self) -> List[Tuple[str, str]]:
-        valid_metadata_mime_types = ['text/plain']
-        return [tuple(x) for x in json.loads(self) if x[0] in valid_metadata_mime_types]
+        return [tuple(x) for x in json.loads(self) if x[0] in self.valid_metadata_mime_types]
 
 
 class LnurlPayRoute(BaseModel):
@@ -42,9 +37,15 @@ class LnurlPaySuccessAction(BaseModel):
 class LnurlResponseModel(BaseModel):
 
     class Config:
-        alias_generator = camelize
         allow_population_by_field_name = True
-        json_dumps = camel_dumps
+
+    def dict(self, **kwargs):
+        kwargs.setdefault('by_alias', True)
+        return super().dict(**kwargs)
+
+    def json(self, **kwargs):
+        kwargs.setdefault('by_alias', True)
+        return super().json(**kwargs)
 
     @property
     def ok(self) -> bool:
@@ -64,10 +65,6 @@ class LnurlSuccessResponse(LnurlResponseModel):
     status: str = 'OK'
 
 
-class LnurlAuthResponse(LnurlResponseModel):
-    tag: str = 'login'
-
-
 class LnurlChannelResponse(LnurlResponseModel):
     tag: str = 'channelRequest'
     uri: str  # TODO: LightningNodeUri
@@ -85,9 +82,15 @@ class LnurlHostedChannelResponse(LnurlResponseModel):
 class LnurlPayResponse(LnurlResponseModel):
     tag: str = 'payRequest'
     callback: HttpsUrl
-    min_sendable: MilliSatoshi
-    max_sendable: MilliSatoshi
+    min_sendable: Millisatoshi = Field(..., alias='minSendable')
+    max_sendable: Millisatoshi = Field(..., alias='maxSendable')
     metadata: LnurlPayMetadata
+
+    @validator('max_sendable')
+    def max_less_than_min(cls, v, values, **kwargs):
+        if 'min_sendable' in values and v < values['min_sendable']:
+            raise ValueError('`max_sendable` cannot be less than `min_sendable`.')
+        return v
 
     @property
     def h(self) -> str:
@@ -104,17 +107,23 @@ class LnurlPayResponse(LnurlResponseModel):
 
 class LnurlPaySuccessResponse(LnurlResponseModel):
     pr: Bech32Invoice
-    success_action: Optional[LnurlPaySuccessAction]
-    routes: List[LnurlPayRoute]
+    success_action: Optional[LnurlPaySuccessAction] = Field(None, alias='successAction')
+    routes: List[LnurlPayRoute] = []
 
 
 class LnurlWithdrawResponse(LnurlResponseModel):
     tag: str = 'withdrawRequest'
     callback: HttpsUrl
     k1: str
-    min_withdrawable: MilliSatoshi
-    max_withdrawable: MilliSatoshi
-    default_description: str = ''
+    min_withdrawable: Millisatoshi = Field(..., alias='minWithdrawable')
+    max_withdrawable: Millisatoshi = Field(..., alias='maxWithdrawable')
+    default_description: str = Field('', alias='defaultDescription')
+
+    @validator('max_withdrawable')
+    def max_less_than_min(cls, v, values, **kwargs):
+        if 'min_withdrawable' in values and v < values['min_withdrawable']:
+            raise ValueError('`max_withdrawable` cannot be less than `min_withdrawable`.')
+        return v
 
     @property
     def min_sats(self) -> int:
@@ -135,7 +144,6 @@ class LnurlResponse:
 
             elif 'tag' in d:
                 return {
-                    'login': LnurlAuthResponse,
                     'channelRequest': LnurlChannelResponse,
                     'hostedChannelRequest': LnurlHostedChannelResponse,
                     'payRequest': LnurlPayResponse,
@@ -144,6 +152,9 @@ class LnurlResponse:
 
             elif 'success_action' in d:
                 return LnurlPaySuccessResponse(**d)
+
+            else:
+                return LnurlSuccessResponse(**d)
 
         except Exception:
             raise LnurlResponseException

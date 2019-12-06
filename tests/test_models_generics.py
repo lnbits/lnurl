@@ -12,13 +12,13 @@ class HttpsUrlModel(BaseModel):
 class TestHttpsUrl:
 
     def test_valid(self):
-        m = HttpsUrlModel(url='https://service.com/api?q=3fc3645b439ce8e7&test=ok')
-        assert m.url.host == 'service.com'
-        assert m.url.base == 'https://service.com/api'
+        m = HttpsUrlModel(url='https://service.ln/?q=3fc3645b439ce8e7&test=ok')
+        assert m.url.host == 'service.ln'
+        assert m.url.base == 'https://service.ln/'
         assert m.url.query_params == {'q': '3fc3645b439ce8e7', 'test': 'ok'}
 
     @pytest.mark.parametrize('url', [
-        f'https://service.com/?hash={"x" * 4096}',
+        f'https://service.ln/?hash={"x" * 4096}',
         'http://📙.la/⚡',  # https://emojipedia.org/high-voltage-sign/
         'http://xn--yt8h.la/%E2%9A%A1',
     ])
@@ -48,11 +48,11 @@ class TestLnurl:
     @pytest.mark.parametrize('lnurl,url', [
         ('LNURL1DP68GURN8GHJ7UM9WFMXJCM99E3K7MF0V9CXJ0M385EKVCENXC6R2C35XVUKXEFCV5MKVV34X'
          '5EKZD3EV56NYD3HXQURZEPEXEJXXEPNXSCRVWFNV9NXZCN9XQ6XYEFHVGCXXCMYXYMNSERXFQ5FNS',
-         'https://service.com/api?q=3fc3645b439ce8e7f2553a69e5267081d96dcd340693afabe04be7b0ccd178df')
+         'https://service.ln/api?q=3fc3645b439ce8e7f2553a69e5267081d96dcd340693afabe04be7b0ccd178df')
     ])
     def skip__test_valid(self, lnurl, url):
         ln = LnurlModel(lnurl=lnurl)
         assert ln.lnurl.bech32 == lnurl
         assert ln.lnurl.url == url
-        assert ln.lnurl.url.base == 'https://service.com/api'
+        assert ln.lnurl.url.base == 'https://service.ln/api'
         assert ln.lnurl.url.query_params == {'q': '3fc3645b439ce8e7f2553a69e5267081d96dcd340693afabe04be7b0ccd178df'}

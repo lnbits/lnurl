@@ -30,7 +30,7 @@ class HttpsUrl(HttpUrl):
         return {k: v[0] for k, v in parse_qs(self.query).items()}
 
 
-class MilliSatoshi(PositiveInt):
+class Millisatoshi(PositiveInt):
     """A thousandth of a satoshi."""
 
 
