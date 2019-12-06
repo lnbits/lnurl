@@ -2,13 +2,17 @@ import json
 import math
 
 from hashlib import sha256
+from humps import camelize
 from pydantic import BaseModel
 from pydantic.validators import str_validator
 from typing import List, Optional, Tuple, Union
 
-from lnurl.exceptions import LnurlResponseException, InvalidLnurlTag, InvalidLnurlPayMetadata
-from lnurl.utils import to_camel
+from lnurl.exceptions import LnurlResponseException, InvalidLnurlPayMetadata
 from .generics import Bech32Invoice, HttpsUrl, LightningNodeUri, MilliSatoshi
+
+
+def camel_dumps(d, default=None, **kwargs):
+    return json.dumps(camelize(d), default=default)
 
 
 class LnurlPayMetadata(str):
@@ -38,8 +42,9 @@ class LnurlPaySuccessAction(BaseModel):
 class LnurlResponseModel(BaseModel):
 
     class Config:
-        alias_generator = to_camel
-        json_dumps = json.dumps
+        alias_generator = camelize
+        allow_population_by_field_name = True
+        json_dumps = camel_dumps
 
     @property
     def ok(self) -> bool:
@@ -109,7 +114,7 @@ class LnurlWithdrawResponse(LnurlResponseModel):
     k1: str
     min_withdrawable: MilliSatoshi
     max_withdrawable: MilliSatoshi
-    default_description: str
+    default_description: str = ''
 
     @property
     def min_sats(self) -> int:

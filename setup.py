@@ -33,6 +33,7 @@ setup(
     install_requires=[
         'bech32',
         'pydantic',
+        'pyhumps',
     ],
     zip_safe=False
 )

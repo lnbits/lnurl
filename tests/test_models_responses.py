@@ -4,7 +4,7 @@ from pydantic import ValidationError
 
 from lnurl.models.responses import (
     LnurlErrorResponse, LnurlSuccessResponse,
-    LnurlChannelResponse
+    LnurlChannelResponse, LnurlWithdrawResponse
 )
 
 
@@ -39,7 +39,11 @@ class TestLnurlSuccessResponse:
 class TestLnurlChannelResponse:
 
     @pytest.mark.parametrize('d', [
-        {'uri': 'node_key@ip_address:port_number', 'callback': 'https://service.com/ch-response', 'k1': 'c3RyaW5n'},
+        {
+            'uri': 'node_key@ip_address:port_number',
+            'callback': 'https://service.com/channel',
+            'k1': 'c3RyaW5n'
+        },
     ])
     def test_channel_response(self, d):
         res = LnurlChannelResponse(**d)
@@ -47,10 +51,29 @@ class TestLnurlChannelResponse:
         assert res.dict() == {**{'tag': 'channelRequest'}, **d}
 
     @pytest.mark.parametrize('d', [
-        {'uri': 'invalid', 'callback': 'https://service.com/ch-response', 'k1': 'c3RyaW5n'},
+        {'uri': 'invalid', 'callback': 'https://service.com/channel', 'k1': 'c3RyaW5n'},
         {'uri': 'node_key@ip_address:port_number', 'callback': 'invalid', 'k1': 'c3RyaW5n'},
-        {'uri': 'node_key@ip_address:port_number', 'callback': 'https://service.com/ch-response', 'k1': None},
+        {'uri': 'node_key@ip_address:port_number', 'callback': 'https://service.com/channel', 'k1': None},
     ])
     def skip__test_invalid_data(self, d):
         with pytest.raises(ValidationError):
             LnurlChannelResponse(**d)
+
+
+class TestLnurlWithdrawResponse:
+
+    @pytest.mark.parametrize('d', [
+        {
+            'callback': 'https://service.com/withdraw',
+            'k1': 'c3RyaW5n',
+            'min_withdrawable': 1000,
+            'max_withdrawable': 2000,
+        },
+    ])
+    def test_success_response(self, d):
+        res = LnurlWithdrawResponse(**d)
+        assert res.ok is True
+        assert res.json() == (
+            '{"tag": "withdrawRequest", "callback": "https://service.com/withdraw", "k1": "c3RyaW5n", '
+            '"minWithdrawable": 1000, "maxWithdrawable": 2000, "defaultDescription": ""}'
+        )
