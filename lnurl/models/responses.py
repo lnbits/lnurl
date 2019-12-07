@@ -5,6 +5,7 @@ from hashlib import sha256
 from pydantic import BaseModel, Field, validator
 from pydantic.validators import str_validator
 from typing import List, Optional, Tuple
+from typing_extensions import Literal
 
 from lnurl.exceptions import LnurlResponseException, InvalidLnurlPayMetadata
 from .generics import HttpsUrl, LightningInvoiceBech32, LightningNodeUri, Millisatoshi
@@ -59,7 +60,7 @@ class LnurlResponseModel(BaseModel):
 
 
 class LnurlErrorResponse(LnurlResponseModel):
-    status: str = 'ERROR'
+    status: Literal['ERROR'] = 'ERROR'
     reason: str
 
     @property
@@ -68,31 +69,31 @@ class LnurlErrorResponse(LnurlResponseModel):
 
 
 class LnurlSuccessResponse(LnurlResponseModel):
-    status: str = 'OK'
+    status: Literal['OK'] = 'OK'
 
 
 class LnurlAuthResponse(LnurlResponseModel):
-    tag: str = 'login'
+    tag: Literal['login'] = 'login'
     callback: HttpsUrl
     k1: str
 
 
 class LnurlChannelResponse(LnurlResponseModel):
-    tag: str = 'channelRequest'
+    tag: Literal['channelRequest'] = 'channelRequest'
     uri: LightningNodeUri
     callback: HttpsUrl
     k1: str
 
 
 class LnurlHostedChannelResponse(LnurlResponseModel):
-    tag: str = 'hostedChannelRequest'
+    tag: Literal['hostedChannelRequest'] = 'hostedChannelRequest'
     uri: LightningNodeUri
     k1: str
     alias: Optional[str]
 
 
 class LnurlPayResponse(LnurlResponseModel):
-    tag: str = 'payRequest'
+    tag: Literal['payRequest'] = 'payRequest'
     callback: HttpsUrl
     min_sendable: Millisatoshi = Field(..., alias='minSendable')
     max_sendable: Millisatoshi = Field(..., alias='maxSendable')
@@ -124,7 +125,7 @@ class LnurlPayActionResponse(LnurlResponseModel):
 
 
 class LnurlWithdrawResponse(LnurlResponseModel):
-    tag: str = 'withdrawRequest'
+    tag: Literal['withdrawRequest'] = 'withdrawRequest'
     callback: HttpsUrl
     k1: str
     min_withdrawable: Millisatoshi = Field(..., alias='minWithdrawable')

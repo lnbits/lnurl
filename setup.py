@@ -33,6 +33,7 @@ setup(
     install_requires=[
         'bech32',
         'pydantic',
+        'typing-extensions',
     ],
     zip_safe=False
 )

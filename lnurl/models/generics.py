@@ -1,7 +1,6 @@
-from bech32 import bech32_decode
 from pydantic import BaseModel, HttpUrl, PositiveInt
 from pydantic.validators import str_validator
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs
 from typing import Any, Optional, Set
 
 from lnurl.tools import _bech32_decode, _lnurl_decode
@@ -27,10 +26,6 @@ class Bech32(str, ReprMixin):
         str.__init__(bech32)
         self.hrp = hrp
         self.data = data
-
-    def __repr__(self) -> str:
-        extra = ', '.join(f'{n}={getattr(self, n)!r}' for n in self.__slots__ if getattr(self, n) is not None)
-        return f'{self.__class__.__name__}({super().__repr__()}, {extra})'
 
     @classmethod
     def __get_validators__(cls) -> 'CallableGenerator':
@@ -97,14 +92,13 @@ class LightningNodeUri(str, ReprMixin):
 
 
 class Lnurl(str, ReprMixin):
-    __slots__ = ('bech32', 'url')
+    __slots__ = ('url',)
 
     def __new__(cls, bech32: str, **kwargs) -> object:
         return str.__new__(cls, bech32)
 
     def __init__(self, bech32: str, *, url: Optional[HttpsUrl] = None):
         str.__init__(bech32)
-        self.bech32 = bech32
         self.url = url
 
     @classmethod
@@ -119,6 +113,10 @@ class Lnurl(str, ReprMixin):
 
         url = HttpsUrlModel(url=_lnurl_decode(value)).url
         return cls(value, url=url)
+
+    @property
+    def bech32(self) -> str:
+        return self
 
     @property
     def is_login(self) -> bool:
