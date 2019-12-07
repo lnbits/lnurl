@@ -1,58 +1,48 @@
-import re
+try:
+    import requests
+except ImportError:  # pragma: nocover
+    requests = None
 
-from bech32 import bech32_decode, bech32_encode, convertbits
-from urllib.parse import urlparse
+from pydantic import BaseModel, ValidationError
 
-from .exceptions import InvalidLnurl, InvalidScheme, InvalidUrl
-
-
-URL_MAXLENGTH = 4096  # arbitrary
-CTRL = re.compile(r'[\u0000-\u001f\u007f-\u009f]')  # control characters (unicode blocks C0 and C1, plus DEL)
-NON_RFC3986 = re.compile(r"[^]a-zA-Z0-9._~:/?#[@!$&'()*+,;=-]")
+from lnurl.models.generics import HttpsUrl, Lnurl
+from lnurl.models.responses import LnurlResponse, LnurlAuthResponse
+from lnurl.tools import _url_encode
+from .exceptions import InvalidLnurl, InvalidUrl
 
 
-def decode(lnurl: str, *, strict_rfc3986: bool = False, allow_long: bool = False) -> str:
-    lnurl = lnurl.replace('lightning:', '') if lnurl.startswith('lightning:') else lnurl
-    hrp, data = bech32_decode(lnurl)
+class _LnurlModel(BaseModel):
+    lnurl: Lnurl
 
-    if None in (hrp, data) or hrp != 'lnurl':
+
+def decode(bech32_lnurl: str) -> HttpsUrl:
+    try:
+        return _LnurlModel(lnurl=bech32_lnurl).lnurl.url
+    except ValidationError:
         raise InvalidLnurl
 
+
+def encode(url: str) -> Lnurl:
     try:
-        url = bytes(convertbits(data, 5, 8, False)).decode('utf-8')
-    except UnicodeDecodeError:  # pragma: nocover
+        return _LnurlModel(lnurl=_url_encode(url)).lnurl
+    except (ValidationError, ValueError):
+        raise InvalidUrl
+
+
+def handle(bech32_lnurl: str) -> LnurlResponse:
+    try:
+        lnurl = _LnurlModel(lnurl=bech32_lnurl).lnurl
+    except ValidationError:
         raise InvalidLnurl
 
-    validate_url(url, strict_rfc3986=strict_rfc3986, allow_long=allow_long)
+    if lnurl.is_login:
+        return LnurlAuthResponse(**{
+            'callback': lnurl.url,
+            'k1': lnurl.url.query_params['k1']
+        })
+    else:
+        if requests is None:  # pragma: nocover
+            raise ImportError('The `requests` library must be installed to use `lnurl.handle()`.')
 
-    return url
-
-
-def encode(url: str) -> str:
-    validate_url(url, strict_rfc3986=True, allow_long=False)
-
-    try:
-        lnurl = bech32_encode('lnurl', convertbits(url.encode('utf-8'), 8, 5, True))
-    except UnicodeEncodeError:  # pragma: nocover
-        raise InvalidUrl
-
-    return lnurl.upper()
-
-
-def validate_url(url: str, *, strict_rfc3986: bool = False, allow_long: bool = False) -> None:
-    if not allow_long and len(url) > URL_MAXLENGTH:
-        raise InvalidUrl('too long HTTPS URL')
-
-    if (strict_rfc3986 and NON_RFC3986.search(url)) or CTRL.search(url):
-        raise InvalidUrl('invalid characters in HTTPS URL')
-
-    try:
-        parsed = urlparse(url)
-    except ValueError:  # pragma: nocover
-        raise InvalidUrl
-
-    if not parsed.netloc or not parsed.hostname:
-        raise InvalidUrl
-
-    if parsed.scheme != 'https':
-        raise InvalidScheme
+        r = requests.get(lnurl.url)
+        return LnurlResponse.from_dict(r.json())

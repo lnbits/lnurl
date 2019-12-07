@@ -2,7 +2,7 @@ import pytest
 
 from pydantic import BaseModel, ValidationError
 
-from lnurl.models.generics import HttpsUrl, LightningNodeUri, Lnurl
+from lnurl.models.generics import HttpsUrl, LightningNodeUri
 
 
 class HttpsUrlModel(BaseModel):
@@ -12,13 +12,13 @@ class HttpsUrlModel(BaseModel):
 class TestHttpsUrl:
 
     def test_valid(self):
-        m = HttpsUrlModel(url='https://service.ln/?q=3fc3645b439ce8e7&test=ok')
-        assert m.url.host == 'service.ln'
-        assert m.url.base == 'https://service.ln/'
-        assert m.url.query_params == {'q': '3fc3645b439ce8e7', 'test': 'ok'}
+        url = HttpsUrlModel(url='https://service.io/?q=3fc3645b439ce8e7&test=ok').url
+        assert url.host == 'service.io'
+        assert url.base == 'https://service.io/'
+        assert url.query_params == {'q': '3fc3645b439ce8e7', 'test': 'ok'}
 
     @pytest.mark.parametrize('url', [
-        f'https://service.ln/?hash={"x" * 4096}',
+        f'https://service.io/?hash={"x" * 4096}',
         'http://📙.la/⚡',  # https://emojipedia.org/high-voltage-sign/
         'http://xn--yt8h.la/%E2%9A%A1',
     ])
@@ -33,26 +33,17 @@ class LightningNodeUriModel(BaseModel):
 
 class TestLightningNode:
 
-    def skip__test_valid(self):
-        m = LightningNodeUriModel(uri='node_key@ip_address:port_number')
-        assert m.uri.host == 'ip_address'
-        assert m.uri.port == 'port_number'
+    def test_valid(self):
+        node = LightningNodeUriModel(uri='node_key@ip_address:port_number').uri
+        assert node.key == 'node_key'
+        assert node.ip == 'ip_address'
+        assert node.port == 'port_number'
 
-
-class LnurlModel(BaseModel):
-    lnurl: Lnurl
-
-
-class TestLnurl:
-
-    @pytest.mark.parametrize('lnurl,url', [
-        ('LNURL1DP68GURN8GHJ7UM9WFMXJCM99E3K7MF0V9CXJ0M385EKVCENXC6R2C35XVUKXEFCV5MKVV34X'
-         '5EKZD3EV56NYD3HXQURZEPEXEJXXEPNXSCRVWFNV9NXZCN9XQ6XYEFHVGCXXCMYXYMNSERXFQ5FNS',
-         'https://service.ln/api?q=3fc3645b439ce8e7f2553a69e5267081d96dcd340693afabe04be7b0ccd178df')
+    @pytest.mark.parametrize('uri', [
+        'https://service.io/node',
+        'node_key@ip_address',
+        'ip_address:port_number',
     ])
-    def skip__test_valid(self, lnurl, url):
-        ln = LnurlModel(lnurl=lnurl)
-        assert ln.lnurl.bech32 == lnurl
-        assert ln.lnurl.url == url
-        assert ln.lnurl.url.base == 'https://service.ln/api'
-        assert ln.lnurl.url.query_params == {'q': '3fc3645b439ce8e7f2553a69e5267081d96dcd340693afabe04be7b0ccd178df'}
+    def test_invalid_data(self, uri):
+        with pytest.raises(ValidationError):
+            LightningNodeUriModel(uri=uri)

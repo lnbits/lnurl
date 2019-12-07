@@ -7,20 +7,26 @@ from pydantic.validators import str_validator
 from typing import List, Optional, Tuple
 
 from lnurl.exceptions import LnurlResponseException, InvalidLnurlPayMetadata
-from .generics import Bech32Invoice, HttpsUrl, LightningNodeUri, MilliSatoshi
+from .generics import HttpsUrl, LightningInvoiceBech32, LightningNodeUri, Millisatoshi
 
 
 class LnurlPayMetadata(str):
     valid_metadata_mime_types = ['text/plain']
 
     @classmethod
-    def __get_validators__(cls) -> 'LnurlPayMetadata':
+    def __get_validators__(cls):
         yield str_validator
         yield cls.validate
+        yield cls.validate_raw_json
 
     @classmethod
     def validate(cls, value: str) -> 'LnurlPayMetadata':
         return cls(value)
+
+    @classmethod
+    def validate_raw_json(cls, value: str) -> str:
+        # TODO: check and raise InvalidLnurlPayMetadata
+        return value
 
     def load(self) -> List[Tuple[str, str]]:
         return [tuple(x) for x in json.loads(self) if x[0] in self.valid_metadata_mime_types]
@@ -65,16 +71,22 @@ class LnurlSuccessResponse(LnurlResponseModel):
     status: str = 'OK'
 
 
+class LnurlAuthResponse(LnurlResponseModel):
+    tag: str = 'login'
+    callback: HttpsUrl
+    k1: str
+
+
 class LnurlChannelResponse(LnurlResponseModel):
     tag: str = 'channelRequest'
-    uri: str  # TODO: LightningNodeUri
+    uri: LightningNodeUri
     callback: HttpsUrl
     k1: str
 
 
 class LnurlHostedChannelResponse(LnurlResponseModel):
     tag: str = 'hostedChannelRequest'
-    uri: str  # TODO: LightningNodeUri
+    uri: LightningNodeUri
     k1: str
     alias: Optional[str]
 
@@ -106,7 +118,7 @@ class LnurlPayResponse(LnurlResponseModel):
 
 
 class LnurlPayActionResponse(LnurlResponseModel):
-    pr: Bech32Invoice
+    pr: LightningInvoiceBech32
     success_action: Optional[LnurlPaySuccessAction] = Field(None, alias='successAction')
     routes: List[LnurlPayRoute] = []
 
@@ -137,12 +149,15 @@ class LnurlWithdrawResponse(LnurlResponseModel):
 class LnurlResponse:
 
     @staticmethod
-    def from_dict(d) -> LnurlResponseModel:
+    def from_dict(d: dict) -> LnurlResponseModel:
         try:
             if 'status' in d and d['status'].lower() == 'error':
                 return LnurlErrorResponse(**d)
 
             elif 'tag' in d:
+                # some services return `status` here, but it is not in the spec
+                d.pop('status', None)
+
                 return {
                     'channelRequest': LnurlChannelResponse,
                     'hostedChannelRequest': LnurlHostedChannelResponse,

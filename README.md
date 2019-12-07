@@ -10,10 +10,9 @@ Basic usage
 -----------
 
 ```python
-import lnurl
-
-lnurl.encode('https://example.com/c?p=a8dw93x2h39s1f')
-lnurl.decode('LNURL1DP68GURN8GHJ7ETCV9KHQMR99E3K7MF0VVLHQ0TP8PJ8WWFN0QEXSVEEWVCKVF3A4RP')
+>>> import lnurl
+>>> lnurl.encode('https://service.io/?q=3fc3645b439ce8e7')
+>>> lnurl.decode('LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWXQ96S9')
 ```
 
 Advanced usage
@@ -22,13 +21,13 @@ Advanced usage
 The `Lnurl` object wraps a bech32 LNURL to provide some extra utilities.
 
 ```python
-from lnurl import Lnurl
+import lnurl
 
-lnurl = Lnurl('LNURL1DP68GURN8GHJ7ETCV9KHQMR99E3K7MF0VVLHQ0TP8PJ8WWFN0QEXSVEEWVCKVF3A4RP')
-lnurl.bech32  # 'LNURL1DP68GURN8GHJ7ETCV9KHQMR99E3K7MF0VVLHQ0TP8PJ8WWFN0QEXSVEEWVCKVF3A4RP'
-lnurl.decoded  # 'https://example.com/c?p=a8dw93x2h39s1f'
-lnurl.url.base  # 'https://example.com/c'
-lnurl.url.query_params  # {'p': 'a8dw93x2h39s1f'}
+lnurl = lnurl.decode('LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWXQ96S9')
+lnurl.bech32  # 'LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWXQ96S9'
+lnurl.url  # 'https://service.io/?q=3fc3645b439ce8e7'
+lnurl.url.base  # 'https://service.io/'
+lnurl.url.query_params  # {'q': '3fc3645b439ce8e7'}
 ```
 
 You can also use a `LnurlResponse` to wrap responses you get from a LNURL.  
@@ -36,16 +35,29 @@ The different types of responses defined in the LNURL specification have a diffe
 with different properties (see `models.py`):
 
 ```python
+import lnurl
 import requests
 
-from lnurl import Lnurl, LnurlResponse
+from lnurl import LnurlResponse
 
-lnurl = Lnurl('LNURL1DP68GURN8GHJ7UM9WFMXJCM99E3K7MF0V9CXJ0M384EKZAR0WD5XJ0JELRS')
-res = requests.get(lnurl.decoded)
-withdraw = LnurlResponse.from_dict(res.json())
-withdraw.max_sats  # int
-withdraw.callback.base  # str
-withdraw.callback.query_params # dict
+bech32 = 'LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94MKJARGV3EXZAELWDJHXUMFDAHR6WFHXQERSVPCA649RV'
+lnurl = lnurl.decode(bech32)
+
+r = requests.get(lnurl.url)
+
+res = LnurlResponse.from_dict(res.json())  # LnurlWithdrawResponse
+res.max_sats  # int
+res.callback.base  # str
+res.callback.query_params # dict
+```
+
+Or if you have already `requests` installed, you can use the `.handle()` function directly.
+It will return the appropriate response for an LNURL.
+
+```python
+>>> import lnurl
+>>> lnurl.handle('LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94MKJARGV3EXZAELWDJHXUMFDAHR6WFHXQERSVPCA649RV')
+LnurlWithdrawResponse(tag='withdrawRequest', callback=HttpsUrl('https://lnurl.bigsun.xyz/lnurl-withdraw/callback/9702808', scheme='https', host='lnurl.bigsun.xyz', tld='xyz', host_type='domain', path='/lnurl-withdraw/callback/9702808'), k1='b7a051db1ac71ae8d3f62727e39d52ae1406f625561b2129c4902b4f37044248', min_withdrawable=923000, max_withdrawable=2769000, default_description='sample withdraw')
 ```
 
 [travis-badge]: https://travis-ci.org/python-ln/lnurl.svg?branch=master
