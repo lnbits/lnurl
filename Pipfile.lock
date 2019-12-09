@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "ce101e98b8a71d6d15f793314d58473025db48ba55e7c28901948d4a35e9f630"
+            "sha256": "a02a069402e6629ebe1a4509c819b0c88105af487c031e66623d30f8318f45d5"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -177,10 +177,10 @@
         },
         "keyring": {
             "hashes": [
-                "sha256:9b80469783d3f6106bce1d389c6b8b20c8d4d739943b1b8cd0ddc2a45d065f9d",
-                "sha256:ee3d35b7f1ac3cb69e9a1e4323534649d3ab2fea402738a77e4250c152970fed"
+                "sha256:a3f71fc0cf6b74e201e70532879ba1d15db25cb2c7407dce52fe52a6d5fc7b66",
+                "sha256:fc9cadedae35b77141f670f84c10a657147d2e526348698c93dd77f039979729"
             ],
-            "version": "==19.3.0"
+            "version": "==20.0.0"
         },
         "mccabe": {
             "hashes": [
@@ -306,6 +306,7 @@
                 "sha256:11e007a8a2aa0323f5a921e9e6a2d7e4e67d9877e85773fba9ba6419025cbeb4",
                 "sha256:9cf5292fcd0f598c671cfc1e0d7d1a7f13bb8085e9a590f48c010551dc6c4b31"
             ],
+            "index": "pypi",
             "version": "==2.22.0"
         },
         "requests-toolbelt": {

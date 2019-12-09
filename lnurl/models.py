@@ -1,36 +1,12 @@
-import json
 import math
 
 from hashlib import sha256
 from pydantic import BaseModel, Field, validator
-from pydantic.validators import str_validator
-from typing import List, Optional, Tuple
+from typing import List, Optional
 from typing_extensions import Literal
 
-from lnurl.exceptions import LnurlResponseException, InvalidLnurlPayMetadata
-from .generics import HttpsUrl, LightningInvoiceBech32, LightningNodeUri, Millisatoshi
-
-
-class LnurlPayMetadata(str):
-    valid_metadata_mime_types = ['text/plain']
-
-    @classmethod
-    def __get_validators__(cls):
-        yield str_validator
-        yield cls.validate
-        yield cls.validate_raw_json
-
-    @classmethod
-    def validate(cls, value: str) -> 'LnurlPayMetadata':
-        return cls(value)
-
-    @classmethod
-    def validate_raw_json(cls, value: str) -> str:
-        # TODO: check and raise InvalidLnurlPayMetadata
-        return value
-
-    def load(self) -> List[Tuple[str, str]]:
-        return [tuple(x) for x in json.loads(self) if x[0] in self.valid_metadata_mime_types]
+from .exceptions import LnurlResponseException
+from .types import HttpsUrl, LightningInvoice, LightningNodeUri, LnurlPayMetadata, MilliSatoshi
 
 
 class LnurlPayRoute(BaseModel):
@@ -56,7 +32,7 @@ class LnurlResponseModel(BaseModel):
 
     @property
     def ok(self) -> bool:
-        return not ('status' in self.__fields__ and self.status.lower() == 'error')
+        return not ('status' in self.__fields__ and self.status == 'ERROR')
 
 
 class LnurlErrorResponse(LnurlResponseModel):
@@ -95,15 +71,15 @@ class LnurlHostedChannelResponse(LnurlResponseModel):
 class LnurlPayResponse(LnurlResponseModel):
     tag: Literal['payRequest'] = 'payRequest'
     callback: HttpsUrl
-    min_sendable: Millisatoshi = Field(..., alias='minSendable')
-    max_sendable: Millisatoshi = Field(..., alias='maxSendable')
+    min_sendable: MilliSatoshi = Field(..., alias='minSendable')
+    max_sendable: MilliSatoshi = Field(..., alias='maxSendable')
     metadata: LnurlPayMetadata
 
     @validator('max_sendable')
-    def max_less_than_min(cls, v, values, **kwargs):
-        if 'min_sendable' in values and v < values['min_sendable']:
+    def max_less_than_min(cls, value, values, **kwargs):
+        if 'min_sendable' in values and value < values['min_sendable']:
             raise ValueError('`max_sendable` cannot be less than `min_sendable`.')
-        return v
+        return value
 
     @property
     def h(self) -> str:
@@ -119,7 +95,7 @@ class LnurlPayResponse(LnurlResponseModel):
 
 
 class LnurlPayActionResponse(LnurlResponseModel):
-    pr: LightningInvoiceBech32
+    pr: LightningInvoice
     success_action: Optional[LnurlPaySuccessAction] = Field(None, alias='successAction')
     routes: List[LnurlPayRoute] = []
 
@@ -128,15 +104,15 @@ class LnurlWithdrawResponse(LnurlResponseModel):
     tag: Literal['withdrawRequest'] = 'withdrawRequest'
     callback: HttpsUrl
     k1: str
-    min_withdrawable: Millisatoshi = Field(..., alias='minWithdrawable')
-    max_withdrawable: Millisatoshi = Field(..., alias='maxWithdrawable')
+    min_withdrawable: MilliSatoshi = Field(..., alias='minWithdrawable')
+    max_withdrawable: MilliSatoshi = Field(..., alias='maxWithdrawable')
     default_description: str = Field('', alias='defaultDescription')
 
     @validator('max_withdrawable')
-    def max_less_than_min(cls, v, values, **kwargs):
-        if 'min_withdrawable' in values and v < values['min_withdrawable']:
+    def max_less_than_min(cls, value, values, **kwargs):
+        if 'min_withdrawable' in values and value < values['min_withdrawable']:
             raise ValueError('`max_withdrawable` cannot be less than `min_withdrawable`.')
-        return v
+        return value
 
     @property
     def min_sats(self) -> int:
@@ -152,13 +128,12 @@ class LnurlResponse:
     @staticmethod
     def from_dict(d: dict) -> LnurlResponseModel:
         try:
-            if 'status' in d and d['status'].lower() == 'error':
+            if 'status' in d and d['status'].upper() == 'ERROR':
+                d['status'] = d['status'].upper()  # some services return `status` in lowercase, but spec says upper
                 return LnurlErrorResponse(**d)
 
             elif 'tag' in d:
-                # some services return `status` here, but it is not in the spec
-                d.pop('status', None)
-
+                d.pop('status', None)  # some services return `status` here, but it is not in the spec
                 return {
                     'channelRequest': LnurlChannelResponse,
                     'hostedChannelRequest': LnurlHostedChannelResponse,

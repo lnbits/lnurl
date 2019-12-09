@@ -3,7 +3,7 @@ import pytest
 
 from pydantic import ValidationError
 
-from lnurl.models.responses import (
+from lnurl.models import (
     LnurlErrorResponse, LnurlSuccessResponse,
     LnurlChannelResponse, LnurlHostedChannelResponse, LnurlPayResponse, LnurlWithdrawResponse
 )

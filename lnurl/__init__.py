@@ -1,7 +1,6 @@
 # flake8: noqa
 
-from .models.generics import Lnurl
-from .models.responses import (
+from .models import (
     LnurlResponse,
     LnurlErrorResponse,
     LnurlSuccessResponse,
@@ -9,10 +8,13 @@ from .models.responses import (
     LnurlHostedChannelResponse,
     LnurlPayResponse,
     LnurlPayActionResponse,
-    LnurlWithdrawResponse
+    LnurlWithdrawResponse,
+)
+from .types import (
+    Lnurl,
 )
 from .utils import (
     decode,
     encode,
-    handle
+    handle,
 )

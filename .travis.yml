@@ -6,7 +6,7 @@ python:
     - "3.8"
 
 install:
-    - pip install tox-travis codecov
+    - pip install requests codecov tox-travis
 
 script:
     - tox

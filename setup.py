@@ -12,6 +12,8 @@ setup(
     url='https://github.com/python-ln/lnurl',
     author="jogco",
     author_email="jogco@lnsms.world",
+    maintainer="eillarra",
+    maintainer_email="eneko@illarra.com",
     license='MIT',
     description='LNURL implementation for Python.',
     long_description=long_description,

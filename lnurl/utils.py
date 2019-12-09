@@ -3,36 +3,32 @@ try:
 except ImportError:  # pragma: nocover
     requests = None
 
-from pydantic import BaseModel, ValidationError
+from pydantic import ValidationError
 
-from lnurl.models.generics import HttpsUrl, Lnurl
-from lnurl.models.responses import LnurlResponse, LnurlAuthResponse
-from lnurl.tools import _url_encode
 from .exceptions import InvalidLnurl, InvalidUrl
-
-
-class _LnurlModel(BaseModel):
-    lnurl: Lnurl
+from .models import LnurlResponse, LnurlAuthResponse
+from .tools import _url_encode
+from .types import HttpsUrl, Lnurl
 
 
 def decode(bech32_lnurl: str) -> HttpsUrl:
     try:
-        return _LnurlModel(lnurl=bech32_lnurl).lnurl.url
-    except ValidationError:
+        return Lnurl(bech32_lnurl).url
+    except (ValidationError, ValueError):
         raise InvalidLnurl
 
 
 def encode(url: str) -> Lnurl:
     try:
-        return _LnurlModel(lnurl=_url_encode(url)).lnurl
+        return Lnurl(_url_encode(url))
     except (ValidationError, ValueError):
         raise InvalidUrl
 
 
 def handle(bech32_lnurl: str) -> LnurlResponse:
     try:
-        lnurl = _LnurlModel(lnurl=bech32_lnurl).lnurl
-    except ValidationError:
+        lnurl = Lnurl(bech32_lnurl)
+    except (ValidationError, ValueError):
         raise InvalidLnurl
 
     if lnurl.is_login:

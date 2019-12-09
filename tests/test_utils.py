@@ -1,12 +1,12 @@
 import pytest
 
 from lnurl.exceptions import InvalidLnurl, InvalidUrl
-from lnurl.models.generics import HttpsUrl, Lnurl
-from lnurl.utils import decode, encode
+from lnurl.models import LnurlAuthResponse, LnurlPayResponse, LnurlWithdrawResponse
+from lnurl.types import HttpsUrl, Lnurl
+from lnurl.utils import decode, encode, handle
 
 
-class TestUtils:
-    valid_bc_address = 'BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4'
+class TestDecode:
 
     @pytest.mark.parametrize('bech32,url', [
         ('LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWE3JX56NXCFK89JN2V3K'
@@ -28,6 +28,9 @@ class TestUtils:
         with pytest.raises(InvalidLnurl):
             decode(bech32)
 
+
+class TestEncode:
+
     @pytest.mark.parametrize('bech32,url', [
         ('LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWE3JX56NXCFK89JN2V3K'
          'XUCRSVTY8YMXGCMYXV6RQD3EXDSKVCTZV5CRGCN9XA3RQCMRVSCNWWRYVCYAE0UU',
@@ -45,3 +48,47 @@ class TestUtils:
     def test_encode_nohttps(self, url):
         with pytest.raises(InvalidUrl):
             encode(url)
+
+
+class TestHandle:
+    """Responses from the LNURL playground: https://lnurl.bigsun.xyz/"""
+
+    @pytest.mark.parametrize('bech32', [
+        ('LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94KX7EMFDCLHGCT884KX7EMFDCNXKVFAXUMN2VF4XV6SPQ9K0W')
+    ])
+    def test_handle_auth(self, bech32):
+        res = handle(bech32)
+        assert isinstance(res, LnurlAuthResponse) is True
+        assert res.tag == 'login'
+        assert res.callback.host == 'lnurl.bigsun.xyz'
+        assert hasattr(res, 'k1') is True
+
+    @pytest.mark.parametrize('bech32', [
+        ('LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94CXZ7FLWDJHXUMFDAHR6V3EXYURYDEJSGPG7J')
+    ])
+    def test_handle_pay(self, bech32):
+        res = handle(bech32)
+        if res.ok:
+            assert isinstance(res, LnurlPayResponse) is True
+            assert res.tag == 'payRequest'
+            assert res.callback.host == 'lnurl.bigsun.xyz'
+            assert len(res.metadata.list) >= 1
+
+    @pytest.mark.parametrize('bech32', [
+        ('LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94MKJARGV3EXZAELWDJHXUMFDAHR6DEHX5CN2VE4K2GN78')
+    ])
+    def test_handle_withdraw(self, bech32):
+        res = handle(bech32)
+        if res.ok:
+            assert isinstance(res, LnurlWithdrawResponse) is True
+            assert res.tag == 'withdrawRequest'
+            assert res.callback.host == 'lnurl.bigsun.xyz'
+            assert res.default_description == 'sample withdraw'
+            assert res.max_withdrawable >= res.min_withdrawable
+
+    @pytest.mark.parametrize('bech32', [
+        'BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4',
+    ])
+    def test_handle_nolnurl(self, bech32):
+        with pytest.raises(InvalidLnurl):
+            handle(bech32)

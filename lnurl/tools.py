@@ -1,8 +1,8 @@
 from bech32 import bech32_decode, bech32_encode, convertbits
-from typing import Any, Set, Tuple
+from typing import List, Set, Tuple
 
 
-def _bech32_decode(bech32: str, *, allowed_hrp: Set[str] = None) -> Tuple[str, Any]:
+def _bech32_decode(bech32: str, *, allowed_hrp: Set[str] = None) -> Tuple[str, List[int]]:
     hrp, data = bech32_decode(bech32)
 
     if None in (hrp, data) or (allowed_hrp and hrp not in allowed_hrp):
@@ -11,13 +11,16 @@ def _bech32_decode(bech32: str, *, allowed_hrp: Set[str] = None) -> Tuple[str, A
     return hrp, data
 
 
+def _lnurl_clean(lnurl: str) -> str:
+    return lnurl.replace('lightning:', '') if lnurl.startswith('lightning:') else lnurl
+
+
 def _lnurl_decode(lnurl: str) -> str:
     """
     Decode a LNURL and return a url string without performing any validation on it.
     Use `lnurl.decode()` for validation and to get `HttpsUrl` object.
     """
-    lnurl = lnurl.replace('lightning:', '') if lnurl.startswith('lightning:') else lnurl
-    hrp, data = _bech32_decode(lnurl, allowed_hrp={'lnurl'})
+    hrp, data = _bech32_decode(_lnurl_clean(lnurl), allowed_hrp={'lnurl'})
 
     try:
         url = bytes(convertbits(data, 5, 8, False)).decode('utf-8')
