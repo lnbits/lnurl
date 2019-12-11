@@ -2,10 +2,10 @@ import pytest
 
 from urllib.parse import urlencode
 
+from lnurl.core import decode, encode, get, handle
 from lnurl.exceptions import InvalidLnurl, InvalidUrl
-from lnurl.models import LnurlAuthResponse, LnurlPayResponse, LnurlWithdrawResponse
+from lnurl.models import LnurlAuthResponse, LnurlPayResponse, LnurlWithdrawResponse, LnurlPaySuccessAction
 from lnurl.types import HttpsUrl, Lnurl
-from lnurl.utils import decode, encode, get, handle
 
 
 class TestDecode:
@@ -87,6 +87,7 @@ class TestHandle:
 class TestPayFlow:
     """Full LNURL-pay flow interacting with https://lnurl.bigsun.xyz/"""
 
+    @pytest.mark.xfail(raises=NotImplementedError)
     @pytest.mark.parametrize('bech32', [
         ('LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94CXZ7FLWDJHXUMFDAHR6V3EXYURYDEJSGPG7J')
     ])
@@ -100,4 +101,5 @@ class TestPayFlow:
         query = urlencode({**res.callback.query_params, **{'amount': res.max_sendable}})
         url = ''.join([res.callback.base, '?', query])
         res2 = get(url=url)
+        assert res2.success_action is None or isinstance(res2.success_action, LnurlPaySuccessAction)
         assert res.h == res2.pr.h

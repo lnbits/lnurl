@@ -2,8 +2,8 @@ import pytest
 
 from pydantic import ValidationError, parse_obj_as
 
-from lnurl.functions import _lnurl_clean
 from lnurl.types import HttpsUrl, LightningInvoice, LightningNodeUri, Lnurl
+from lnurl.utils import _lnurl_clean
 
 
 class TestHttpsUrl:

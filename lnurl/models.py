@@ -1,8 +1,8 @@
 import math
 
 from hashlib import sha256
-from pydantic import BaseModel, Field, validator
-from typing import List, Optional
+from pydantic import BaseModel, Field, constr, validator
+from typing import List, Optional, Union
 from typing_extensions import Literal
 
 from .exceptions import LnurlResponseException
@@ -15,6 +15,24 @@ class LnurlPayRoute(BaseModel):
 
 class LnurlPaySuccessAction(BaseModel):
     pass
+
+
+class AesAction(LnurlPaySuccessAction):
+    tag: Literal['aes'] = 'aes'
+    description: constr(max_length=144)
+    ciphertext: str  # TODO
+    iv: constr(min_length=24, max_length=24)
+
+
+class MessageAction(LnurlPaySuccessAction):
+    tag: Literal['message'] = 'message'
+    message: constr(max_length=144)
+
+
+class UrlAction(LnurlPaySuccessAction):
+    tag: Literal['url'] = 'url'
+    description: constr(max_length=144)
+    url: HttpsUrl
 
 
 class LnurlResponseModel(BaseModel):
@@ -96,7 +114,7 @@ class LnurlPayResponse(LnurlResponseModel):
 
 class LnurlPayActionResponse(LnurlResponseModel):
     pr: LightningInvoice
-    success_action: Optional[LnurlPaySuccessAction] = Field(None, alias='successAction')
+    success_action: Optional[Union[AesAction, MessageAction, UrlAction]] = Field(None, alias='successAction')
     routes: List[LnurlPayRoute] = []
 
 

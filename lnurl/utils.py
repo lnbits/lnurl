@@ -1,48 +1,46 @@
-try:
-    import requests
-except ImportError:  # pragma: nocover
-    requests = None
-
-from pydantic import ValidationError
+from bech32 import bech32_decode, bech32_encode, convertbits
+from typing import List, Set, Tuple
 
 from .exceptions import InvalidLnurl, InvalidUrl
-from .models import LnurlResponse, LnurlAuthResponse
-from .functions import _url_encode
-from .types import HttpsUrl, Lnurl
 
 
-def decode(bech32_lnurl: str) -> HttpsUrl:
+def _bech32_decode(bech32: str, *, allowed_hrp: Set[str] = None) -> Tuple[str, List[int]]:
+    hrp, data = bech32_decode(bech32)
+
+    if None in (hrp, data) or (allowed_hrp and hrp not in allowed_hrp):
+        raise ValueError(f'Invalid Human Readable Prefix (HRP): {hrp}.')
+
+    return hrp, data
+
+
+def _lnurl_clean(lnurl: str) -> str:
+    lnurl = lnurl.strip()
+    return lnurl.replace('lightning:', '') if lnurl.startswith('lightning:') else lnurl
+
+
+def _lnurl_decode(lnurl: str) -> str:
+    """
+    Decode a LNURL and return a url string without performing any validation on it.
+    Use `lnurl.decode()` for validation and to get `HttpsUrl` object.
+    """
+    hrp, data = _bech32_decode(_lnurl_clean(lnurl), allowed_hrp={'lnurl'})
+
     try:
-        return Lnurl(bech32_lnurl).url
-    except (ValidationError, ValueError):
+        url = bytes(convertbits(data, 5, 8, False)).decode('utf-8')
+    except UnicodeDecodeError:  # pragma: nocover
         raise InvalidLnurl
 
+    return url
 
-def encode(url: str) -> Lnurl:
+
+def _url_encode(url: str) -> str:
+    """
+    Encode a URL without validating it first and return a bech32 LNURL string.
+    Use `lnurl.encode()` for validation and to get a `Lnurl` object.
+    """
     try:
-        return Lnurl(_url_encode(url))
-    except (ValidationError, ValueError):
+        lnurl = bech32_encode('lnurl', convertbits(url.encode('utf-8'), 8, 5, True))
+    except UnicodeEncodeError:  # pragma: nocover
         raise InvalidUrl
 
-
-def get(url: str) -> LnurlResponse:
-    if requests is None:  # pragma: nocover
-        raise ImportError('The `requests` library must be installed to use `lnurl.handle()`.')
-
-    r = requests.get(url)
-    return LnurlResponse.from_dict(r.json())
-
-
-def handle(bech32_lnurl: str) -> LnurlResponse:
-    try:
-        lnurl = Lnurl(bech32_lnurl)
-    except (ValidationError, ValueError):
-        raise InvalidLnurl
-
-    if lnurl.is_login:
-        return LnurlAuthResponse(**{
-            'callback': lnurl.url,
-            'k1': lnurl.url.query_params['k1']
-        })
-
-    return get(lnurl.url)
+    return lnurl.upper()

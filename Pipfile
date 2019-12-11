@@ -10,11 +10,11 @@ python_version = "3.7"
 lnurl = {editable = true, path = "."}
 
 [dev-packages]
-coverage = "*"
 flake8 = "*"
 flake8-mypy = "*"
 pytest = "*"
 pytest-cov = "*"
+pytest-sugar = "*"
 requests = "*"
 tox = "*"
 twine = "*"
