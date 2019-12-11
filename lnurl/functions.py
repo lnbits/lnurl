@@ -1,6 +1,8 @@
 from bech32 import bech32_decode, bech32_encode, convertbits
 from typing import List, Set, Tuple
 
+from .exceptions import InvalidLnurl, InvalidUrl
+
 
 def _bech32_decode(bech32: str, *, allowed_hrp: Set[str] = None) -> Tuple[str, List[int]]:
     hrp, data = bech32_decode(bech32)
@@ -25,7 +27,7 @@ def _lnurl_decode(lnurl: str) -> str:
     try:
         url = bytes(convertbits(data, 5, 8, False)).decode('utf-8')
     except UnicodeDecodeError:  # pragma: nocover
-        raise ValueError('Invalid LNURL.')
+        raise InvalidLnurl
 
     return url
 
@@ -38,6 +40,6 @@ def _url_encode(url: str) -> str:
     try:
         lnurl = bech32_encode('lnurl', convertbits(url.encode('utf-8'), 8, 5, True))
     except UnicodeEncodeError:  # pragma: nocover
-        raise ValueError('Invalid URL.')
+        raise InvalidUrl
 
     return lnurl.upper()

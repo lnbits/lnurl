@@ -48,8 +48,8 @@ class TestLnurlChannelResponse:
         assert res.dict() == {**{'tag': 'channelRequest'}, **d}
 
     @pytest.mark.parametrize('d', [
-        # {'uri': 'invalid', 'callback': 'https://service.io/channel', 'k1': 'c3RyaW5n'},  # TODO: LightningNodeUri
-        # {'uri': 'node_key@ip_address:port_number', 'callback': 'invalid', 'k1': 'c3RyaW5n'},
+        {'uri': 'invalid', 'callback': 'https://service.io/channel', 'k1': 'c3RyaW5n'},
+        {'uri': 'node_key@ip_address:port_number', 'callback': 'invalid', 'k1': 'c3RyaW5n'},
         {'uri': 'node_key@ip_address:port_number', 'callback': 'https://service.io/channel', 'k1': None},
     ])
     def test_invalid_data(self, d):
@@ -68,7 +68,7 @@ class TestLnurlHostedChannelResponse:
         assert res.dict() == {**{'tag': 'hostedChannelRequest', 'alias': None}, **d}
 
     @pytest.mark.parametrize('d', [
-        # {'uri': 'invalid', 'k1': 'c3RyaW5n'},  # TODO: LightningNodeUri
+        {'uri': 'invalid', 'k1': 'c3RyaW5n'},
         {'uri': 'node_key@ip_address:port_number', 'k1': None},
     ])
     def test_invalid_data(self, d):

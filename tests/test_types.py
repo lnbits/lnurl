@@ -1,8 +1,8 @@
 import pytest
 
-from pydantic import BaseModel, ValidationError, parse_obj_as
+from pydantic import ValidationError, parse_obj_as
 
-from lnurl.tools import _lnurl_clean
+from lnurl.functions import _lnurl_clean
 from lnurl.types import HttpsUrl, LightningInvoice, LightningNodeUri, Lnurl
 
 
@@ -26,17 +26,20 @@ class TestHttpsUrl:
 
 class TestLightningInvoice:
 
-    @pytest.mark.skip
-    @pytest.mark.parametrize('bech32,hrp,prefix,amount', [
+    @pytest.mark.xfail(raises=NotImplementedError)
+    @pytest.mark.parametrize('bech32,hrp,prefix,amount,h', [
         ('lntb20m1pvjluezpp5qqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqqqsyqcyq5rqwzqfqypqhp58yjmdan79s6qqdhdzgynm4zwqd'
          '5d7xmw5fk98klysy043l2ahrqsfpp3x9et2e20v6pu37c5d9vax37wxq72un98k6vcx9fz94w0qf237cm2rqv9pmn5lnexfvf55'
-         '79slr4zq3u8kmczecytdx0xg9rwzngp7e6guwqpqlhssu04sucpnz4axcv2dstmknqq6jsk2l', 'lntb20m', 'lntb', 20),
+         '79slr4zq3u8kmczecytdx0xg9rwzngp7e6guwqpqlhssu04sucpnz4axcv2dstmknqq6jsk2l', 'lntb20m', 'lntb', 20,
+         'h'),
     ])
-    def test_valid(self, bech32, hrp, prefix, amount):
+    def test_valid(self, bech32, hrp, prefix, amount, h):
         invoice = LightningInvoice(bech32)
+        assert invoice == parse_obj_as(LightningInvoice, bech32)
         assert invoice.hrp == hrp
         assert invoice.prefix == prefix
         assert invoice.amount == amount
+        assert invoice.h == h
 
 
 class TestLightningNode:
@@ -69,7 +72,7 @@ class TestLnurl:
     ])
     def test_valid(self, lightning, url):
         lnurl = Lnurl(lightning)
-        assert lnurl == lnurl.bech32 == _lnurl_clean(lightning)
+        assert lnurl == lnurl.bech32 == _lnurl_clean(lightning) == parse_obj_as(Lnurl, lightning)
         assert lnurl.bech32.hrp == 'lnurl'
         assert lnurl.url == url
         assert lnurl.url.base == 'https://service.io/'
@@ -82,5 +85,5 @@ class TestLnurl:
         'BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4',
     ])
     def test_decode_nolnurl(self, bech32):
-        with pytest.raises(ValueError):
-            Lnurl(bech32)
+        with pytest.raises(ValidationError):
+            parse_obj_as(Lnurl, bech32)

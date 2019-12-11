@@ -1,11 +1,12 @@
 import re
 
-from pydantic import Json, HttpUrl, PositiveInt, parse_obj_as
+from pydantic import Json, HttpUrl, PositiveInt, ValidationError, parse_obj_as
 from pydantic.validators import str_validator
 from urllib.parse import parse_qs
-from typing import Any, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
-from .tools import _bech32_decode, _lnurl_clean, _lnurl_decode
+from .exceptions import InvalidLnurlPayMetadata
+from .functions import _bech32_decode, _lnurl_clean, _lnurl_decode
 
 
 class ReprMixin:
@@ -23,16 +24,16 @@ class Bech32(ReprMixin, str):
     def __new__(cls, bech32: str, **kwargs) -> object:
         return str.__new__(cls, bech32)
 
-    def __init__(self, bech32: str, *, hrp: Optional[str] = None, data: Optional[Any] = None):
+    def __init__(self, bech32: str, *, hrp: Optional[str] = None, data: Optional[List[int]] = None):
         str.__init__(bech32)
         self.hrp, self.data = (hrp, data) if hrp and data else self.__get_data__(bech32)
 
     @classmethod
-    def __get_data__(cls, bech32: str) -> Tuple[str, List[int], str]:
+    def __get_data__(cls, bech32: str) -> Tuple[str, List[int]]:
         return _bech32_decode(bech32)
 
     @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
+    def __get_validators__(cls):
         yield str_validator
         yield cls.validate
 
@@ -88,7 +89,7 @@ class LightningNodeUri(ReprMixin, str):
         self.port = port
 
     @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
+    def __get_validators__(cls):
         yield str_validator
         yield cls.validate
 
@@ -120,7 +121,7 @@ class Lnurl(ReprMixin, str):
         return parse_obj_as(HttpsUrl, _lnurl_decode(bech32))
 
     @classmethod
-    def __get_validators__(cls) -> 'CallableGenerator':
+    def __get_validators__(cls):
         yield str_validator
         yield cls.validate
 
@@ -147,7 +148,11 @@ class LnurlPayMetadata(ReprMixin, str):
 
     @classmethod
     def __validate_metadata__(cls, json_str: str) -> List[Tuple[str, str]]:
-        data = parse_obj_as(Json[List[Tuple[str, str]]], json_str)
+        try:
+            data = parse_obj_as(Json[List[Tuple[str, str]]], json_str)
+        except ValidationError:
+            raise InvalidLnurlPayMetadata
+
         return [x for x in data if x[0] in cls.valid_metadata_mime_types]
 
     @classmethod

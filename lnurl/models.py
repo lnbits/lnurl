@@ -76,7 +76,7 @@ class LnurlPayResponse(LnurlResponseModel):
     metadata: LnurlPayMetadata
 
     @validator('max_sendable')
-    def max_less_than_min(cls, value, values, **kwargs):
+    def max_less_than_min(cls, value, values, **kwargs):  # noqa
         if 'min_sendable' in values and value < values['min_sendable']:
             raise ValueError('`max_sendable` cannot be less than `min_sendable`.')
         return value
@@ -109,7 +109,7 @@ class LnurlWithdrawResponse(LnurlResponseModel):
     default_description: str = Field('', alias='defaultDescription')
 
     @validator('max_withdrawable')
-    def max_less_than_min(cls, value, values, **kwargs):
+    def max_less_than_min(cls, value, values, **kwargs):  # noqa
         if 'min_withdrawable' in values and value < values['min_withdrawable']:
             raise ValueError('`max_withdrawable` cannot be less than `min_withdrawable`.')
         return value
@@ -128,11 +128,7 @@ class LnurlResponse:
     @staticmethod
     def from_dict(d: dict) -> LnurlResponseModel:
         try:
-            if 'status' in d and d['status'].upper() == 'ERROR':
-                d['status'] = d['status'].upper()  # some services return `status` in lowercase, but spec says upper
-                return LnurlErrorResponse(**d)
-
-            elif 'tag' in d:
+            if 'tag' in d:
                 d.pop('status', None)  # some services return `status` here, but it is not in the spec
                 return {
                     'channelRequest': LnurlChannelResponse,
@@ -141,11 +137,16 @@ class LnurlResponse:
                     'withdrawRequest': LnurlWithdrawResponse,
                 }[d['tag']](**d)
 
-            elif 'success_action' in d:
+            if 'successAction' in d:
+                d.pop('status', None)
                 return LnurlPayActionResponse(**d)
 
-            else:
-                return LnurlSuccessResponse(**d)
+            d['status'] = d['status'].upper()  # some services return `status` in lowercase, but spec says upper
+
+            if 'status' in d and d['status'] == 'ERROR':
+                return LnurlErrorResponse(**d)
+
+            return LnurlSuccessResponse(**d)
 
         except Exception:
             raise LnurlResponseException

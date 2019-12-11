@@ -6,15 +6,22 @@ from lnurl.exceptions import LnurlResponseException
 
 
 class TestLnurlResponse:
-    error_res = json.loads('{"status":"ERROR","reason":"error details..."}')
     pay_res = json.loads(r'{"tag":"payRequest","metadata":"[[\"text/plain\",\"lorem ipsum blah blah\"]]","k1":"c67a8aa61f7c6cd457058916356ca80f5bfd00fa78ac2c1b3157391c2e9787de","callback":"https://lnurl.bigsun.xyz/lnurl-pay/callback/","maxSendable":300980,"minSendable":100980,"defaultDescription":"sample pay"}')  # noqa
     pay_res_invalid = json.loads(r'{"tag":"payRequest","metadata":"[\"text\"\"plain\"]"}')
     withdraw_res = json.loads('{"tag":"withdrawRequest","k1":"c67a8aa61f7c6cd457058916356ca80f5bfd00fa78ac2c1b3157391c2e9787de","callback":"https://lnurl.bigsun.xyz/lnurl-withdraw/callback/?param1=1&param2=2","maxWithdrawable":478980,"minWithdrawable":478980,"defaultDescription":"sample withdraw"}')  # noqa
 
     def test_error(self):
-        res = LnurlResponse.from_dict(self.error_res)
+        res = LnurlResponse.from_dict({'status': 'error', 'reason': 'error details...'})
         assert res.ok is False
         assert res.error_msg == 'error details...'
+
+    def test_success(self):
+        res = LnurlResponse.from_dict({'status': 'OK'})
+        assert res.ok is True
+
+    def test_unknown(self):
+        with pytest.raises(LnurlResponseException):
+            LnurlResponse.from_dict({'status': 'unknown'})
 
     def test_pay(self):
         res = LnurlResponse.from_dict(self.pay_res)

@@ -7,6 +7,8 @@ LNURL implementation for Python
 [![pypi-versions]][pypi]
 [![license-badge]](LICENSE)
 
+A collection of helpers for building [LNURL][lnurl] support into wallets and services.
+
 Basic usage
 -----------
 
@@ -18,7 +20,7 @@ Lnurl('LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWXQ96S9
 HttpsUrl('https://service.io/?q=3fc3645b439ce8e7', scheme='https', host='service.io', tld='io', host_type='domain', path='/', query='q=3fc3645b439ce8e7')
 ```
 
-The `Lnurl` object provides some extra utilities.
+The `Lnurl` object wraps a bech32 LNURL to provide some extra utilities.
 
 ```python
 from lnurl import Lnurl
@@ -27,7 +29,7 @@ lnurl = Lnurl('LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJ
 lnurl.bech32  # 'LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWXQ96S9'
 lnurl.bech32.hrp  # 'lnurl'
 lnurl.url  # 'https://service.io/?q=3fc3645b439ce8e7'
-lnurl.url.host  #  service.io
+lnurl.url.host  # 'service.io'
 lnurl.url.base  # 'https://service.io/'
 lnurl.url.query  # 'q=3fc3645b439ce8e7'
 lnurl.url.query_params  # {'q': '3fc3645b439ce8e7'}
@@ -37,28 +39,26 @@ Parsing LNURL responses
 -----------------------
 
 You can use a `LnurlResponse` to wrap responses you get from a LNURL.
-The different types of responses defined in the LNURL specification have a different response class 
+The different types of responses defined in the [LNURL spec][lnurl-spec] have a different model
 with different properties (see `models.py`):
 
 ```python
-import lnurl
 import requests
 
-from lnurl import LnurlResponse
+from lnurl import Lnurl, LnurlResponse
 
-bech32 = 'LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94MKJARGV3EXZAELWDJHXUMFDAHR6WFHXQERSVPCA649RV'
-lnurl = lnurl.decode(bech32)
-
+lnurl = Lnurl('LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94MKJARGV3EXZAELWDJHXUMFDAHR6WFHXQERSVPCA649RV')
 r = requests.get(lnurl.url)
 
-res = LnurlResponse.from_dict(res.json())  # LnurlWithdrawResponse
+res = LnurlResponse.from_dict(r.json())  # LnurlWithdrawResponse
+res.ok  # bool
 res.max_sats  # int
 res.callback.base  # str
 res.callback.query_params # dict
 ```
 
-Or if you have already `requests` installed, you can use the `.handle()` function directly.
-It will return the appropriate response for an LNURL.
+If you have already `requests` installed, you can also use the `.handle()` function directly.
+It will return the appropriate response for a LNURL.
 
 ```python
 >>> import lnurl
@@ -69,37 +69,41 @@ LnurlWithdrawResponse(tag='withdrawRequest', callback=HttpsUrl('https://lnurl.bi
 Building your own LNURL responses
 ---------------------------------
 
-If you are managing a service, you can use the `lnurl` package to build valid responses too.
+For LNURL services, the `lnurl` package can be used to build **valid** responses.
 
 ```python
 from lnurl import LnurlWithdrawResponse
 
-res = LnurlWithdrawResponse(**{
-    'callback': 'https://lnurl.bigsun.xyz/lnurl-withdraw/callback/9702808',
-    'k1': 38d304051c1b76dcd8c5ee17ee15ff0ebc02090c0afbc6c98100adfa3f920874,
-    'min_withdrawable': 551000,
-    'max_withdrawable': 551000,
-    'default_description': 'sample withdraw',
-})
+res = LnurlWithdrawResponse(
+    callback='https://lnurl.bigsun.xyz/lnurl-withdraw/callback/9702808',
+    k1='38d304051c1b76dcd8c5ee17ee15ff0ebc02090c0afbc6c98100adfa3f920874',
+    min_withdrawable=551000,
+    max_withdrawable=551000,
+    default_description='sample withdraw',
+)
 res.json()  # str
 res.dict()  # dict
 ```
 
-All responses are `pydantic` models, so the information you provide will be validated and you have
+All responses are [`pydantic`][pydantic] models, so the information you provide will be validated and you have
 access to `.json()` and `.dict()` methods to export the data.
 
-**When data is exported it will be exported by default using camelCase keys, because the LNURL spec
-uses camelCase.** You can also use camelCases when you parse the data, and it will be converted to
-snake_case to make your Python code nicer.
+**Data is exported using :camel: camelCase keys by default, as per spec.**
+You can also use camelCases when you parse the data, and it will be converted to snake_case to make your
+Python code nicer.
 
-If you want to export the data using snake_case (in your Python code, for example), you can change
+If you want to export the data using :snake: snake_case (in your Python code, for example), you can change
 the `by_alias` parameter: `res.dict(by_alias=False)` (it is `True` by default).
 
-[travis-badge]: https://travis-ci.org/python-ln/lnurl.svg?branch=master
 [travis]: https://travis-ci.org/python-ln/lnurl?branch=master
-[codecov-badge]: https://codecov.io/gh/python-ln/lnurl/branch/master/graph/badge.svg
+[travis-badge]: https://api.travis-ci.org/python-ln/lnurl.svg?branch=master
 [codecov]: https://codecov.io/gh/python-ln/lnurl
+[codecov-badge]: https://codecov.io/gh/python-ln/lnurl/branch/master/graph/badge.svg
 [pypi]: https://pypi.org/project/lnurl/
 [pypi-badge]: https://badge.fury.io/py/lnurl.svg
 [pypi-versions]: https://img.shields.io/pypi/pyversions/lnurl.svg
 [license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
+
+[lnurl]: https://telegra.ph/lnurl-a-protocol-for-seamless-interaction-between-services-and-Lightning-wallets-08-19
+[lnurl-spec]: https://github.com/btcontract/lnurl-rfc/blob/master/spec.md
+[pydantic]: https://github.com/samuelcolvin/pydantic/
