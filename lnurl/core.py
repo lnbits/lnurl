@@ -6,9 +6,9 @@ except ImportError:  # pragma: nocover
 from pydantic import ValidationError
 
 from .exceptions import InvalidLnurl, InvalidUrl
-from .models import LnurlResponse, LnurlAuthResponse
+from .helpers import _url_encode
+from .models import LnurlResponse, LnurlResponseModel, LnurlAuthResponse
 from .types import HttpsUrl, Lnurl
-from .utils import _url_encode
 
 
 def decode(bech32_lnurl: str) -> HttpsUrl:
@@ -25,15 +25,19 @@ def encode(url: str) -> Lnurl:
         raise InvalidUrl
 
 
-def get(url: str) -> LnurlResponse:
+def get(url: str, *, response_class: LnurlResponseModel = None) -> LnurlResponseModel:
     if requests is None:  # pragma: nocover
         raise ImportError('The `requests` library must be installed to use `lnurl.get()` and `lnurl.handle()`.')
 
     r = requests.get(url)
+
+    if response_class:
+        return response_class(**r.json())
+
     return LnurlResponse.from_dict(r.json())
 
 
-def handle(bech32_lnurl: str) -> LnurlResponse:
+def handle(bech32_lnurl: str, *, response_class: LnurlResponseModel = None) -> LnurlResponseModel:
     try:
         lnurl = Lnurl(bech32_lnurl)
     except (ValidationError, ValueError):
@@ -45,4 +49,4 @@ def handle(bech32_lnurl: str) -> LnurlResponse:
             'k1': lnurl.url.query_params['k1']
         })
 
-    return get(lnurl.url)
+    return get(lnurl.url, response_class=response_class)

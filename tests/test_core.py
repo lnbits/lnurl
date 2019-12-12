@@ -4,7 +4,10 @@ from urllib.parse import urlencode
 
 from lnurl.core import decode, encode, get, handle
 from lnurl.exceptions import InvalidLnurl, InvalidUrl
-from lnurl.models import LnurlAuthResponse, LnurlPayResponse, LnurlWithdrawResponse, LnurlPaySuccessAction
+from lnurl.models import (
+    LnurlAuthResponse, LnurlPayResponse, LnurlPayActionResponse, LnurlWithdrawResponse,
+    LnurlPaySuccessAction
+)
 from lnurl.types import HttpsUrl, Lnurl
 
 
@@ -100,6 +103,7 @@ class TestPayFlow:
 
         query = urlencode({**res.callback.query_params, **{'amount': res.max_sendable}})
         url = ''.join([res.callback.base, '?', query])
-        res2 = get(url=url)
+
+        res2 = get(url, response_class=LnurlPayActionResponse)
         assert res2.success_action is None or isinstance(res2.success_action, LnurlPaySuccessAction)
         assert res.h == res2.pr.h

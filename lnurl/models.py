@@ -9,8 +9,9 @@ from .exceptions import LnurlResponseException
 from .types import HttpsUrl, LightningInvoice, LightningNodeUri, LnurlPayMetadata, MilliSatoshi
 
 
-class LnurlPayRoute(BaseModel):
-    pass
+class LnurlPayRouteHop(BaseModel):
+    node_id: str = Field(..., alias='nodeId')
+    channel_update: str = Field(..., alias='channelUpdate')
 
 
 class LnurlPaySuccessAction(BaseModel):
@@ -114,8 +115,8 @@ class LnurlPayResponse(LnurlResponseModel):
 
 class LnurlPayActionResponse(LnurlResponseModel):
     pr: LightningInvoice
-    success_action: Optional[Union[AesAction, MessageAction, UrlAction]] = Field(None, alias='successAction')
-    routes: List[LnurlPayRoute] = []
+    success_action: Optional[Union[MessageAction, UrlAction, AesAction]] = Field(None, alias='successAction')
+    routes: List[List[LnurlPayRouteHop]] = []
 
 
 class LnurlWithdrawResponse(LnurlResponseModel):

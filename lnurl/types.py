@@ -6,7 +6,7 @@ from urllib.parse import parse_qs
 from typing import List, Optional, Tuple
 
 from .exceptions import InvalidLnurlPayMetadata
-from .utils import _bech32_decode, _lnurl_clean, _lnurl_decode
+from .helpers import _bech32_decode, _lnurl_clean, _lnurl_decode
 
 
 class ReprMixin:
