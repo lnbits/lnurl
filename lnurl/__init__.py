@@ -16,6 +16,4 @@ from .models import (
     LnurlPayActionResponse,
     LnurlWithdrawResponse,
 )
-from .types import (
-    Lnurl,
-)
+from .types import Lnurl

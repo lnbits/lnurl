@@ -10,6 +10,7 @@ python_version = "3.7"
 lnurl = {editable = true, path = "."}
 
 [dev-packages]
+black = "==19.10b0"
 flake8 = "*"
 flake8-mypy = "*"
 pytest = "*"

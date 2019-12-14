@@ -27,7 +27,7 @@ def encode(url: str) -> Lnurl:
 
 def get(url: str, *, response_class: LnurlResponseModel = None) -> LnurlResponseModel:
     if requests is None:  # pragma: nocover
-        raise ImportError('The `requests` library must be installed to use `lnurl.get()` and `lnurl.handle()`.')
+        raise ImportError("The `requests` library must be installed to use `lnurl.get()` and `lnurl.handle()`.")
 
     r = requests.get(url)
 
@@ -44,9 +44,6 @@ def handle(bech32_lnurl: str, *, response_class: LnurlResponseModel = None) -> L
         raise InvalidLnurl
 
     if lnurl.is_login:
-        return LnurlAuthResponse(**{
-            'callback': lnurl.url,
-            'k1': lnurl.url.query_params['k1']
-        })
+        return LnurlAuthResponse(**{"callback": lnurl.url, "k1": lnurl.url.query_params["k1"]})
 
     return get(lnurl.url, response_class=response_class)

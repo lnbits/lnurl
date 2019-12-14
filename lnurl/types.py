@@ -10,16 +10,15 @@ from .helpers import _bech32_decode, _lnurl_clean, _lnurl_decode
 
 
 class ReprMixin:
-
-    def __repr__(self) -> str:   # pragma: nocover
-        extra = ', '.join(f'{n}={getattr(self, n)!r}' for n in self.__slots__ if getattr(self, n) is not None)
-        return f'{self.__class__.__name__}({super().__repr__()}, {extra})'
+    def __repr__(self) -> str:  # pragma: nocover
+        extra = ", ".join(f"{n}={getattr(self, n)!r}" for n in self.__slots__ if getattr(self, n) is not None)
+        return f"{self.__class__.__name__}({super().__repr__()}, {extra})"
 
 
 class Bech32(ReprMixin, str):
     """Bech32 string."""
 
-    __slots__ = ('hrp', 'data')
+    __slots__ = ("hrp", "data")
 
     def __new__(cls, bech32: str, **kwargs) -> object:
         return str.__new__(cls, bech32)
@@ -38,19 +37,20 @@ class Bech32(ReprMixin, str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> 'Bech32':
+    def validate(cls, value: str) -> "Bech32":
         hrp, data = cls.__get_data__(value)
         return cls(value, hrp=hrp, data=data)
 
 
 class HttpsUrl(HttpUrl):
     """HTTPS URL."""
-    allowed_schemes = {'https'}
+
+    allowed_schemes = {"https"}
     max_length = 2047  # https://stackoverflow.com/questions/417142/
 
     @property
     def base(self) -> str:
-        return f'{self.scheme}://{self.host}{self.path}'
+        return f"{self.scheme}://{self.host}{self.path}"
 
     @property
     def query_params(self) -> dict:
@@ -62,12 +62,12 @@ class LightningInvoice(Bech32):
 
     @property
     def amount(self) -> int:
-        a = re.search(r'(lnbc|lntb|lnbcrt)(\w+)', self.hrp).groups()[1]
+        a = re.search(r"(lnbc|lntb|lnbcrt)(\w+)", self.hrp).groups()[1]
         raise NotImplementedError
 
     @property
     def prefix(self) -> str:
-        return re.search(r'(lnbc|lntb|lnbcrt)(\w+)', self.hrp).groups()[0]
+        return re.search(r"(lnbc|lntb|lnbcrt)(\w+)", self.hrp).groups()[0]
 
     @property
     def h(self):
@@ -77,7 +77,7 @@ class LightningInvoice(Bech32):
 class LightningNodeUri(ReprMixin, str):
     """Remote node address of form `node_key@ip_address:port_number`."""
 
-    __slots__ = ('key', 'ip', 'port')
+    __slots__ = ("key", "ip", "port")
 
     def __new__(cls, uri: str, **kwargs) -> object:
         return str.__new__(cls, uri)
@@ -94,10 +94,10 @@ class LightningNodeUri(ReprMixin, str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> 'LightningNodeUri':
+    def validate(cls, value: str) -> "LightningNodeUri":
         try:
-            key, netloc = value.split('@')
-            ip, port = netloc.split(':')
+            key, netloc = value.split("@")
+            ip, port = netloc.split(":")
         except Exception:
             raise ValueError
 
@@ -105,7 +105,7 @@ class LightningNodeUri(ReprMixin, str):
 
 
 class Lnurl(ReprMixin, str):
-    __slots__ = ('bech32', 'url')
+    __slots__ = ("bech32", "url")
 
     def __new__(cls, lightning: str, **kwargs) -> object:
         return str.__new__(cls, _lnurl_clean(lightning))
@@ -126,18 +126,18 @@ class Lnurl(ReprMixin, str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> 'Lnurl':
+    def validate(cls, value: str) -> "Lnurl":
         return cls(value, url=cls.__get_url__(value))
 
     @property
     def is_login(self) -> bool:
-        return 'tag' in self.url.query_params and self.url.query_params['tag'] == 'login'
+        return "tag" in self.url.query_params and self.url.query_params["tag"] == "login"
 
 
 class LnurlPayMetadata(ReprMixin, str):
-    valid_metadata_mime_types = ['text/plain']
+    valid_metadata_mime_types = ["text/plain"]
 
-    __slots__ = ('list',)
+    __slots__ = ("list",)
 
     def __new__(cls, json_str: str, **kwargs) -> object:
         return str.__new__(cls, json_str)
@@ -161,7 +161,7 @@ class LnurlPayMetadata(ReprMixin, str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> 'LnurlPayMetadata':
+    def validate(cls, value: str) -> "LnurlPayMetadata":
         return cls(value, json_obj=cls.__validate_metadata__(value))
 
 
