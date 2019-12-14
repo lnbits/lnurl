@@ -95,8 +95,8 @@ Python code nicer.
 If you want to export the data using :snake: snake_case (in your Python code, for example), you can change
 the `by_alias` parameter: `res.dict(by_alias=False)` (it is `True` by default).
 
-[travis]: https://travis-ci.org/python-ln/lnurl?branch=master
-[travis-badge]: https://api.travis-ci.org/python-ln/lnurl.svg?branch=master
+[travis]: https://travis-ci.com/python-ln/lnurl?branch=master
+[travis-badge]: https://api.travis-ci.com/python-ln/lnurl.svg?branch=master
 [codecov]: https://codecov.io/gh/python-ln/lnurl
 [codecov-badge]: https://codecov.io/gh/python-ln/lnurl/branch/master/graph/badge.svg
 [pypi]: https://pypi.org/project/lnurl/
