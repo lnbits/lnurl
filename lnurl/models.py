@@ -2,7 +2,11 @@ import math
 
 from pydantic import BaseModel, Field, constr, validator
 from typing import List, Optional, Union
-from typing_extensions import Literal
+
+try:
+    from typing_extensions import Literal
+except ImportError:  # pragma: nocover
+    from typing import Literal
 
 from .exceptions import LnurlResponseException
 from .types import LightningInvoice, LightningNodeUri, LnurlPayMetadata, MilliSatoshi, Url

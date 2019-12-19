@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.1] - 2019-12-19
+
+### Fixed
+- Stupid import error for `Literal` in Python 3.8 :(
+
 ## [0.3.0] - 2019-12-19
 
 ### Added
@@ -68,7 +73,8 @@ All notable changes to this project will be documented in this file.
 - Initial commit, based on `bech32` package.
 - `encode()` and `decode()` functions.
 
-[unreleased]: https://github.com/python-ln/lnurl/compare/0.3.0...HEAD
+[unreleased]: https://github.com/python-ln/lnurl/compare/0.3.1...HEAD
+[0.3.1]: https://github.com/python-ln/lnurl/compare/0.3.0...0.3.1
 [0.3.0]: https://github.com/python-ln/lnurl/compare/0.2.0...0.3.0
 [0.2.0]: https://github.com/python-ln/lnurl/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/python-ln/lnurl/compare/0.1.0...0.1.1
