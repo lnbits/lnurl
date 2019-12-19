@@ -96,3 +96,30 @@ class TestLnurl:
     def test_decode_nolnurl(self, bech32):
         with pytest.raises(ValidationError):
             parse_obj_as(Lnurl, bech32)
+
+
+class TestLnurlPayMetadata:
+    @pytest.mark.parametrize('metadata, image_type', [
+        ('[[\"text/plain\", \"main text\"]]', None),
+        ('[[\"text/plain\", \"main text\"], [\"image/jpeg;base64\", \"base64encodedimage\"]]', 'jpeg'),
+        ('[[\"text/plain\", \"main text\"], [\"image/png;base64\", \"base64encodedimage\"]]', 'png'),
+    ])
+    def test_valid(self, metadata, image_type):
+        m = parse_obj_as(LnurlPayMetadata, metadata)
+        assert m.text == 'main text'
+
+        if m.images:
+            assert len(m.images) == 1
+            assert dict(m.images)[f"image/{image_type};base64"] == 'base64encodedimage'
+
+    @pytest.mark.parametrize('metadata', [
+        '[]',
+        '[\"text\"\"plain\"]',
+        '[[\"text\", \"plain\"]]',
+        '[[\"text\", \"plain\", \"plane\"]]',
+        '[[\"text/plain\", \"main text\"], [\"text/plain\", \"two is too much\"]]',
+        '[[\"image/jpeg;base64\", \"base64encodedimage\"]]',
+    ])
+    def test_invalid_data(self, metadata):
+        with pytest.raises(ValidationError):
+            parse_obj_as(LnurlPayMetadata, metadata)

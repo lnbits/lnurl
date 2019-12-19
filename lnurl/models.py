@@ -1,6 +1,5 @@
 import math
 
-from hashlib import sha256
 from pydantic import BaseModel, Field, constr, validator
 from typing import List, Optional, Union
 from typing_extensions import Literal
@@ -98,10 +97,6 @@ class LnurlPayResponse(LnurlResponseModel):
         if "min_sendable" in values and value < values["min_sendable"]:
             raise ValueError("`max_sendable` cannot be less than `min_sendable`.")
         return value
-
-    @property
-    def h(self) -> str:
-        return sha256(self.metadata.encode("utf-8")).hexdigest()
 
     @property
     def min_sats(self) -> int:

@@ -99,11 +99,14 @@ class TestPayFlow:
         assert isinstance(res, LnurlPayResponse) is True
         assert res.tag == 'payRequest'
         assert res.callback.host == 'lnurl.bigsun.xyz'
-        assert len(res.metadata.list) >= 1
+        assert len(res.metadata.list()) >= 1
+        assert res.metadata.text != ''
 
         query = urlencode({**res.callback.query_params, **{'amount': res.max_sendable}})
         url = ''.join([res.callback.base, '?', query])
 
         res2 = get(url, response_class=LnurlPayActionResponse)
+        res3 = get(url)
+        assert res2.__class__ == res3.__class__
         assert res2.success_action is None or isinstance(res2.success_action, LnurlPaySuccessAction)
-        assert res.h == res2.pr.h
+        assert res2.pr.h == res.metadata.h

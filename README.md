@@ -50,11 +50,16 @@ from lnurl import Lnurl, LnurlResponse
 lnurl = Lnurl('LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94MKJARGV3EXZAELWDJHXUMFDAHR6WFHXQERSVPCA649RV')
 r = requests.get(lnurl.url)
 
-res = LnurlResponse.from_dict(r.json())  # LnurlWithdrawResponse
+res = LnurlResponse.from_dict(r.json())  # LnurlPayResponse
 res.ok  # bool
+res.max_sendable  # int
 res.max_sats  # int
 res.callback.base  # str
 res.callback.query_params # dict
+res.metadata  # str
+res.metadata.list()  # list
+res.metadata.text  # str
+res.metadata.images  # list
 ```
 
 If you have already `requests` installed, you can also use the `.handle()` function directly.
@@ -62,8 +67,8 @@ It will return the appropriate response for a LNURL.
 
 ```python
 >>> import lnurl
->>> lnurl.handle('lightning:LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94MKJARGV3EXZAELWDJHXUMFDAHR6WFHXQERSVPCA649RV')
-LnurlWithdrawResponse(tag='withdrawRequest', callback=HttpsUrl('https://lnurl.bigsun.xyz/lnurl-withdraw/callback/9702808', scheme='https', host='lnurl.bigsun.xyz', tld='xyz', host_type='domain', path='/lnurl-withdraw/callback/9702808'), k1='38d304051c1b76dcd8c5ee17ee15ff0ebc02090c0afbc6c98100adfa3f920874', min_withdrawable=551000, max_withdrawable=551000, default_description='sample withdraw')
+>>> lnurl.handle('lightning:LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94CXZ7FLWDJHXUMFDAHR6V33XCUNSVE38QV6UF')
+LnurlPayResponse(tag='payRequest', callback=Url('https://lnurl.bigsun.xyz/lnurl-pay/callback/2169831', scheme='https', host='lnurl.bigsun.xyz', tld='xyz', host_type='domain', path='/lnurl-pay/callback/2169831'), min_sendable=3000, max_sendable=6000, metadata=LnurlPayMetadata('[["text/plain","rJcIdiekFE cTLynjPIqzum"]]'))
 ```
 
 Building your own LNURL responses

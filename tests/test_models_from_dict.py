@@ -29,8 +29,10 @@ class TestLnurlResponse:
         assert res.max_sats == 300
         assert res.min_sats == 101
         assert res.metadata == '[[\"text/plain\",\"lorem ipsum blah blah\"]]'
-        assert res.metadata.list == [('text/plain', 'lorem ipsum blah blah')]
-        assert res.h == 'd824d0ea606c5a9665279c31cf185528a8df2875ea93f1f75e501e354b33e90a'
+        assert res.metadata.list() == [('text/plain', 'lorem ipsum blah blah')]
+        assert len(res.metadata.images) == 0
+        assert res.metadata.text == 'lorem ipsum blah blah'
+        assert res.metadata.h == 'd824d0ea606c5a9665279c31cf185528a8df2875ea93f1f75e501e354b33e90a'
 
     def test_pay_invalid_metadata(self):
         with pytest.raises(LnurlResponseException):

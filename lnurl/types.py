@@ -1,6 +1,7 @@
 import os
 import re
 
+from hashlib import sha256
 from pydantic import Json, HttpUrl, PositiveInt, ValidationError, parse_obj_as
 from pydantic.validators import str_validator
 from urllib.parse import parse_qs
@@ -30,8 +31,9 @@ def strict_rfc3986_validator(value: str) -> Optional[str]:
 
 class ReprMixin:
     def __repr__(self) -> str:  # pragma: nocover
-        extra = ", ".join(f"{n}={getattr(self, n)!r}" for n in self.__slots__ if getattr(self, n) is not None)
-        return f"{self.__class__.__name__}({super().__repr__()}, {extra})"
+        attr = [n for n in self.__slots__ if not n.startswith("_")]
+        extra = ", " + ", ".join(f"{n}={self.n}" for n in attr if getattr(self, n) is not None) if attr else ""
+        return f"{self.__class__.__name__}({super().__repr__()}{extra})"
 
 
 class Bech32(ReprMixin, str):
@@ -161,16 +163,16 @@ class Lnurl(ReprMixin, str):
 
 
 class LnurlPayMetadata(ReprMixin, str):
-    valid_metadata_mime_types = ["text/plain"]
+    valid_metadata_mime_types = {"text/plain", "image/png;base64", "image/jpeg;base64"}
 
-    __slots__ = ("list",)
+    __slots__ = ("_list",)
 
     def __new__(cls, json_str: str, **kwargs) -> object:
         return str.__new__(cls, json_str)
 
     def __init__(self, json_str: str, *, json_obj: Optional[List] = None):
         str.__init__(json_str)
-        self.list = json_obj if json_obj else self.__validate_metadata__(json_str)
+        self._list = json_obj if json_obj else self.__validate_metadata__(json_str)
 
     @classmethod
     def __validate_metadata__(cls, json_str: str) -> List[Tuple[str, str]]:
@@ -179,7 +181,14 @@ class LnurlPayMetadata(ReprMixin, str):
         except ValidationError:
             raise InvalidLnurlPayMetadata
 
-        return [x for x in data if x[0] in cls.valid_metadata_mime_types]
+        clean_data = [x for x in data if x[0] in cls.valid_metadata_mime_types]
+        mime_types = [x[0] for x in clean_data]
+        counts = {x: mime_types.count(x) for x in mime_types}
+
+        if not clean_data or "text/plain" not in mime_types or counts["text/plain"] > 1:
+            raise InvalidLnurlPayMetadata
+
+        return clean_data
 
     @classmethod
     def __get_validators__(cls):
@@ -189,6 +198,23 @@ class LnurlPayMetadata(ReprMixin, str):
     @classmethod
     def validate(cls, value: str) -> "LnurlPayMetadata":
         return cls(value, json_obj=cls.__validate_metadata__(value))
+
+    @property
+    def h(self) -> str:
+        return sha256(self.encode("utf-8")).hexdigest()
+
+    @property
+    def text(self) -> str:
+        for metadata in self._list:
+            if metadata[0] == "text/plain":
+                return metadata[1]
+
+    @property
+    def images(self) -> List[Tuple[str, str]]:
+        return [(x[0], x[1]) for x in self._list if x[0].startswith("image/")]
+
+    def list(self) -> List[Tuple[str, str]]:
+        return self._list
 
 
 class MilliSatoshi(PositiveInt):
