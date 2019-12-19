@@ -1,0 +1,77 @@
+Changelog
+=========
+
+All notable changes to this project will be documented in this file.
+
+## [Unreleased]
+
+## [0.3.0] - 2019-12-19
+
+### Added
+- Changelog.
+- New LNURL-pay metadata mime types for images.
+- New `LnurlPayMetadata` properties: `.images` (_list_) and `.text` (_str_).
+- `LnurlPayMetadata` now checks if the required "text/plain" entry exists.
+- `LNURL_FORCE_SSL` and `LNURL_STRICT_RFC3986` environment variables.
+
+### Changed
+- For `LnurlPayMetadata` there is no `.list` property anymore: use `.list()` method instead.
+- Hashed metadata should be accessed now with `LnurlPayResponse().metadata.h` instead of `LnurlPayResponse().h`
+- `HttpsUrl` type is now called `Url`.
+- `Url` is not valid when control characters are found or if it is not RFC3986 compliant.
+
+### Fixed
+- Fix `Url` type tests.
+- Install `typing-extensions` only if Python version < 3.8.
+
+## [0.2.0] - 2019-12-14
+
+### Added
+- Extra documentation in README.
+- Full validation of LNURL responses using `pydantic` models.
+- `.json()` and `.dict()` methods to export data from responses. Data is exported in camelCase
+  by default, but internally all properties are still pythonic (snake_case).
+- `LnurlResponse.from_dict()` helper to parse a response and assign the right type.
+- `handle()` function to get a typed response directly from a LNURL if you have `requests` installed.
+- Typed returns for `encode()` and `decode()` functions.
+- `black` for code formating.
+
+### Changed
+- Responses now require that you pass kwargs instead of a dictionary: use `LnurlResponseModel(**dict)`
+  instead of the previous `LnurlResponse(dict)`
+- `HttpsUrl` uses default `pydantic` validations now.
+
+## [0.1.1] - 2019-12-04
+
+### Added
+- Get URL checks back into `validate_url()` function (from 0.0.2).
+
+### Changed
+- We can now parse error responses in lowercase (even if this is not in the spec).
+
+## [0.1.0] - 2019-11-24
+
+### Added
+- API documentation in README.
+- `Lnurl` class and different `LnurlResponse` classes.
+- New folder structure.
+- Tests.
+
+## [0.0.2] - 2019-11-21
+
+### Removed
+- Remove all duplicated code from `bech32` package. We import the package instead.
+
+## [0.0.1] - 2019-11-14
+
+### Added
+- Initial commit, based on `bech32` package.
+- `encode()` and `decode()` functions.
+
+[unreleased]: https://github.com/python-ln/lnurl/compare/0.3.0...HEAD
+[0.3.0]: https://github.com/python-ln/lnurl/compare/0.2.0...0.3.0
+[0.2.0]: https://github.com/python-ln/lnurl/compare/0.1.1...0.2.0
+[0.1.1]: https://github.com/python-ln/lnurl/compare/0.1.0...0.1.1
+[0.1.0]: https://github.com/python-ln/lnurl/compare/0.0.2...0.1.0
+[0.0.2]: https://github.com/python-ln/lnurl/compare/0.0.1...0.0.2
+[0.0.1]: https://github.com/python-ln/lnurl/releases/tag/0.0.1
