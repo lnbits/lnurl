@@ -8,7 +8,7 @@ from lnurl.models import (
     LnurlAuthResponse, LnurlPayResponse, LnurlPayActionResponse, LnurlWithdrawResponse,
     LnurlPaySuccessAction
 )
-from lnurl.types import HttpsUrl, Lnurl
+from lnurl.types import Lnurl, Url
 
 
 class TestDecode:
@@ -20,7 +20,7 @@ class TestDecode:
     ])
     def test_decode(self, bech32, url):
         decoded_url = decode(bech32)
-        assert isinstance(decoded_url, HttpsUrl) is True
+        assert isinstance(decoded_url, Url) is True
         assert decoded_url == str(decoded_url) == url
         assert decoded_url.host == 'service.io'
 

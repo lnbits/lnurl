@@ -8,10 +8,10 @@ from pydantic import ValidationError
 from .exceptions import InvalidLnurl, InvalidUrl
 from .helpers import _url_encode
 from .models import LnurlResponse, LnurlResponseModel, LnurlAuthResponse
-from .types import HttpsUrl, Lnurl
+from .types import Lnurl, Url
 
 
-def decode(bech32_lnurl: str) -> HttpsUrl:
+def decode(bech32_lnurl: str) -> Url:
     try:
         return Lnurl(bech32_lnurl).url
     except (ValidationError, ValueError):

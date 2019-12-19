@@ -1,3 +1,4 @@
+import os
 import re
 
 from pydantic import Json, HttpUrl, PositiveInt, ValidationError, parse_obj_as
@@ -7,6 +8,24 @@ from typing import List, Optional, Tuple
 
 from .exceptions import InvalidLnurlPayMetadata
 from .helpers import _bech32_decode, _lnurl_clean, _lnurl_decode
+
+
+FORCE_SSL = os.environ.get("LNURL_FORCE_SSL", True)
+STRICT_RFC3986 = os.environ.get("LNURL_STRICT_RFC3986", True)
+
+
+def ctrl_characters_validator(value: str) -> Optional[str]:
+    """Checks for control characters (unicode blocks C0 and C1, plus DEL)."""
+    if re.compile(r"[\u0000-\u001f\u007f-\u009f]").search(value):
+        raise ValueError
+    return value
+
+
+def strict_rfc3986_validator(value: str) -> Optional[str]:
+    """Checks for RFC3986 compliance."""
+    if re.compile(r"[^]a-zA-Z0-9._~:/?#[@!$&'()*+,;=-]").search(value):
+        raise ValueError
+    return value
 
 
 class ReprMixin:
@@ -42,11 +61,18 @@ class Bech32(ReprMixin, str):
         return cls(value, hrp=hrp, data=data)
 
 
-class HttpsUrl(HttpUrl):
-    """HTTPS URL."""
+class Url(HttpUrl):
+    """URL, HTTPS by default."""
 
-    allowed_schemes = {"https"}
+    allowed_schemes = {"https"} if FORCE_SSL else {"https", "http"}
     max_length = 2047  # https://stackoverflow.com/questions/417142/
+
+    @classmethod
+    def __get_validators__(cls):
+        yield ctrl_characters_validator
+        if STRICT_RFC3986:
+            yield strict_rfc3986_validator
+        yield cls.validate
 
     @property
     def base(self) -> str:
@@ -110,15 +136,15 @@ class Lnurl(ReprMixin, str):
     def __new__(cls, lightning: str, **kwargs) -> object:
         return str.__new__(cls, _lnurl_clean(lightning))
 
-    def __init__(self, lightning: str, *, url: Optional[HttpsUrl] = None):
+    def __init__(self, lightning: str, *, url: Optional[Url] = None):
         bech32 = _lnurl_clean(lightning)
         str.__init__(bech32)
         self.bech32 = Bech32(bech32)
         self.url = url if url else self.__get_url__(bech32)
 
     @classmethod
-    def __get_url__(cls, bech32: str) -> HttpsUrl:
-        return parse_obj_as(HttpsUrl, _lnurl_decode(bech32))
+    def __get_url__(cls, bech32: str) -> Url:
+        return parse_obj_as(Url, _lnurl_decode(bech32))
 
     @classmethod
     def __get_validators__(cls):

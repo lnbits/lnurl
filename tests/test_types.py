@@ -3,25 +3,34 @@ import pytest
 from pydantic import ValidationError, parse_obj_as
 
 from lnurl.helpers import _lnurl_clean
-from lnurl.types import HttpsUrl, LightningInvoice, LightningNodeUri, Lnurl
+from lnurl.types import LightningInvoice, LightningNodeUri, Lnurl, LnurlPayMetadata, Url
 
 
-class TestHttpsUrl:
-
-    def test_valid(self):
-        url = parse_obj_as(HttpsUrl, 'https://service.io/?q=3fc3645b439ce8e7&test=ok')
+class TestUrl:
+    def test_parameters(self):
+        url = parse_obj_as(Url, 'https://service.io/?q=3fc3645b439ce8e7&test=ok')
         assert url.host == 'service.io'
         assert url.base == 'https://service.io/'
         assert url.query_params == {'q': '3fc3645b439ce8e7', 'test': 'ok'}
 
     @pytest.mark.parametrize('url', [
+        'https://service.io/?q=3fc3645b439ce8e7&test=ok',
+        'https://[2001:db8:0:1]:80',
+    ])
+    def test_valid(self, url):
+        url = parse_obj_as(Url, url)
+        assert isinstance(url, Url) is True
+
+    @pytest.mark.parametrize('url', [
+        'http://[2001:db8:0:1]:80',
         f'https://service.io/?hash={"x" * 4096}',
-        'http://📙.la/⚡',  # https://emojipedia.org/high-voltage-sign/
-        'http://xn--yt8h.la/%E2%9A%A1',
+        'https://📙.la/⚡',  # https://emojipedia.org/high-voltage-sign/
+        'https://xn--yt8h.la/%E2%9A%A1',
+        'https://1.1.1.1/\u0000',
     ])
     def test_invalid_data(self, url):
         with pytest.raises(ValidationError):
-            parse_obj_as(HttpsUrl, url)
+            parse_obj_as(Url, url)
 
 
 class TestLightningInvoice:

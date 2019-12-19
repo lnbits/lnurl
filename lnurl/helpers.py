@@ -21,7 +21,7 @@ def _lnurl_clean(lnurl: str) -> str:
 def _lnurl_decode(lnurl: str) -> str:
     """
     Decode a LNURL and return a url string without performing any validation on it.
-    Use `lnurl.decode()` for validation and to get `HttpsUrl` object.
+    Use `lnurl.decode()` for validation and to get `Url` object.
     """
     hrp, data = _bech32_decode(_lnurl_clean(lnurl), allowed_hrp={"lnurl"})
 
