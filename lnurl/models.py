@@ -4,9 +4,9 @@ from pydantic import BaseModel, Field, constr, validator
 from typing import List, Optional, Union
 
 try:
-    from typing_extensions import Literal
-except ImportError:  # pragma: nocover
     from typing import Literal
+except ImportError:  # pragma: nocover
+    from typing_extensions import Literal
 
 from .exceptions import LnurlResponseException
 from .types import LightningInvoice, LightningNodeUri, LnurlPayMetadata, MilliSatoshi, Url

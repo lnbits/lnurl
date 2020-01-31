@@ -211,7 +211,7 @@ class LnurlPayMetadata(ReprMixin, str):
 
     @property
     def images(self) -> List[Tuple[str, str]]:
-        return [(x[0], x[1]) for x in self._list if x[0].startswith("image/")]
+        return [x for x in self._list if x[0].startswith("image/")]
 
     def list(self) -> List[Tuple[str, str]]:
         return self._list
