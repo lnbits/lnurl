@@ -5,7 +5,7 @@ except ImportError:  # pragma: nocover
 
 from pydantic import ValidationError
 
-from .exceptions import InvalidLnurl, InvalidUrl
+from .exceptions import LnurlResponseException, InvalidLnurl, InvalidUrl
 from .helpers import _url_encode
 from .models import LnurlResponse, LnurlResponseModel, LnurlAuthResponse
 from .types import Lnurl, Url
@@ -29,7 +29,10 @@ def get(url: str, *, response_class: LnurlResponseModel = None) -> LnurlResponse
     if requests is None:  # pragma: nocover
         raise ImportError("The `requests` library must be installed to use `lnurl.get()` and `lnurl.handle()`.")
 
-    r = requests.get(url)
+    try:
+        r = requests.get(url)
+    except Exception as e:
+        raise LnurlResponseException(str(e))
 
     if response_class:
         return response_class(**r.json())

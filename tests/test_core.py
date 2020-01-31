@@ -3,7 +3,7 @@ import pytest
 from urllib.parse import urlencode
 
 from lnurl.core import decode, encode, get, handle
-from lnurl.exceptions import InvalidLnurl, InvalidUrl
+from lnurl.exceptions import LnurlResponseException, InvalidLnurl, InvalidUrl
 from lnurl.models import (
     LnurlAuthResponse,
     LnurlPayResponse,
@@ -97,6 +97,11 @@ class TestHandle:
     def test_handle_nolnurl(self, bech32):
         with pytest.raises(InvalidLnurl):
             handle(bech32)
+
+    @pytest.mark.parametrize("url", ["https://lnurl.thisshouldfail.io/"])
+    def test_get_requests_error(self, url):
+        with pytest.raises(LnurlResponseException):
+            get(url)
 
 
 class TestPayFlow:
