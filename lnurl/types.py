@@ -11,8 +11,8 @@ from .exceptions import InvalidLnurlPayMetadata
 from .helpers import _bech32_decode, _lnurl_clean, _lnurl_decode
 
 
-FORCE_SSL = os.environ.get("LNURL_FORCE_SSL", True)
-STRICT_RFC3986 = os.environ.get("LNURL_STRICT_RFC3986", True)
+FORCE_SSL = os.environ.get("LNURL_FORCE_SSL", "1") == "1"
+STRICT_RFC3986 = os.environ.get("LNURL_STRICT_RFC3986", "1") == "1"
 
 
 def ctrl_characters_validator(value: str) -> Optional[str]:

@@ -8,7 +8,7 @@ with open(path.join(path.abspath(path.dirname(__file__)), "README.md")) as f:
 
 setup(
     name="lnurl",
-    version="0.3.1",
+    version="0.3.2",
     url="https://github.com/python-ln/lnurl",
     author="jogco",
     author_email="jogco@lnsms.world",
