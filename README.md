@@ -25,14 +25,14 @@ The `Lnurl` object wraps a bech32 LNURL to provide some extra utilities.
 ```python
 from lnurl import Lnurl
 
-lnurl = Lnurl('LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWXQ96S9')
-lnurl.bech32  # 'LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWXQ96S9'
-lnurl.bech32.hrp  # 'lnurl'
-lnurl.url  # 'https://service.io/?q=3fc3645b439ce8e7'
-lnurl.url.host  # 'service.io'
-lnurl.url.base  # 'https://service.io/'
-lnurl.url.query  # 'q=3fc3645b439ce8e7'
-lnurl.url.query_params  # {'q': '3fc3645b439ce8e7'}
+lnurl = Lnurl("LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWXQ96S9")
+lnurl.bech32  # "LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWXQ96S9"
+lnurl.bech32.hrp  # "lnurl"
+lnurl.url  # "https://service.io/?q=3fc3645b439ce8e7"
+lnurl.url.host  # "service.io"
+lnurl.url.base  # "https://service.io/"
+lnurl.url.query  # "q=3fc3645b439ce8e7"
+lnurl.url.query_params  # {"q": "3fc3645b439ce8e7"}
 ```
 
 Parsing LNURL responses
@@ -80,11 +80,11 @@ For LNURL services, the `lnurl` package can be used to build **valid** responses
 from lnurl import LnurlWithdrawResponse
 
 res = LnurlWithdrawResponse(
-    callback='https://lnurl.bigsun.xyz/lnurl-withdraw/callback/9702808',
-    k1='38d304051c1b76dcd8c5ee17ee15ff0ebc02090c0afbc6c98100adfa3f920874',
+    callback="https://lnurl.bigsun.xyz/lnurl-withdraw/callback/9702808",
+    k1="38d304051c1b76dcd8c5ee17ee15ff0ebc02090c0afbc6c98100adfa3f920874",
     min_withdrawable=551000,
     max_withdrawable=551000,
-    default_description='sample withdraw',
+    default_description="sample withdraw",
 )
 res.json()  # str
 res.dict()  # dict
