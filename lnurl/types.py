@@ -3,9 +3,10 @@ import re
 
 from hashlib import sha256
 from pydantic import Json, HttpUrl, PositiveInt, ValidationError, parse_obj_as
+from pydantic.errors import UrlHostTldError
 from pydantic.validators import str_validator
 from urllib.parse import parse_qs
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 from .exceptions import InvalidLnurlPayMetadata
 from .helpers import _bech32_decode, _lnurl_clean, _lnurl_decode
@@ -15,14 +16,14 @@ FORCE_SSL = os.environ.get("LNURL_FORCE_SSL", "1") == "1"
 STRICT_RFC3986 = os.environ.get("LNURL_STRICT_RFC3986", "1") == "1"
 
 
-def ctrl_characters_validator(value: str) -> Optional[str]:
+def ctrl_characters_validator(value: str) -> str:
     """Checks for control characters (unicode blocks C0 and C1, plus DEL)."""
     if re.compile(r"[\u0000-\u001f\u007f-\u009f]").search(value):
         raise ValueError
     return value
 
 
-def strict_rfc3986_validator(value: str) -> Optional[str]:
+def strict_rfc3986_validator(value: str) -> str:
     """Checks for RFC3986 compliance."""
     if re.compile(r"[^]a-zA-Z0-9._~:/?#[@!$&'()*+,;=-]").search(value):
         raise ValueError
@@ -64,9 +65,8 @@ class Bech32(ReprMixin, str):
 
 
 class Url(HttpUrl):
-    """URL, HTTPS by default."""
+    """URL with extra validations over pydantic's `HttpUrl`."""
 
-    allowed_schemes = {"https"} if FORCE_SSL else {"https", "http"}
     max_length = 2047  # https://stackoverflow.com/questions/417142/
 
     @classmethod
@@ -83,6 +83,25 @@ class Url(HttpUrl):
     @property
     def query_params(self) -> dict:
         return {k: v[0] for k, v in parse_qs(self.query).items()}
+
+
+class TorUrl(Url):
+    """Tor anonymous onion service."""
+
+    allowed_schemes = {"https", "http"}
+
+    @classmethod
+    def validate_host(cls, parts: Dict[str, str]) -> Tuple[str, Optional[str], str, bool]:
+        host, tld, host_type, rebuild = super().validate_host(parts)
+        if tld != "onion":
+            raise UrlHostTldError()
+        return host, tld, host_type, rebuild
+
+
+class WebUrl(Url):
+    """Web URL, secure by default; users can override the FORCE_SSL setting."""
+
+    allowed_schemes = {"https"} if FORCE_SSL else {"https", "http"}
 
 
 class LightningInvoice(Bech32):
@@ -138,15 +157,15 @@ class Lnurl(ReprMixin, str):
     def __new__(cls, lightning: str, **kwargs) -> object:
         return str.__new__(cls, _lnurl_clean(lightning))
 
-    def __init__(self, lightning: str, *, url: Optional[Url] = None):
+    def __init__(self, lightning: str, *, url: Optional[Union[TorUrl, WebUrl]] = None):
         bech32 = _lnurl_clean(lightning)
         str.__init__(bech32)
         self.bech32 = Bech32(bech32)
         self.url = url if url else self.__get_url__(bech32)
 
     @classmethod
-    def __get_url__(cls, bech32: str) -> Url:
-        return parse_obj_as(Url, _lnurl_decode(bech32))
+    def __get_url__(cls, bech32: str) -> Union[TorUrl, WebUrl]:
+        return parse_obj_as(Union[TorUrl, WebUrl], _lnurl_decode(bech32))
 
     @classmethod
     def __get_validators__(cls):

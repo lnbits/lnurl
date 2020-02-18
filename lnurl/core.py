@@ -4,14 +4,15 @@ except ImportError:  # pragma: nocover
     requests = None
 
 from pydantic import ValidationError
+from typing import Union
 
 from .exceptions import LnurlResponseException, InvalidLnurl, InvalidUrl
 from .helpers import _url_encode
 from .models import LnurlResponse, LnurlResponseModel, LnurlAuthResponse
-from .types import Lnurl, Url
+from .types import Lnurl, TorUrl, WebUrl
 
 
-def decode(bech32_lnurl: str) -> Url:
+def decode(bech32_lnurl: str) -> Union[TorUrl, WebUrl]:
     try:
         return Lnurl(bech32_lnurl).url
     except (ValidationError, ValueError):

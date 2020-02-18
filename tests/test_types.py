@@ -1,9 +1,10 @@
 import pytest
 
 from pydantic import ValidationError, parse_obj_as
+from typing import Union
 
 from lnurl.helpers import _lnurl_clean
-from lnurl.types import LightningInvoice, LightningNodeUri, Lnurl, LnurlPayMetadata, Url
+from lnurl.types import LightningInvoice, LightningNodeUri, Lnurl, LnurlPayMetadata, Url, TorUrl, WebUrl
 
 
 class TestUrl:
@@ -13,14 +14,23 @@ class TestUrl:
         assert url.base == "https://service.io/"
         assert url.query_params == {"q": "3fc3645b439ce8e7", "test": "ok"}
 
-    @pytest.mark.parametrize("url", ["https://service.io/?q=3fc3645b439ce8e7&test=ok", "https://[2001:db8:0:1]:80"])
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "https://service.io/?q=3fc3645b439ce8e7&test=ok",
+            "https://[2001:db8:0:1]:80",
+            "https://protonirockerxow.onion/",
+            "http://protonirockerxow.onion/",
+        ],
+    )
     def test_valid(self, url):
-        url = parse_obj_as(Url, url)
+        url = parse_obj_as(Union[TorUrl, WebUrl], url)
         assert isinstance(url, Url)
 
     @pytest.mark.parametrize(
         "url",
         [
+            "http://service.io/?q=3fc3645b439ce8e7&test=ok",
             "http://[2001:db8:0:1]:80",
             f'https://service.io/?hash={"x" * 4096}',
             "https://📙.la/⚡",  # https://emojipedia.org/high-voltage-sign/
@@ -30,7 +40,7 @@ class TestUrl:
     )
     def test_invalid_data(self, url):
         with pytest.raises(ValidationError):
-            parse_obj_as(Url, url)
+            parse_obj_as(Union[TorUrl, WebUrl], url)
 
 
 class TestLightningInvoice:
