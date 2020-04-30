@@ -1,8 +1,9 @@
+import json
 import os
 import re
 
 from hashlib import sha256
-from pydantic import Json, HttpUrl, PositiveInt, ValidationError, parse_obj_as
+from pydantic import ConstrainedStr, Json, HttpUrl, PositiveInt, ValidationError, parse_obj_as
 from pydantic.errors import UrlHostTldError
 from pydantic.validators import str_validator
 from urllib.parse import parse_qs
@@ -42,7 +43,7 @@ class Bech32(ReprMixin, str):
 
     __slots__ = ("hrp", "data")
 
-    def __new__(cls, bech32: str, **kwargs) -> object:
+    def __new__(cls, bech32: str, **kwargs) -> "Bech32":
         return str.__new__(cls, bech32)
 
     def __init__(self, bech32: str, *, hrp: Optional[str] = None, data: Optional[List[int]] = None):
@@ -109,12 +110,11 @@ class LightningInvoice(Bech32):
 
     @property
     def amount(self) -> int:
-        a = re.search(r"(lnbc|lntb|lnbcrt)(\w+)", self.hrp).groups()[1]
         raise NotImplementedError
 
     @property
     def prefix(self) -> str:
-        return re.search(r"(lnbc|lntb|lnbcrt)(\w+)", self.hrp).groups()[0]
+        raise NotImplementedError
 
     @property
     def h(self):
@@ -126,7 +126,7 @@ class LightningNodeUri(ReprMixin, str):
 
     __slots__ = ("key", "ip", "port")
 
-    def __new__(cls, uri: str, **kwargs) -> object:
+    def __new__(cls, uri: str, **kwargs) -> "LightningNodeUri":
         return str.__new__(cls, uri)
 
     def __init__(self, uri: str, *, key: Optional[str] = None, ip: Optional[str] = None, port: Optional[str] = None):
@@ -154,7 +154,7 @@ class LightningNodeUri(ReprMixin, str):
 class Lnurl(ReprMixin, str):
     __slots__ = ("bech32", "url")
 
-    def __new__(cls, lightning: str, **kwargs) -> object:
+    def __new__(cls, lightning: str, **kwargs) -> "Lnurl":
         return str.__new__(cls, _lnurl_clean(lightning))
 
     def __init__(self, lightning: str, *, url: Optional[Union[TorUrl, WebUrl]] = None):
@@ -186,7 +186,7 @@ class LnurlPayMetadata(ReprMixin, str):
 
     __slots__ = ("_list",)
 
-    def __new__(cls, json_str: str, **kwargs) -> object:
+    def __new__(cls, json_str: str, **kwargs) -> "LnurlPayMetadata":
         return str.__new__(cls, json_str)
 
     def __init__(self, json_str: str, *, json_obj: Optional[List] = None):
@@ -196,7 +196,8 @@ class LnurlPayMetadata(ReprMixin, str):
     @classmethod
     def __validate_metadata__(cls, json_str: str) -> List[Tuple[str, str]]:
         try:
-            data = parse_obj_as(Json[List[Tuple[str, str]]], json_str)
+            parse_obj_as(Json[List[Tuple[str, str]]], json_str)
+            data = [(str(item[0]), str(item[1])) for item in json.loads(json_str)]
         except ValidationError:
             raise InvalidLnurlPayMetadata
 
@@ -224,9 +225,14 @@ class LnurlPayMetadata(ReprMixin, str):
 
     @property
     def text(self) -> str:
+        output = ""
+
         for metadata in self._list:
             if metadata[0] == "text/plain":
-                return metadata[1]
+                output = metadata[1]
+                break
+
+        return output
 
     @property
     def images(self) -> List[Tuple[str, str]]:
@@ -234,6 +240,15 @@ class LnurlPayMetadata(ReprMixin, str):
 
     def list(self) -> List[Tuple[str, str]]:
         return self._list
+
+
+class InitializationVector(ConstrainedStr):
+    min_length = 24
+    max_length = 24
+
+
+class Max144Str(ConstrainedStr):
+    max_length = 144
 
 
 class MilliSatoshi(PositiveInt):

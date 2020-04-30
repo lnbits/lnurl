@@ -7,8 +7,8 @@ from .exceptions import InvalidLnurl, InvalidUrl
 def _bech32_decode(bech32: str, *, allowed_hrp: Set[str] = None) -> Tuple[str, List[int]]:
     hrp, data = bech32_decode(bech32)
 
-    if None in (hrp, data) or (allowed_hrp and hrp not in allowed_hrp):
-        raise ValueError(f"Invalid Human Readable Prefix (HRP): {hrp}.")
+    if not hrp or not data or (allowed_hrp and hrp not in allowed_hrp):
+        raise ValueError(f"Invalid data or Human Readable Prefix (HRP): {hrp}.")
 
     return hrp, data
 
@@ -26,7 +26,9 @@ def _lnurl_decode(lnurl: str) -> str:
     hrp, data = _bech32_decode(_lnurl_clean(lnurl), allowed_hrp={"lnurl"})
 
     try:
-        url = bytes(convertbits(data, 5, 8, False)).decode("utf-8")
+        bech32_data = convertbits(data, 5, 8, False)
+        assert bech32_data
+        url = bytes(bech32_data).decode("utf-8")
     except UnicodeDecodeError:  # pragma: nocover
         raise InvalidLnurl
 
@@ -39,7 +41,9 @@ def _url_encode(url: str) -> str:
     Use `lnurl.encode()` for validation and to get a `Lnurl` object.
     """
     try:
-        lnurl = bech32_encode("lnurl", convertbits(url.encode("utf-8"), 8, 5, True))
+        bech32_data = convertbits(url.encode("utf-8"), 8, 5, True)
+        assert bech32_data
+        lnurl = bech32_encode("lnurl", bech32_data)
     except UnicodeEncodeError:  # pragma: nocover
         raise InvalidUrl
 

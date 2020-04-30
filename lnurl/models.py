@@ -1,15 +1,24 @@
 import math
 
-from pydantic import BaseModel, Field, constr, validator
+from pydantic import BaseModel, Field, validator
 from typing import List, Optional, Union
 
 try:
-    from typing import Literal
+    from typing import Literal  # type: ignore
 except ImportError:  # pragma: nocover
     from typing_extensions import Literal
 
 from .exceptions import LnurlResponseException
-from .types import LightningInvoice, LightningNodeUri, LnurlPayMetadata, MilliSatoshi, TorUrl, WebUrl
+from .types import (
+    InitializationVector,
+    LightningInvoice,
+    LightningNodeUri,
+    LnurlPayMetadata,
+    Max144Str,
+    MilliSatoshi,
+    TorUrl,
+    WebUrl,
+)
 
 
 class LnurlPayRouteHop(BaseModel):
@@ -23,20 +32,20 @@ class LnurlPaySuccessAction(BaseModel):
 
 class AesAction(LnurlPaySuccessAction):
     tag: Literal["aes"] = "aes"
-    description: constr(max_length=144)
+    description: Max144Str
     ciphertext: str  # TODO
-    iv: constr(min_length=24, max_length=24)
+    iv: InitializationVector
 
 
 class MessageAction(LnurlPaySuccessAction):
     tag: Literal["message"] = "message"
-    message: constr(max_length=144)
+    message: Max144Str
 
 
 class UrlAction(LnurlPaySuccessAction):
     tag: Literal["url"] = "url"
-    description: constr(max_length=144)
     url: Union[TorUrl, WebUrl]
+    description: Max144Str
 
 
 class LnurlResponseModel(BaseModel):
@@ -53,7 +62,7 @@ class LnurlResponseModel(BaseModel):
 
     @property
     def ok(self) -> bool:
-        return not ("status" in self.__fields__ and self.status == "ERROR")
+        return True
 
 
 class LnurlErrorResponse(LnurlResponseModel):
@@ -63,6 +72,10 @@ class LnurlErrorResponse(LnurlResponseModel):
     @property
     def error_msg(self) -> str:
         return self.reason
+
+    @property
+    def ok(self) -> bool:
+        return False
 
 
 class LnurlSuccessResponse(LnurlResponseModel):

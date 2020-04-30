@@ -2,6 +2,7 @@ LNURL implementation for Python
 ===============================
 
 [![travis-badge]][travis]
+[![mypy-badge]][mypy]
 [![codecov-badge]][codecov]
 [![pypi-badge]][pypi]
 [![pypi-versions]][pypi]
@@ -100,8 +101,11 @@ Python code nicer.
 If you want to export the data using :snake: snake_case (in your Python code, for example), you can change
 the `by_alias` parameter: `res.dict(by_alias=False)` (it is `True` by default).
 
+
 [travis]: https://travis-ci.com/python-ln/lnurl?branch=master
 [travis-badge]: https://api.travis-ci.com/python-ln/lnurl.svg?branch=master
+[mypy]: https://github.com/python-ln/lnurl/actions?query=workflow%3A%22mypy%22
+[mypy-badge]: https://github.com/python-ln/lnurl/workflows/mypy/badge.svg
 [codecov]: https://codecov.io/gh/python-ln/lnurl
 [codecov-badge]: https://codecov.io/gh/python-ln/lnurl/branch/master/graph/badge.svg
 [pypi]: https://pypi.org/project/lnurl/
