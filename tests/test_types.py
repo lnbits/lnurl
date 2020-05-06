@@ -4,7 +4,7 @@ from pydantic import ValidationError, parse_obj_as
 from typing import Union
 
 from lnurl.helpers import _lnurl_clean
-from lnurl.types import LightningInvoice, LightningNodeUri, Lnurl, LnurlPayMetadata, Url, TorUrl, WebUrl
+from lnurl.types import LightningInvoice, LightningNodeUri, Lnurl, LnurlPayMetadata, Url, ClearnetUrl, OnionUrl
 
 
 class TestUrl:
@@ -24,7 +24,7 @@ class TestUrl:
         ],
     )
     def test_valid(self, url):
-        url = parse_obj_as(Union[TorUrl, WebUrl], url)
+        url = parse_obj_as(Union[OnionUrl, ClearnetUrl], url)
         assert isinstance(url, Url)
 
     @pytest.mark.parametrize(
@@ -40,7 +40,7 @@ class TestUrl:
     )
     def test_invalid_data(self, url):
         with pytest.raises(ValidationError):
-            parse_obj_as(Union[TorUrl, WebUrl], url)
+            parse_obj_as(Union[OnionUrl, ClearnetUrl], url)
 
 
 class TestLightningInvoice:

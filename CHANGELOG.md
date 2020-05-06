@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- `TorUrl` and `WebUrl` are now `OnionUrl` and `ClearnetUrl`, following LNURL spec terminology.
+
+### Removed
+- `LNURL_FORCE_SSL` environment variable is not used anymore. Only https is allowed now for `ClearnetUrl`s.
+
 ## [0.3.3] - 2020-02-18
 
 ### Added

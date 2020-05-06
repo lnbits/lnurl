@@ -13,7 +13,6 @@ from .exceptions import InvalidLnurlPayMetadata
 from .helpers import _bech32_decode, _lnurl_clean, _lnurl_decode
 
 
-FORCE_SSL = os.environ.get("LNURL_FORCE_SSL", "1") == "1"
 STRICT_RFC3986 = os.environ.get("LNURL_STRICT_RFC3986", "1") == "1"
 
 
@@ -86,7 +85,13 @@ class Url(HttpUrl):
         return {k: v[0] for k, v in parse_qs(self.query).items()}
 
 
-class TorUrl(Url):
+class ClearnetUrl(Url):
+    """Web URL, secure by default; users can override the FORCE_SSL setting."""
+
+    allowed_schemes = {"https"}
+
+
+class OnionUrl(Url):
     """Tor anonymous onion service."""
 
     allowed_schemes = {"https", "http"}
@@ -97,12 +102,6 @@ class TorUrl(Url):
         if tld != "onion":
             raise UrlHostTldError()
         return host, tld, host_type, rebuild
-
-
-class WebUrl(Url):
-    """Web URL, secure by default; users can override the FORCE_SSL setting."""
-
-    allowed_schemes = {"https"} if FORCE_SSL else {"https", "http"}
 
 
 class LightningInvoice(Bech32):
@@ -157,15 +156,15 @@ class Lnurl(ReprMixin, str):
     def __new__(cls, lightning: str, **kwargs) -> "Lnurl":
         return str.__new__(cls, _lnurl_clean(lightning))
 
-    def __init__(self, lightning: str, *, url: Optional[Union[TorUrl, WebUrl]] = None):
+    def __init__(self, lightning: str, *, url: Optional[Union[OnionUrl, ClearnetUrl]] = None):
         bech32 = _lnurl_clean(lightning)
         str.__init__(bech32)
         self.bech32 = Bech32(bech32)
         self.url = url if url else self.__get_url__(bech32)
 
     @classmethod
-    def __get_url__(cls, bech32: str) -> Union[TorUrl, WebUrl]:
-        return parse_obj_as(Union[TorUrl, WebUrl], _lnurl_decode(bech32))
+    def __get_url__(cls, bech32: str) -> Union[OnionUrl, ClearnetUrl]:
+        return parse_obj_as(Union[OnionUrl, ClearnetUrl], _lnurl_decode(bech32))
 
     @classmethod
     def __get_validators__(cls):

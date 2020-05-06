@@ -9,10 +9,10 @@ from typing import Any, Optional, Union
 from .exceptions import LnurlResponseException, InvalidLnurl, InvalidUrl
 from .helpers import _url_encode
 from .models import LnurlResponse, LnurlResponseModel, LnurlAuthResponse
-from .types import Lnurl, TorUrl, WebUrl
+from .types import Lnurl, ClearnetUrl, OnionUrl
 
 
-def decode(bech32_lnurl: str) -> Union[TorUrl, WebUrl]:
+def decode(bech32_lnurl: str) -> Union[OnionUrl, ClearnetUrl]:
     try:
         return Lnurl(bech32_lnurl).url
     except (ValidationError, ValueError):

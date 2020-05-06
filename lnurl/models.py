@@ -10,14 +10,14 @@ except ImportError:  # pragma: nocover
 
 from .exceptions import LnurlResponseException
 from .types import (
+    ClearnetUrl,
     InitializationVector,
     LightningInvoice,
     LightningNodeUri,
     LnurlPayMetadata,
     Max144Str,
     MilliSatoshi,
-    TorUrl,
-    WebUrl,
+    OnionUrl,
 )
 
 
@@ -44,7 +44,7 @@ class MessageAction(LnurlPaySuccessAction):
 
 class UrlAction(LnurlPaySuccessAction):
     tag: Literal["url"] = "url"
-    url: Union[TorUrl, WebUrl]
+    url: Union[OnionUrl, ClearnetUrl]
     description: Max144Str
 
 
@@ -84,14 +84,14 @@ class LnurlSuccessResponse(LnurlResponseModel):
 
 class LnurlAuthResponse(LnurlResponseModel):
     tag: Literal["login"] = "login"
-    callback: Union[TorUrl, WebUrl]
+    callback: Union[OnionUrl, ClearnetUrl]
     k1: str
 
 
 class LnurlChannelResponse(LnurlResponseModel):
     tag: Literal["channelRequest"] = "channelRequest"
     uri: LightningNodeUri
-    callback: Union[TorUrl, WebUrl]
+    callback: Union[OnionUrl, ClearnetUrl]
     k1: str
 
 
@@ -104,7 +104,7 @@ class LnurlHostedChannelResponse(LnurlResponseModel):
 
 class LnurlPayResponse(LnurlResponseModel):
     tag: Literal["payRequest"] = "payRequest"
-    callback: Union[TorUrl, WebUrl]
+    callback: Union[OnionUrl, ClearnetUrl]
     min_sendable: MilliSatoshi = Field(..., alias="minSendable")
     max_sendable: MilliSatoshi = Field(..., alias="maxSendable")
     metadata: LnurlPayMetadata
@@ -132,7 +132,7 @@ class LnurlPayActionResponse(LnurlResponseModel):
 
 class LnurlWithdrawResponse(LnurlResponseModel):
     tag: Literal["withdrawRequest"] = "withdrawRequest"
-    callback: Union[TorUrl, WebUrl]
+    callback: Union[OnionUrl, ClearnetUrl]
     k1: str
     min_withdrawable: MilliSatoshi = Field(..., alias="minWithdrawable")
     max_withdrawable: MilliSatoshi = Field(..., alias="maxWithdrawable")
