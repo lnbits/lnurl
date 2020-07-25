@@ -1,5 +1,5 @@
 from os import path
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 with open(path.join(path.abspath(path.dirname(__file__)), "README.md")) as f:
@@ -31,8 +31,13 @@ setup(
         "Programming Language :: Python :: 3.8",
         "Topic :: Utilities",
     ],
-    packages=["lnurl"],
+    packages=find_packages(exclude=["tests"]),
     python_requires=">=3.6",
     install_requires=["bech32", "pydantic", "typing-extensions; python_version<'3.8'"],
+    extras_require={ "cli": ["click", "toml", "requests"] },
+    entry_points={
+        "console_scripts": [ "lnurl = lnurl.cli:lnurl [cli]" ],
+        "lnurl.rpc_handlers": [ "lnd_rest = lnurl.cli.lnrpc.lnd_rest:LndRestRPC [cli]" ]
+    },
     zip_safe=False,
 )
