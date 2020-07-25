@@ -18,11 +18,9 @@ class LnRPC(Protocol):
 
         Warning: do NOT confuse with closing a channel!
         """
-        pass
 
     def get_node_id(self) -> str:
         """Returns the ID (hex-encoded public key) of the node"""
-        pass
 
     def connect(self, node: LightningNodeUri):
         """Instructs the node to connect to a remote peer.
@@ -31,4 +29,3 @@ class LnRPC(Protocol):
         RPC server is implementation-specific, this is a command for a node to
         connect to another node.
         """
-        pass
