@@ -55,8 +55,8 @@ class Context:
             self._accept_channel(response)
         elif isinstance(response, LnurlErrorResponse):
             raise LnurlException("Error returned by the LNURL server: %s" % response.reason)
-        else:
-            raise LnurlException("Error: LNURL subprotocol %s not implemented" % type(response).__name__)
+
+        raise LnurlException("Error: LNURL subprotocol %s not implemented" % type(response).__name__)
 
     def _accept_channel(self, response: LnurlChannelResponse):
         """Handles accepting a channel"""
@@ -75,7 +75,7 @@ class Context:
 
         if isinstance(result, LnurlErrorResponse):
             raise LnurlResponseException("Failed to accept a channel: %s" % result.reason)
-        elif not isinstance(result, LnurlSuccessResponse):
+        if not isinstance(result, LnurlSuccessResponse):
             raise LnurlResponseException("Error: Unexpected result from the server")
 
     def close(self):
