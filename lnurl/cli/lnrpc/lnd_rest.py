@@ -65,7 +65,7 @@ class LndRestRPC(LnRPC):
             try:
                 resp_json = response.json()
                 error = resp_json["error"]
-            except:
+            except Exception:
                 error = None
 
             raise UnexpectedHttpStatusException(response.status_code, rpc_method, error)
