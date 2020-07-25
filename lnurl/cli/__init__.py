@@ -1,5 +1,3 @@
-#!/usr/bin/python3
-
 import sys
 import pkg_resources
 from contextlib import contextmanager
@@ -16,13 +14,6 @@ try:
     from typing import Mapping, Any  # type: ignore
 except ImportError:  # pragma: nocover
     from typing_extensions import Mapping, Any  # type: ignore
-
-# We want to support Python 3.7, so we have to define it ourselves
-def remove_prefix(string: str, prefix: str):
-    if string.startswith(prefix):
-        return string[len(prefix):]
-    else:
-        return string
 
 class Context:
     """Contains RPC handler with settings"""
