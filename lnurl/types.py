@@ -78,7 +78,8 @@ class Url(HttpUrl):
 
     @property
     def base(self) -> str:
-        return f"{self.scheme}://{self.host}{self.path}"
+        hostport = f"{self.host}:{self.port}" if self.port else self.host
+        return f"{self.scheme}://{hostport}{self.path}"
 
     @property
     def query_params(self) -> dict:

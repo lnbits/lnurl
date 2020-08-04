@@ -8,10 +8,17 @@ from lnurl.types import LightningInvoice, LightningNodeUri, Lnurl, LnurlPayMetad
 
 
 class TestUrl:
-    def test_parameters(self):
-        url = parse_obj_as(Url, "https://service.io/?q=3fc3645b439ce8e7&test=ok")
+    @pytest.mark.parametrize(
+        "hostport",
+        [
+            "service.io",
+            "service.io:9000",
+        ],
+    )
+    def test_parameters(self, hostport):
+        url = parse_obj_as(Url, f"https://{hostport}/?q=3fc3645b439ce8e7&test=ok")
         assert url.host == "service.io"
-        assert url.base == "https://service.io/"
+        assert url.base == f"https://{hostport}/"
         assert url.query_params == {"q": "3fc3645b439ce8e7", "test": "ok"}
 
     @pytest.mark.parametrize(
