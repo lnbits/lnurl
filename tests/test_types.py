@@ -9,11 +9,7 @@ from lnurl.types import LightningInvoice, LightningNodeUri, Lnurl, LnurlPayMetad
 
 class TestUrl:
     @pytest.mark.parametrize(
-        "hostport",
-        [
-            "service.io",
-            "service.io:9000",
-        ],
+        "hostport", ["service.io", "service.io:9000"],
     )
     def test_parameters(self, hostport):
         url = parse_obj_as(Url, f"https://{hostport}/?q=3fc3645b439ce8e7&test=ok")
@@ -82,7 +78,7 @@ class TestLightningNode:
         assert node.ip == "ip_address"
         assert node.port == "port_number"
 
-    @pytest.mark.parametrize("uri", ["https://service.io/node", "node_key@ip_address", "ip_address:port_number",])
+    @pytest.mark.parametrize("uri", ["https://service.io/node", "node_key@ip_address", "ip_address:port_number"])
     def test_invalid_data(self, uri):
         with pytest.raises(ValidationError):
             parse_obj_as(LightningNodeUri, uri)

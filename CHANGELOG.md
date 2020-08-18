@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.5] - 2020-08-18
+
+### Added
+- Option to ignore SSL certificate verification for HTTPS requests, in `handle()` and `get()`.
+
+## [0.3.4] - 2020-08-04
+
+### Fixed
+- Port is not ignored anymore by `Url.base`.
+
 ### Changed
 - `TorUrl` and `WebUrl` are now `OnionUrl` and `ClearnetUrl`, following LNURL spec terminology.
 
@@ -95,7 +105,9 @@ All notable changes to this project will be documented in this file.
 - Initial commit, based on `bech32` package.
 - `encode()` and `decode()` functions.
 
-[unreleased]: https://github.com/python-ln/lnurl/compare/0.3.3...HEAD
+[unreleased]: https://github.com/python-ln/lnurl/compare/0.3.5...HEAD
+[0.3.5]: https://github.com/python-ln/lnurl/compare/0.3.4...0.3.5
+[0.3.4]: https://github.com/python-ln/lnurl/compare/0.3.3...0.3.4
 [0.3.3]: https://github.com/python-ln/lnurl/compare/0.3.2...0.3.3
 [0.3.2]: https://github.com/python-ln/lnurl/compare/0.3.1...0.3.2
 [0.3.1]: https://github.com/python-ln/lnurl/compare/0.3.0...0.3.1

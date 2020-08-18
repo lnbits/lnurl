@@ -26,12 +26,12 @@ def encode(url: str) -> Lnurl:
         raise InvalidUrl
 
 
-def get(url: str, *, response_class: Optional[Any] = None) -> LnurlResponseModel:
+def get(url: str, *, response_class: Optional[Any] = None, verify: Union[str, bool] = True) -> LnurlResponseModel:
     if requests is None:  # pragma: nocover
         raise ImportError("The `requests` library must be installed to use `lnurl.get()` and `lnurl.handle()`.")
 
     try:
-        r = requests.get(url)
+        r = requests.get(url, verify=verify)
     except Exception as e:
         raise LnurlResponseException(str(e))
 
@@ -42,7 +42,9 @@ def get(url: str, *, response_class: Optional[Any] = None) -> LnurlResponseModel
     return LnurlResponse.from_dict(r.json())
 
 
-def handle(bech32_lnurl: str, *, response_class: Optional[LnurlResponseModel] = None) -> LnurlResponseModel:
+def handle(
+    bech32_lnurl: str, *, response_class: Optional[LnurlResponseModel] = None, verify: Union[str, bool] = True
+) -> LnurlResponseModel:
     try:
         lnurl = Lnurl(bech32_lnurl)
     except (ValidationError, ValueError):
