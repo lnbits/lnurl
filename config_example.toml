@@ -1,0 +1,19 @@
+# This is an example configuration file for lnurl command
+# In this case we use the internal `lnd_rest` RPC implementation
+# If you've installed a package that allows a different implementation
+# refer to their documentation
+
+# Whether channels accepted by LNURL-channel should be private
+# The default is false. (All channels are public.)
+private_channels = false
+
+# RPC implementation - there is built-in implementation using LND REST
+# You can implement your own by implementing LnRPC protocol from cli module
+# and provide it using entry point (see setup.py)
+rpc_proto = "lnd_rest"
+
+# The configuration data for 
+[rpc]
+macaroon_file = "/var/lib/lnd-system-mainnet/private/admin.macaroon"
+tls_cert_file = "/var/lib/lnd-system-mainnet/public/tls.cert"
+address = "127.0.0.1:9090"
