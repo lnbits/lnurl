@@ -24,6 +24,8 @@ class TestUrl:
             "https://[2001:db8:0:1]:80",
             "https://protonirockerxow.onion/",
             "http://protonirockerxow.onion/",
+            "https://📙.la/⚡",  # https://emojipedia.org/high-voltage-sign/
+            "https://xn--yt8h.la/%E2%9A%A1",
         ],
     )
     def test_valid(self, url):
@@ -36,14 +38,25 @@ class TestUrl:
             "http://service.io/?q=3fc3645b439ce8e7&test=ok",
             "http://[2001:db8:0:1]:80",
             f'https://service.io/?hash={"x" * 4096}',
-            "https://📙.la/⚡",  # https://emojipedia.org/high-voltage-sign/
-            "https://xn--yt8h.la/%E2%9A%A1",
             "https://1.1.1.1/\u0000",
+            "http://xn--yt8h.la/%E2%9A%A1",
         ],
     )
     def test_invalid_data(self, url):
         with pytest.raises(ValidationError):
             parse_obj_as(Union[OnionUrl, ClearnetUrl], url)
+
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "https://📙.la/⚡",  # https://emojipedia.org/high-voltage-sign/
+            "https://xn--yt8h.la/%E2%9A%A1",
+        ],
+    )
+    def test_strict_rfc3986(self, monkeypatch, url):
+        monkeypatch.setenv("LNURL_STRICT_RFC3986", "1")
+        with pytest.raises(ValidationError):
+            parse_obj_as(ClearnetUrl, url)
 
 
 class TestLightningInvoice:

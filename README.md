@@ -11,6 +11,14 @@ LNURL implementation for Python
 
 A collection of helpers for building [LNURL][lnurl] support into wallets and services.
 
+Configuration
+-------------
+
+Developers can force strict RFC3986 validation for the URLs that the library encodes/decodes, using this env var:
+
+> LNURL_STRICT_RFC3986 = "0" by default (False)
+
+
 Basic usage
 -----------
 
@@ -103,12 +111,12 @@ If you want to export the data using :snake: snake_case (in your Python code, fo
 the `by_alias` parameter: `res.dict(by_alias=False)` (it is `True` by default).
 
 
-[github-tests]: https://github.com/python-ln/lnurl/actions?query=workflow%3A%22tests%22
-[github-tests-badge]: https://github.com/python-ln/lnurl/workflows/tests/badge.svg
-[github-mypy]: https://github.com/python-ln/lnurl/actions?query=workflow%3A%22mypy%22
-[github-mypy-badge]: https://github.com/python-ln/lnurl/workflows/mypy/badge.svg
-[codecov]: https://codecov.io/gh/python-ln/lnurl
-[codecov-badge]: https://codecov.io/gh/python-ln/lnurl/branch/master/graph/badge.svg
+[github-tests]: https://github.com/lnbits/lnurl/actions?query=workflow%3Atests
+[github-tests-badge]: https://github.com/lnbits/lnurl/workflows/tests/badge.svg
+[github-mypy]: https://github.com/lnbits/lnurl/actions?query=workflow%3Amypy
+[github-mypy-badge]: https://github.com/lnbits/lnurl/workflows/mypy/badge.svg
+[codecov]: https://codecov.io/gh/lnbits/lnurl
+[codecov-badge]: https://codecov.io/gh/lnbits/lnurl/branch/master/graph/badge.svg
 [pypi]: https://pypi.org/project/lnurl/
 [pypi-badge]: https://badge.fury.io/py/lnurl.svg
 [pypi-versions-badge]: https://img.shields.io/pypi/pyversions/lnurl.svg

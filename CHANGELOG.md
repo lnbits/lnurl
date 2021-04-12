@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.6] - 2021-04-12
+
+### Added
+- Python 3.9 support.
+
+### Changed
+- `LNURL_STRICT_RFC3986` environment variable is now `False` (0) by default.
+- Moved library to the LNbits family.
+
 ## [0.3.5] - 2020-08-18
 
 ### Added
@@ -105,15 +114,17 @@ All notable changes to this project will be documented in this file.
 - Initial commit, based on `bech32` package.
 - `encode()` and `decode()` functions.
 
-[unreleased]: https://github.com/python-ln/lnurl/compare/0.3.5...HEAD
-[0.3.5]: https://github.com/python-ln/lnurl/compare/0.3.4...0.3.5
-[0.3.4]: https://github.com/python-ln/lnurl/compare/0.3.3...0.3.4
-[0.3.3]: https://github.com/python-ln/lnurl/compare/0.3.2...0.3.3
-[0.3.2]: https://github.com/python-ln/lnurl/compare/0.3.1...0.3.2
-[0.3.1]: https://github.com/python-ln/lnurl/compare/0.3.0...0.3.1
-[0.3.0]: https://github.com/python-ln/lnurl/compare/0.2.0...0.3.0
-[0.2.0]: https://github.com/python-ln/lnurl/compare/0.1.1...0.2.0
-[0.1.1]: https://github.com/python-ln/lnurl/compare/0.1.0...0.1.1
-[0.1.0]: https://github.com/python-ln/lnurl/compare/0.0.2...0.1.0
-[0.0.2]: https://github.com/python-ln/lnurl/compare/0.0.1...0.0.2
-[0.0.1]: https://github.com/python-ln/lnurl/releases/tag/0.0.1
+
+[unreleased]: https://github.com/lnbits/lnurl/compare/0.3.6...HEAD
+[0.3.6]: https://github.com/lnbits/lnurl/compare/0.3.5...0.3.6
+[0.3.5]: https://github.com/lnbits/lnurl/compare/0.3.4...0.3.5
+[0.3.4]: https://github.com/lnbits/lnurl/compare/0.3.3...0.3.4
+[0.3.3]: https://github.com/lnbits/lnurl/compare/0.3.2...0.3.3
+[0.3.2]: https://github.com/lnbits/lnurl/compare/0.3.1...0.3.2
+[0.3.1]: https://github.com/lnbits/lnurl/compare/0.3.0...0.3.1
+[0.3.0]: https://github.com/lnbits/lnurl/compare/0.2.0...0.3.0
+[0.2.0]: https://github.com/lnbits/lnurl/compare/0.1.1...0.2.0
+[0.1.1]: https://github.com/lnbits/lnurl/compare/0.1.0...0.1.1
+[0.1.0]: https://github.com/lnbits/lnurl/compare/0.0.2...0.1.0
+[0.0.2]: https://github.com/lnbits/lnurl/compare/0.0.1...0.0.2
+[0.0.1]: https://github.com/lnbits/lnurl/releases/tag/0.0.1

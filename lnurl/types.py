@@ -13,9 +13,6 @@ from .exceptions import InvalidLnurlPayMetadata
 from .helpers import _bech32_decode, _lnurl_clean, _lnurl_decode
 
 
-STRICT_RFC3986 = os.environ.get("LNURL_STRICT_RFC3986", "1") == "1"
-
-
 def ctrl_characters_validator(value: str) -> str:
     """Checks for control characters (unicode blocks C0 and C1, plus DEL)."""
     if re.compile(r"[\u0000-\u001f\u007f-\u009f]").search(value):
@@ -72,7 +69,7 @@ class Url(HttpUrl):
     @classmethod
     def __get_validators__(cls):
         yield ctrl_characters_validator
-        if STRICT_RFC3986:
+        if os.environ.get("LNURL_STRICT_RFC3986", "0") == "1":
             yield strict_rfc3986_validator
         yield cls.validate
 
@@ -87,7 +84,7 @@ class Url(HttpUrl):
 
 
 class ClearnetUrl(Url):
-    """Web URL, secure by default; users can override the FORCE_SSL setting."""
+    """Secure web URL."""
 
     allowed_schemes = {"https"}
 
