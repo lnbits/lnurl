@@ -26,14 +26,22 @@ def encode(url: str) -> Lnurl:
         raise InvalidUrl
 
 
-def get(url: str, *, response_class: Optional[Any] = None, verify: Union[str, bool] = True) -> LnurlResponseModel:
+def get(
+    url: str,
+    *,
+    response_class: Optional[Any] = None,
+    verify: Union[str, bool] = True,
+    raise_for_status: Optional[bool] = True
+) -> LnurlResponseModel:
     if requests is None:  # pragma: nocover
         raise ImportError("The `requests` library must be installed to use `lnurl.get()` and `lnurl.handle()`.")
 
     try:
         r = requests.get(url, verify=verify)
+        if raise_for_status:
+            r.raise_for_status()
     except Exception as e:
-        raise LnurlResponseException(str(e))
+        raise LnurlResponseException(e)
 
     if response_class:
         assert issubclass(response_class, LnurlResponseModel), "Use a valid `LnurlResponseModel` subclass."
