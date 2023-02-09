@@ -14,7 +14,7 @@ packages = [
 ]
 
 [tool.poetry.dependencies]
-python = "^3.8.1"
+python = "^3.9"
 requests = "^2.28.2"
 pydantic = "^1.10.4"
 bech32 = "^1.2.0"
