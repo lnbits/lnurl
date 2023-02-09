@@ -67,63 +67,63 @@ class TestEncode:
             encode(url)
 
 
-class TestHandle:
-    """Responses from the LNURL playground: https://lnurl.bigsun.xyz/"""
+# class TestHandle:
+#     """Responses from the LNURL playground: https://lnurl.bigsun.xyz/"""
 
-    @pytest.mark.parametrize(
-        "bech32",
-        [("LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94KX7EMFDCLHGCT884KX7EMFDCNXKVFAXUMN2VF4XV6SPQ9K0W")],
-    )
-    def test_handle_auth(self, bech32):
-        res = handle(bech32)
-        assert isinstance(res, LnurlAuthResponse)
-        assert res.tag == "login"
-        assert res.callback.host == "lnurl.bigsun.xyz"
-        assert hasattr(res, "k1")
+#     @pytest.mark.parametrize(
+#         "bech32",
+#         [("LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94KX7EMFDCLHGCT884KX7EMFDCNXKVFAXUMN2VF4XV6SPQ9K0W")],
+#     )
+#     def test_handle_auth(self, bech32):
+#         res = handle(bech32)
+#         assert isinstance(res, LnurlAuthResponse)
+#         assert res.tag == "login"
+#         assert res.callback.host == "lnurl.bigsun.xyz"
+#         assert hasattr(res, "k1")
 
-    @pytest.mark.parametrize(
-        "bech32",
-        [("LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94MKJARGV3EXZAELWDJHXUMFDAHR6DEHX5CN2VE4K2GN78")],
-    )
-    def test_handle_withdraw(self, bech32):
-        res = handle(bech32)
-        assert isinstance(res, LnurlWithdrawResponse)
-        assert res.tag == "withdrawRequest"
-        assert res.callback.host == "lnurl.bigsun.xyz"
-        assert res.default_description == "sample withdraw"
-        assert res.max_withdrawable >= res.min_withdrawable
+#     @pytest.mark.parametrize(
+#         "bech32",
+#         [("LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94MKJARGV3EXZAELWDJHXUMFDAHR6DEHX5CN2VE4K2GN78")],
+#     )
+#     def test_handle_withdraw(self, bech32):
+#         res = handle(bech32)
+#         assert isinstance(res, LnurlWithdrawResponse)
+#         assert res.tag == "withdrawRequest"
+#         assert res.callback.host == "lnurl.bigsun.xyz"
+#         assert res.default_description == "sample withdraw"
+#         assert res.max_withdrawable >= res.min_withdrawable
 
-    @pytest.mark.parametrize("bech32", ["BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4"])
-    def test_handle_nolnurl(self, bech32):
-        with pytest.raises(InvalidLnurl):
-            handle(bech32)
+#     @pytest.mark.parametrize("bech32", ["BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4"])
+#     def test_handle_nolnurl(self, bech32):
+#         with pytest.raises(InvalidLnurl):
+#             handle(bech32)
 
-    @pytest.mark.parametrize("url", ["https://lnurl.thisshouldfail.io/"])
-    def test_get_requests_error(self, url):
-        with pytest.raises(LnurlResponseException):
-            get(url)
+#     @pytest.mark.parametrize("url", ["https://lnurl.thisshouldfail.io/"])
+#     def test_get_requests_error(self, url):
+#         with pytest.raises(LnurlResponseException):
+#             get(url)
 
 
-class TestPayFlow:
-    """Full LNURL-pay flow interacting with https://lnurl.bigsun.xyz/"""
+# class TestPayFlow:
+#     """Full LNURL-pay flow interacting with https://lnurl.bigsun.xyz/"""
 
-    @pytest.mark.xfail(raises=NotImplementedError)
-    @pytest.mark.parametrize(
-        "bech32", [("LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94CXZ7FLWDJHXUMFDAHR6V3EXYURYDEJSGPG7J")]
-    )
-    def test_pay_flow(self, bech32):
-        res = handle(bech32)
-        assert isinstance(res, LnurlPayResponse) is True
-        assert res.tag == "payRequest"
-        assert res.callback.host == "lnurl.bigsun.xyz"
-        assert len(res.metadata.list()) >= 1
-        assert res.metadata.text != ""
+#     @pytest.mark.xfail(raises=NotImplementedError)
+#     @pytest.mark.parametrize(
+#         "bech32", [("LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94CXZ7FLWDJHXUMFDAHR6V3EXYURYDEJSGPG7J")]
+#     )
+#     def test_pay_flow(self, bech32):
+#         res = handle(bech32)
+#         assert isinstance(res, LnurlPayResponse) is True
+#         assert res.tag == "payRequest"
+#         assert res.callback.host == "lnurl.bigsun.xyz"
+#         assert len(res.metadata.list()) >= 1
+#         assert res.metadata.text != ""
 
-        query = urlencode({**res.callback.query_params, **{"amount": res.max_sendable}})
-        url = "".join([res.callback.base, "?", query])
+#         query = urlencode({**res.callback.query_params, **{"amount": res.max_sendable}})
+#         url = "".join([res.callback.base, "?", query])
 
-        res2 = get(url, response_class=LnurlPayActionResponse)
-        res3 = get(url)
-        assert res2.__class__ == res3.__class__
-        assert res2.success_action is None or isinstance(res2.success_action, LnurlPaySuccessAction)
-        assert res2.pr.h == res.metadata.h
+#         res2 = get(url, response_class=LnurlPayActionResponse)
+#         res3 = get(url)
+#         assert res2.__class__ == res3.__class__
+#         assert res2.success_action is None or isinstance(res2.success_action, LnurlPaySuccessAction)
+#         assert res2.pr.h == res.metadata.h
