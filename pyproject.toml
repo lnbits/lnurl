@@ -8,10 +8,16 @@ description = "LNURL implementation for Python."
 authors = ["Alan Bits <alan@lnbits.com>"]
 license = "MIT"
 readme = "README.md"
+packages = [
+  {include = "lnurl"},
+  {include = "lnurl/py.typed"},
+]
 
 [tool.poetry.dependencies]
 python = "^3.8.1"
 requests = "^2.28.2"
+pydantic = "^1.10.4"
+bech32 = "^1.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -25,3 +31,8 @@ twine = "^4.0.2"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = [
+  "tests"
+]
