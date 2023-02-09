@@ -1,6 +1,8 @@
 """ lnurl CLI """
 import sys
+import json
 import click
+import requests
 
 from .types import Lnurl
 from .core import handle as handle_lnurl
@@ -44,8 +46,29 @@ def handle(lnurl):
     handle a LNURL
     """
     decoded = handle_lnurl(lnurl)
-    print(decoded)
-    click.echo(decoded)
+    click.echo(decoded.json())
+
+
+@click.command()
+@click.argument("lnurl", type=str)
+@click.argument("amount", type=int)
+def payment_request(lnurl, amount):
+    """
+    make a payment_request
+    """
+    res = handle_lnurl(lnurl)
+    decoded = res.dict()
+
+    if decoded["tag"] and decoded["tag"] == "payRequest":
+        if decoded["minSendable"] <= amount <= decoded["maxSendable"]:
+            res = requests.get(decoded["callback"] + "?amount=" + str(amount))
+            res.raise_for_status()
+            return click.echo(json.dumps(res.json()))
+        else:
+            click.echo("Amount not in range.")
+    else:
+        click.echo("Not a payRequest:")
+    click.echo(res.json())
 
 
 def main():
@@ -53,6 +76,7 @@ def main():
     command_group.add_command(encode)
     command_group.add_command(decode)
     command_group.add_command(handle)
+    command_group.add_command(payment_request)
     command_group()
 
 

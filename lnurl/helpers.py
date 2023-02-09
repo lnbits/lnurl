@@ -29,10 +29,10 @@ def _lnurl_decode(lnurl: str) -> str:
         bech32_data = convertbits(data, 5, 8, False)
         assert bech32_data
         url = bytes(bech32_data).decode("utf-8")
+        return url
     except UnicodeDecodeError:  # pragma: nocover
         raise InvalidLnurl
 
-    return url
 
 
 def _url_encode(url: str) -> str:

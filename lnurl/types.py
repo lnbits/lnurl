@@ -4,6 +4,7 @@ import re
 
 from hashlib import sha256
 from pydantic import ConstrainedStr, Json, HttpUrl, PositiveInt, ValidationError, parse_obj_as
+from pydantic.networks import Parts
 from pydantic.errors import UrlHostTldError, UrlSchemeError
 from pydantic.validators import str_validator
 from urllib.parse import parse_qs
@@ -28,8 +29,8 @@ def strict_rfc3986_validator(value: str) -> str:
 
 
 class ReprMixin:
-    def __repr__(self) -> str:  # pragma: nocover
-        attrs = [n for n in [n for n in self.__slots__ if not n.startswith("_")] if getattr(self, n) is not None]
+    def __repr__(self) -> str:
+        attrs = [n for n in [n for n in self.__slots__ if not n.startswith("_")] if getattr(self, n) is not None] #type: ignore
         extra = ", " + ", ".join(f"{n}={getattr(self, n).__repr__()}" for n in attrs) if attrs else ""
         return f"{self.__class__.__name__}({super().__repr__()}{extra})"
 
@@ -88,7 +89,7 @@ class DebugUrl(Url):
     allowed_schemes = {"http"}
 
     @classmethod
-    def validate_host(cls, parts: Dict[str, str]) -> Tuple[str, Optional[str], str, bool]:
+    def validate_host(cls, parts: Parts) -> Tuple[str, Optional[str], str, bool]:
         host, tld, host_type, rebuild = super().validate_host(parts)
         if host not in ["127.0.0.1", "0.0.0.0"]:
             raise UrlSchemeError()
@@ -106,7 +107,7 @@ class OnionUrl(Url):
     allowed_schemes = {"https", "http"}
 
     @classmethod
-    def validate_host(cls, parts: Dict[str, str]) -> Tuple[str, Optional[str], str, bool]:
+    def validate_host(cls, parts: Parts) -> Tuple[str, Optional[str], str, bool]:
         host, tld, host_type, rebuild = super().validate_host(parts)
         if tld != "onion":
             raise UrlHostTldError()
@@ -173,7 +174,8 @@ class Lnurl(ReprMixin, str):
 
     @classmethod
     def __get_url__(cls, bech32: str) -> Union[OnionUrl, ClearnetUrl, DebugUrl]:
-        return parse_obj_as(Union[OnionUrl, ClearnetUrl, DebugUrl], _lnurl_decode(bech32))
+        url: str = _lnurl_decode(bech32)
+        return parse_obj_as(Union[OnionUrl, ClearnetUrl, DebugUrl], url) #type: ignore
 
     @classmethod
     def __get_validators__(cls):
