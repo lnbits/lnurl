@@ -34,7 +34,7 @@ class TestUrl:
     )
     def test_valid(self, url):
         url = parse_obj_as(Union[OnionUrl, DebugUrl, ClearnetUrl], url)
-        assert isinstance(url, Union[OnionUrl, DebugUrl, ClearnetUrl])
+        assert isinstance(url, (OnionUrl, DebugUrl, ClearnetUrl))
 
     @pytest.mark.parametrize(
         "url",
