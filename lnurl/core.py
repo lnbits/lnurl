@@ -1,7 +1,4 @@
-try:
-    import requests
-except ImportError:  # pragma: nocover
-    requests = None  # type: ignore
+import requests
 
 from pydantic import ValidationError
 from typing import Any, Optional, Union
@@ -9,10 +6,10 @@ from typing import Any, Optional, Union
 from .exceptions import LnurlResponseException, InvalidLnurl, InvalidUrl
 from .helpers import _url_encode
 from .models import LnurlResponse, LnurlResponseModel, LnurlAuthResponse
-from .types import Lnurl, ClearnetUrl, OnionUrl
+from .types import Lnurl, OnionUrl, ClearnetUrl, DebugUrl
 
 
-def decode(bech32_lnurl: str) -> Union[OnionUrl, ClearnetUrl]:
+def decode(bech32_lnurl: str) -> Union[OnionUrl, ClearnetUrl, DebugUrl]:
     try:
         return Lnurl(bech32_lnurl).url
     except (ValidationError, ValueError):
@@ -27,9 +24,6 @@ def encode(url: str) -> Lnurl:
 
 
 def get(url: str, *, response_class: Optional[Any] = None, verify: Union[str, bool] = True) -> LnurlResponseModel:
-    if requests is None:  # pragma: nocover
-        raise ImportError("The `requests` library must be installed to use `lnurl.get()` and `lnurl.handle()`.")
-
     try:
         r = requests.get(url, verify=verify)
     except Exception as e:

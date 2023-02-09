@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.7] - 2022-02-09
+- Switch to poetry
+- Add DebugUrl to make developers lifes easier
+
 ## [0.3.6] - 2021-04-12
 
 ### Added

@@ -4,7 +4,7 @@ import re
 
 from hashlib import sha256
 from pydantic import ConstrainedStr, Json, HttpUrl, PositiveInt, ValidationError, parse_obj_as
-from pydantic.errors import UrlHostTldError
+from pydantic.errors import UrlHostTldError, UrlSchemeError
 from pydantic.validators import str_validator
 from urllib.parse import parse_qs
 from typing import Dict, List, Optional, Tuple, Union
@@ -83,9 +83,20 @@ class Url(HttpUrl):
         return {k: v[0] for k, v in parse_qs(self.query).items()}
 
 
+class DebugUrl(Url):
+    """Unsecure web URL, to make developers life easier."""
+    allowed_schemes = {"http"}
+
+    @classmethod
+    def validate_host(cls, parts: Dict[str, str]) -> Tuple[str, Optional[str], str, bool]:
+        host, tld, host_type, rebuild = super().validate_host(parts)
+        if host not in ["127.0.0.1", "0.0.0.0"]:
+            raise UrlSchemeError()
+        return host, tld, host_type, rebuild
+
+
 class ClearnetUrl(Url):
     """Secure web URL."""
-
     allowed_schemes = {"https"}
 
 
@@ -151,18 +162,18 @@ class LightningNodeUri(ReprMixin, str):
 class Lnurl(ReprMixin, str):
     __slots__ = ("bech32", "url")
 
-    def __new__(cls, lightning: str, **kwargs) -> "Lnurl":
+    def __new__(cls, lightning: str, **_) -> "Lnurl":
         return str.__new__(cls, _lnurl_clean(lightning))
 
-    def __init__(self, lightning: str, *, url: Optional[Union[OnionUrl, ClearnetUrl]] = None):
+    def __init__(self, lightning: str, *, url: Optional[Union[OnionUrl, ClearnetUrl, DebugUrl]] = None):
         bech32 = _lnurl_clean(lightning)
         str.__init__(bech32)
         self.bech32 = Bech32(bech32)
         self.url = url if url else self.__get_url__(bech32)
 
     @classmethod
-    def __get_url__(cls, bech32: str) -> Union[OnionUrl, ClearnetUrl]:
-        return parse_obj_as(Union[OnionUrl, ClearnetUrl], _lnurl_decode(bech32))
+    def __get_url__(cls, bech32: str) -> Union[OnionUrl, ClearnetUrl, DebugUrl]:
+        return parse_obj_as(Union[OnionUrl, ClearnetUrl, DebugUrl], _lnurl_decode(bech32))
 
     @classmethod
     def __get_validators__(cls):

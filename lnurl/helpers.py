@@ -1,10 +1,10 @@
 from bech32 import bech32_decode, bech32_encode, convertbits
-from typing import List, Set, Tuple
+from typing import List, Set, Tuple, Optional
 
 from .exceptions import InvalidLnurl, InvalidUrl
 
 
-def _bech32_decode(bech32: str, *, allowed_hrp: Set[str] = None) -> Tuple[str, List[int]]:
+def _bech32_decode(bech32: str, *, allowed_hrp: Optional[Set[str]] = None) -> Tuple[str, List[int]]:
     hrp, data = bech32_decode(bech32)
 
     if not hrp or not data or (allowed_hrp and hrp not in allowed_hrp):
@@ -23,7 +23,7 @@ def _lnurl_decode(lnurl: str) -> str:
     Decode a LNURL and return a url string without performing any validation on it.
     Use `lnurl.decode()` for validation and to get `Url` object.
     """
-    hrp, data = _bech32_decode(_lnurl_clean(lnurl), allowed_hrp={"lnurl"})
+    _, data = _bech32_decode(_lnurl_clean(lnurl), allowed_hrp={"lnurl"})
 
     try:
         bech32_data = convertbits(data, 5, 8, False)
