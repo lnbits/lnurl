@@ -26,6 +26,7 @@ def encode(url: str) -> Lnurl:
 def get(url: str, *, response_class: Optional[Any] = None, verify: Union[str, bool] = True) -> LnurlResponseModel:
     try:
         r = requests.get(url, verify=verify)
+        r.raise_for_status()
     except Exception as e:
         raise LnurlResponseException(str(e))
 
