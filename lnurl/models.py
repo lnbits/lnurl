@@ -108,6 +108,11 @@ class LnurlPayResponse(LnurlResponseModel):
     min_sendable: MilliSatoshi = Field(..., alias="minSendable")
     max_sendable: MilliSatoshi = Field(..., alias="maxSendable")
     metadata: LnurlPayMetadata
+    comment_allowed: Optional[int] = Field(
+        1000,
+        description="Length of comment which can be sent",
+        alias="commentAllowed",
+    )
 
     @validator("max_sendable")
     def max_less_than_min(cls, value, values, **kwargs):  # noqa
