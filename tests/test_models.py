@@ -1,14 +1,14 @@
 import json
-import pytest
 
+import pytest
 from pydantic import ValidationError
 
 from lnurl.models import (
-    LnurlErrorResponse,
-    LnurlSuccessResponse,
     LnurlChannelResponse,
+    LnurlErrorResponse,
     LnurlHostedChannelResponse,
     LnurlPayResponse,
+    LnurlSuccessResponse,
     LnurlWithdrawResponse,
 )
 
@@ -23,7 +23,7 @@ class TestLnurlErrorResponse:
 
     def test_no_reason(self):
         with pytest.raises(ValidationError):
-            LnurlErrorResponse()
+            LnurlErrorResponse()  # type: ignore
 
 
 class TestLnurlSuccessResponse:
@@ -80,6 +80,13 @@ class TestLnurlPayResponse:
         [
             {"callback": "https://service.io/pay", "min_sendable": 1000, "max_sendable": 2000, "metadata": metadata},
             {"callback": "https://service.io/pay", "minSendable": 1000, "maxSendable": 2000, "metadata": metadata},
+            {
+                "callback": "https://service.io/pay",
+                "minSendable": 1000,
+                "maxSendable": 2000,
+                "metadata": metadata,
+                "commentAllowed": True,
+            },
         ],
     )
     def test_success_response(self, d):
@@ -120,6 +127,13 @@ class TestLnurlPayResponse:
             {"callback": "https://service.io/pay", "min_sendable": 0, "max_sendable": 0, "metadata": metadata},  # 0
             {"callback": "https://service.io/pay", "minSendable": 100, "maxSendable": 10, "metadata": metadata},  # max
             {"callback": "https://service.io/pay", "minSendable": -90, "maxSendable": -10, "metadata": metadata},
+            {
+                "callback": "https://service.io/pay",
+                "minSendable": 10,
+                "maxSendable": 1000,
+                "metadata": metadata,
+                "commentAllowed": "blobby",
+            },
         ],
     )
     def test_invalid_data(self, d):
