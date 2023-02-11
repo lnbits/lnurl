@@ -90,7 +90,8 @@ class TestLnurlPayResponse:
             == res.json(by_alias=True)
             == (
                 f'{{"tag": "payRequest", "callback": "https://service.io/pay", '
-                f'"minSendable": 1000, "maxSendable": 2000, "metadata": {json.dumps(metadata)}}}'
+                f'"minSendable": 1000, "maxSendable": 2000, "metadata": {json.dumps(metadata)}, '
+                f'"commentAllowed": 1000}}'
             )
         )
         assert (
@@ -102,6 +103,7 @@ class TestLnurlPayResponse:
                 "minSendable": 1000,
                 "maxSendable": 2000,
                 "metadata": metadata,
+                "commentAllowed": 1000
             }
         )
         assert res.dict(by_alias=False) == {
@@ -110,6 +112,7 @@ class TestLnurlPayResponse:
             "min_sendable": 1000,
             "max_sendable": 2000,
             "metadata": metadata,
+            "comment_allowed": 1000
         }
 
     @pytest.mark.parametrize(
