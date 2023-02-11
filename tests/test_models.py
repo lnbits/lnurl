@@ -23,7 +23,7 @@ class TestLnurlErrorResponse:
 
     def test_no_reason(self):
         with pytest.raises(ValidationError):
-            LnurlErrorResponse()
+            LnurlErrorResponse() #type: ignore
 
 
 class TestLnurlSuccessResponse:

@@ -3,21 +3,19 @@ import math
 from pydantic import BaseModel, Field, validator
 from typing import List, Optional, Union
 
-try:
-    from typing import Literal  # type: ignore
-except ImportError:  # pragma: nocover
-    from typing_extensions import Literal
+from typing import Literal, Union
 
 from .exceptions import LnurlResponseException
 from .types import (
+    OnionUrl,
     ClearnetUrl,
+    DebugUrl,
     InitializationVector,
     LightningInvoice,
     LightningNodeUri,
     LnurlPayMetadata,
     Max144Str,
     MilliSatoshi,
-    OnionUrl,
 )
 
 
@@ -44,7 +42,7 @@ class MessageAction(LnurlPaySuccessAction):
 
 class UrlAction(LnurlPaySuccessAction):
     tag: Literal["url"] = "url"
-    url: Union[OnionUrl, ClearnetUrl]
+    url: Union[ClearnetUrl, OnionUrl, DebugUrl]
     description: Max144Str
 
 
@@ -84,14 +82,14 @@ class LnurlSuccessResponse(LnurlResponseModel):
 
 class LnurlAuthResponse(LnurlResponseModel):
     tag: Literal["login"] = "login"
-    callback: Union[OnionUrl, ClearnetUrl]
+    callback: Union[ClearnetUrl, OnionUrl, DebugUrl]
     k1: str
 
 
 class LnurlChannelResponse(LnurlResponseModel):
     tag: Literal["channelRequest"] = "channelRequest"
     uri: LightningNodeUri
-    callback: Union[OnionUrl, ClearnetUrl]
+    callback: Union[ClearnetUrl, OnionUrl, DebugUrl]
     k1: str
 
 
@@ -104,7 +102,7 @@ class LnurlHostedChannelResponse(LnurlResponseModel):
 
 class LnurlPayResponse(LnurlResponseModel):
     tag: Literal["payRequest"] = "payRequest"
-    callback: Union[OnionUrl, ClearnetUrl]
+    callback: Union[ClearnetUrl, OnionUrl, DebugUrl]
     min_sendable: MilliSatoshi = Field(..., alias="minSendable")
     max_sendable: MilliSatoshi = Field(..., alias="maxSendable")
     metadata: LnurlPayMetadata
@@ -132,7 +130,7 @@ class LnurlPayActionResponse(LnurlResponseModel):
 
 class LnurlWithdrawResponse(LnurlResponseModel):
     tag: Literal["withdrawRequest"] = "withdrawRequest"
-    callback: Union[OnionUrl, ClearnetUrl]
+    callback: Union[ClearnetUrl, OnionUrl, DebugUrl]
     k1: str
     min_withdrawable: MilliSatoshi = Field(..., alias="minWithdrawable")
     max_withdrawable: MilliSatoshi = Field(..., alias="maxWithdrawable")

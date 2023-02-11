@@ -125,3 +125,22 @@ the `by_alias` parameter: `res.dict(by_alias=False)` (it is `True` by default).
 [lnurl]: https://telegra.ph/lnurl-a-protocol-for-seamless-interaction-between-services-and-Lightning-wallets-08-19
 [lnurl-spec]: https://github.com/btcontract/lnurl-rfc/blob/master/spec.md
 [pydantic]: https://github.com/samuelcolvin/pydantic/
+
+
+CLI
+---------
+```console
+$ poetry run lnurl
+Usage: lnurl [OPTIONS] COMMAND [ARGS]...
+
+  Python CLI for LNURL decode and encode lnurls
+
+Options:
+  --help  Show this message and exit.
+
+Commands:
+  decode           decode a LNURL
+  encode           encode a URL
+  handle           handle a LNURL
+  payment-request  make a payment_request
+```

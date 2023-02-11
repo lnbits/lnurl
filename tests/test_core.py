@@ -68,28 +68,17 @@ class TestEncode:
 
 
 class TestHandle:
-    """Responses from the LNURL playground: https://lnurl.bigsun.xyz/"""
+    """Responses from the LNURL: https://legend.lnbits.com/"""
 
     @pytest.mark.parametrize(
         "bech32",
-        [("LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94KX7EMFDCLHGCT884KX7EMFDCNXKVFAXUMN2VF4XV6SPQ9K0W")],
-    )
-    def test_handle_auth(self, bech32):
-        res = handle(bech32)
-        assert isinstance(res, LnurlAuthResponse)
-        assert res.tag == "login"
-        assert res.callback.host == "lnurl.bigsun.xyz"
-        assert hasattr(res, "k1")
-
-    @pytest.mark.parametrize(
-        "bech32",
-        [("LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94MKJARGV3EXZAELWDJHXUMFDAHR6DEHX5CN2VE4K2GN78")],
+        [("LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AMKJARGV3EXZAE0V9CXJTMKXYHKCMN4WFKZ7MJT2C6X2NRK0PDRYJNGWVU9WDN2G4V8XK2VSZA2RC")],
     )
     def test_handle_withdraw(self, bech32):
         res = handle(bech32)
         assert isinstance(res, LnurlWithdrawResponse)
         assert res.tag == "withdrawRequest"
-        assert res.callback.host == "lnurl.bigsun.xyz"
+        assert res.callback.host == "legend.lnbits.com"
         assert res.default_description == "sample withdraw"
         assert res.max_withdrawable >= res.min_withdrawable
 
@@ -105,17 +94,18 @@ class TestHandle:
 
 
 class TestPayFlow:
-    """Full LNURL-pay flow interacting with https://lnurl.bigsun.xyz/"""
+    """Full LNURL-pay flow interacting with https://legend.lnbits.com/"""
 
     @pytest.mark.xfail(raises=NotImplementedError)
     @pytest.mark.parametrize(
-        "bech32", [("LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94CXZ7FLWDJHXUMFDAHR6V3EXYURYDEJSGPG7J")]
+        "bech32",
+        [("LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AKXUATJD3CZ7JN9F4EHQJQC25ZZY")],
     )
     def test_pay_flow(self, bech32):
         res = handle(bech32)
         assert isinstance(res, LnurlPayResponse) is True
         assert res.tag == "payRequest"
-        assert res.callback.host == "lnurl.bigsun.xyz"
+        assert res.callback.host == "legend.lnbits.com"
         assert len(res.metadata.list()) >= 1
         assert res.metadata.text != ""
 
