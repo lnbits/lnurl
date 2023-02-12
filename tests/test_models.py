@@ -132,8 +132,20 @@ class TestLnurlPayResponseComment:
     @pytest.mark.parametrize(
         "d",
         [
-            {"callback": "https://service.io/pay", "min_sendable": 1000, "max_sendable": 2000, "metadata": metadata},
-            {"callback": "https://service.io/pay", "minSendable": 1000, "maxSendable": 2000, "metadata": metadata},
+            {
+                "callback": "https://service.io/pay",
+                "min_sendable": 1000,
+                "max_sendable": 2000,
+                "metadata": metadata,
+                "comment_allowed": 555,
+            },
+            {
+                "callback": "https://service.io/pay",
+                "minSendable": 1000,
+                "maxSendable": 2000,
+                "metadata": metadata,
+                "comment_allowed": 555,
+            },
         ],
     )
     def test_success_response(self, d):
@@ -145,7 +157,7 @@ class TestLnurlPayResponseComment:
             == (
                 f'{{"tag": "payRequest", "callback": "https://service.io/pay", '
                 f'"minSendable": 1000, "maxSendable": 2000, "metadata": {json.dumps(metadata)}, '
-                f'"commentAllowed": 1000}}'
+                f'"commentAllowed": 555}}'
             )
         )
         assert (
@@ -157,7 +169,7 @@ class TestLnurlPayResponseComment:
                 "minSendable": 1000,
                 "maxSendable": 2000,
                 "metadata": metadata,
-                "commentAllowed": 1000,
+                "commentAllowed": 555,
             }
         )
         assert res.dict(by_alias=False) == {
@@ -166,7 +178,7 @@ class TestLnurlPayResponseComment:
             "min_sendable": 1000,
             "max_sendable": 2000,
             "metadata": metadata,
-            "comment_allowed": 1000,
+            "comment_allowed": 555,
         }
 
     @pytest.mark.parametrize(
@@ -177,6 +189,13 @@ class TestLnurlPayResponseComment:
             {"callback": "https://service.io/pay", "min_sendable": 0, "max_sendable": 0, "metadata": metadata},  # 0
             {"callback": "https://service.io/pay", "minSendable": 100, "maxSendable": 10, "metadata": metadata},  # max
             {"callback": "https://service.io/pay", "minSendable": -90, "maxSendable": -10, "metadata": metadata},
+            {
+                "callback": "https://service.io/pay",
+                "minSendable": 100,
+                "maxSendable": 1000,
+                "metadata": metadata,
+                "comment_allowed": "Yes",    # str should be int
+            },
         ],
     )
     def test_invalid_data(self, d):
