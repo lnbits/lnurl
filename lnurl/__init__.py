@@ -13,6 +13,7 @@ from .models import (
     LnurlChannelResponse,
     LnurlHostedChannelResponse,
     LnurlPayResponse,
+    LnurlPayResponseComment,
     LnurlPayActionResponse,
     LnurlWithdrawResponse,
 )
