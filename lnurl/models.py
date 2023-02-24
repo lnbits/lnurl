@@ -1,13 +1,10 @@
 import math
+from typing import List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field, validator
-from typing import List, Optional, Union
-
-from typing import Literal, Union
 
 from .exceptions import LnurlResponseException
 from .types import (
-    OnionUrl,
     ClearnetUrl,
     DebugUrl,
     InitializationVector,
@@ -16,6 +13,7 @@ from .types import (
     LnurlPayMetadata,
     Max144Str,
     MilliSatoshi,
+    OnionUrl,
 )
 
 
@@ -120,6 +118,19 @@ class LnurlPayResponse(LnurlResponseModel):
     @property
     def max_sats(self) -> int:
         return int(math.floor(self.max_sendable / 1000))
+
+
+class LnurlPayResponseComment(LnurlPayResponse):
+    """
+    Adds the optional comment_allowed field to the LnurlPayResponse
+    ref LUD-12: Comments in payRequest.
+    """
+
+    comment_allowed: int = Field(
+        1000,
+        description="Length of comment which can be sent",
+        alias="commentAllowed",
+    )
 
 
 class LnurlPayActionResponse(LnurlResponseModel):
