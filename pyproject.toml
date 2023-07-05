@@ -18,18 +18,16 @@ lnurl = "lnurl.cli:main"
 
 [tool.poetry.dependencies]
 python = "^3.9"
-requests = "^2.28.2"
-pydantic = "^1.10.4"
+requests = "^2.31.0"
+pydantic = "^2.0.1"
 bech32 = "^1.2.0"
 
 
 [tool.poetry.group.dev.dependencies]
 flake8 = "^6.0.0"
 black = "^23.1.0"
-flake8-mypy = "^17.8.0"
 pytest = "^7.2.1"
 pytest-cov = "^4.0.0"
-twine = "^4.0.2"
 types-requests = "^2.28.11.12"
 
 [build-system]
