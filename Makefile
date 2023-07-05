@@ -7,7 +7,7 @@ isort:
 	poetry run isort .
 
 mypy:
-	poetry run mypy
+	poetry run mypy .
 
 flake8:
 	poetry run flake8
