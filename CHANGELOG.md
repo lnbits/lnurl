@@ -3,7 +3,8 @@ Changelog
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.4.0] - 2023-07-05
+- sanity release
 
 ## [0.3.7] - 2022-02-09
 - Switch to poetry
