@@ -46,13 +46,3 @@ files = "lnurl"
 testpaths = [
   "tests"
 ]
-
-[tool.pyright]
-reportMissingImports = false
-include = [
-    "lnurl"
-]
-
-[tool.pylint.'MESSAGES CONTROL']
-max-line-length=125
-

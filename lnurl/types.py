@@ -37,7 +37,7 @@ def strict_rfc3986_validator(value: str) -> str:
 
 class ReprMixin:
     def __repr__(self) -> str:
-        attrs = [n for n in [n for n in self.__slots__ if not n.startswith("_")] if getattr(self, n) is not None]
+        attrs = [n for n in [n for n in self.__slots__ if not n.startswith("_")] if getattr(self, n) is not None]  # type: ignore
         extra = ", " + ", ".join(f"{n}={getattr(self, n).__repr__()}" for n in attrs) if attrs else ""
         return f"{self.__class__.__name__}({super().__repr__()}{extra})"
 

@@ -1,6 +1,6 @@
-all: black isort mypy flake8 pyright pylint test
+all: black isort mypy flake8 test
 format: black isort
-lint: flake8 pylint mypy pyright
+lint: flake8 mypy
 check: checkblack checkisort
 
 black:
@@ -20,12 +20,6 @@ mypy:
 
 flake8:
 	poetry run flake8
-
-pyright:
-	poetry run pyright
-
-pylint:
-	poetry run pylint bolt11
 
 test:
 	poetry run pytest tests --cov=lnurl --cov-report=xml
