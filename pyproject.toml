@@ -19,7 +19,6 @@ requests = "^2.31.0"
 pydantic = "^1"
 bech32 = "^1.2.0"
 
-
 [tool.poetry.group.dev.dependencies]
 flake8 = "^6.0.0"
 black = "^23.1.0"
@@ -39,20 +38,21 @@ line-length = 120
 [tool.isort]
 profile = "black"
 
-
 [tool.mypy]
 ignore_missing_imports = "True"
 files = "lnurl"
-
 
 [tool.pytest.ini_options]
 testpaths = [
   "tests"
 ]
 
-
 [tool.pyright]
 reportMissingImports = false
 include = [
     "lnurl"
 ]
+
+[tool.pylint.'MESSAGES CONTROL']
+max-line-length=125
+
