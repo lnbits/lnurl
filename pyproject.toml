@@ -1,6 +1,3 @@
-[tool.black]
-line-length = 120
-
 [tool.poetry]
 name = "lnurl"
 version = "0.4.0"
@@ -36,7 +33,26 @@ isort = "^5.12.0"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+[tool.black]
+line-length = 120
+
+[tool.isort]
+profile = "black"
+
+
+[tool.mypy]
+ignore_missing_imports = "True"
+files = "lnurl"
+
+
 [tool.pytest.ini_options]
 testpaths = [
   "tests"
+]
+
+
+[tool.pyright]
+reportMissingImports = false
+include = [
+    "lnurl"
 ]
