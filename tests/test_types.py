@@ -1,17 +1,25 @@
-import pytest
-
-from pydantic import ValidationError, parse_obj_as
-
 from typing import Union
 
+import pytest
+from pydantic import ValidationError, parse_obj_as
+
 from lnurl.helpers import _lnurl_clean
-from lnurl.types import LightningInvoice, LightningNodeUri, Lnurl, LnurlPayMetadata, ClearnetUrl, OnionUrl, DebugUrl
+from lnurl.types import (
+    ClearnetUrl,
+    DebugUrl,
+    LightningInvoice,
+    LightningNodeUri,
+    Lnurl,
+    LnurlPayMetadata,
+    OnionUrl,
+)
 
 
 class TestUrl:
     # https://github.com/pydantic/pydantic/discussions/2450
     @pytest.mark.parametrize(
-            "hostport", ["service.io:443", "service.io:9000"],
+        "hostport",
+        ["service.io:443", "service.io:9000"],
     )
     def test_parameters(self, hostport):
         url = parse_obj_as(Union[DebugUrl, OnionUrl, ClearnetUrl], f"https://{hostport}/?q=3fc3645b439ce8e7&test=ok")

@@ -1,15 +1,15 @@
-import pytest
-
 from urllib.parse import urlencode
 
+import pytest
+
 from lnurl.core import decode, encode, get, handle
-from lnurl.exceptions import LnurlResponseException, InvalidLnurl, InvalidUrl
+from lnurl.exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
 from lnurl.models import (
     LnurlAuthResponse,
-    LnurlPayResponse,
     LnurlPayActionResponse,
-    LnurlWithdrawResponse,
+    LnurlPayResponse,
     LnurlPaySuccessAction,
+    LnurlWithdrawResponse,
 )
 from lnurl.types import Lnurl, Url
 
@@ -72,7 +72,11 @@ class TestHandle:
 
     @pytest.mark.parametrize(
         "bech32",
-        [("LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AMKJARGV3EXZAE0V9CXJTMKXYHKCMN4WFKZ7MJT2C6X2NRK0PDRYJNGWVU9WDN2G4V8XK2VSZA2RC")],
+        [
+            (
+                "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AMKJARGV3EXZAE0V9CXJTMKXYHKCMN4WFKZ7MJT2C6X2NRK0PDRYJNGWVU9WDN2G4V8XK2VSZA2RC"
+            )
+        ],
     )
     def test_handle_withdraw(self, bech32):
         res = handle(bech32)

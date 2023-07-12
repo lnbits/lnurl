@@ -1,14 +1,21 @@
 import json
 import os
 import re
-
 from hashlib import sha256
-from pydantic import ConstrainedStr, Json, HttpUrl, PositiveInt, ValidationError, parse_obj_as
-from pydantic.networks import Parts
-from pydantic.errors import UrlHostTldError, UrlSchemeError
-from pydantic.validators import str_validator
-from urllib.parse import parse_qs
 from typing import Dict, List, Optional, Tuple, Union
+from urllib.parse import parse_qs
+
+from pydantic import (
+    ConstrainedStr,
+    HttpUrl,
+    Json,
+    PositiveInt,
+    ValidationError,
+    parse_obj_as,
+)
+from pydantic.errors import UrlHostTldError, UrlSchemeError
+from pydantic.networks import Parts
+from pydantic.validators import str_validator
 
 from .exceptions import InvalidLnurlPayMetadata
 from .helpers import _bech32_decode, _lnurl_clean, _lnurl_decode
@@ -30,7 +37,7 @@ def strict_rfc3986_validator(value: str) -> str:
 
 class ReprMixin:
     def __repr__(self) -> str:
-        attrs = [n for n in [n for n in self.__slots__ if not n.startswith("_")] if getattr(self, n) is not None] #type: ignore
+        attrs = [n for n in [n for n in self.__slots__ if not n.startswith("_")] if getattr(self, n) is not None]  # type: ignore
         extra = ", " + ", ".join(f"{n}={getattr(self, n).__repr__()}" for n in attrs) if attrs else ""
         return f"{self.__class__.__name__}({super().__repr__()}{extra})"
 
@@ -86,6 +93,7 @@ class Url(HttpUrl):
 
 class DebugUrl(Url):
     """Unsecure web URL, to make developers life easier."""
+
     allowed_schemes = {"http"}
 
     @classmethod
@@ -98,6 +106,7 @@ class DebugUrl(Url):
 
 class ClearnetUrl(Url):
     """Secure web URL."""
+
     allowed_schemes = {"https"}
 
 
@@ -175,7 +184,7 @@ class Lnurl(ReprMixin, str):
     @classmethod
     def __get_url__(cls, bech32: str) -> Union[OnionUrl, ClearnetUrl, DebugUrl]:
         url: str = _lnurl_decode(bech32)
-        return parse_obj_as(Union[OnionUrl, ClearnetUrl, DebugUrl], url) #type: ignore
+        return parse_obj_as(Union[OnionUrl, ClearnetUrl, DebugUrl], url)  # type: ignore
 
     @classmethod
     def __get_validators__(cls):

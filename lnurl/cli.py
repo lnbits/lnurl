@@ -1,12 +1,13 @@
 """ lnurl CLI """
-import sys
 import json
+import sys
+
 import click
 import requests
 
-from .types import Lnurl
-from .core import handle as handle_lnurl
 from .core import encode as encode_lnurl
+from .core import handle as handle_lnurl
+from .types import Lnurl
 
 # disable tracebacks on exceptions
 sys.tracebacklimit = 0

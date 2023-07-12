@@ -1,5 +1,6 @@
+from typing import List, Optional, Set, Tuple
+
 from bech32 import bech32_decode, bech32_encode, convertbits
-from typing import List, Set, Tuple, Optional
 
 from .exceptions import InvalidLnurl, InvalidUrl
 
@@ -32,7 +33,6 @@ def _lnurl_decode(lnurl: str) -> str:
         return url
     except UnicodeDecodeError:  # pragma: nocover
         raise InvalidLnurl
-
 
 
 def _url_encode(url: str) -> str:

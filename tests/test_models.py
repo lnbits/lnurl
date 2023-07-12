@@ -194,7 +194,7 @@ class TestLnurlPayResponseComment:
                 "minSendable": 100,
                 "maxSendable": 1000,
                 "metadata": metadata,
-                "comment_allowed": "Yes",    # str should be int
+                "comment_allowed": "Yes",  # str should be int
             },
         ],
     )
