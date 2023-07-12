@@ -5,7 +5,6 @@ import pytest
 from lnurl.core import decode, encode, get, handle
 from lnurl.exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
 from lnurl.models import (
-    LnurlAuthResponse,
     LnurlPayActionResponse,
     LnurlPayResponse,
     LnurlPaySuccessAction,
@@ -74,7 +73,8 @@ class TestHandle:
         "bech32",
         [
             (
-                "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AMKJARGV3EXZAE0V9CXJTMKXYHKCMN4WFKZ7MJT2C6X2NRK0PDRYJNGWVU9WDN2G4V8XK2VSZA2RC"
+                "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AMKJARGV3EXZAE0V9CXJTMKXYH"
+                "KCMN4WFKZ7MJT2C6X2NRK0PDRYJNGWVU9WDN2G4V8XK2VSZA2RC"
             )
         ],
     )

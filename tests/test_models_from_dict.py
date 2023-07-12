@@ -8,11 +8,16 @@ from lnurl.exceptions import LnurlResponseException
 
 class TestLnurlResponse:
     pay_res = json.loads(
-        r'{"tag":"payRequest","metadata":"[[\"text/plain\",\"lorem ipsum blah blah\"]]","k1":"c67a8aa61f7c6cd457058916356ca80f5bfd00fa78ac2c1b3157391c2e9787de","callback":"https://lnurl.bigsun.xyz/lnurl-pay/callback/","maxSendable":300980,"minSendable":100980,"defaultDescription":"sample pay"}'
+        r'{"tag":"payRequest","metadata":"[[\"text/plain\",\"lorem ipsum blah blah\"]]",'
+        '"k1":"c67a8aa61f7c6cd457058916356ca80f5bfd00fa78ac2c1b3157391c2e9787de",'
+        '"callback":"https://lnurl.bigsun.xyz/lnurl-pay/callback/","maxSendable":300980,'
+        '"minSendable":100980,"defaultDescription":"sample pay"}'
     )  # noqa
     pay_res_invalid = json.loads(r'{"tag":"payRequest","metadata":"[\"text\"\"plain\"]"}')
     withdraw_res = json.loads(
-        '{"tag":"withdrawRequest","k1":"c67a8aa61f7c6cd457058916356ca80f5bfd00fa78ac2c1b3157391c2e9787de","callback":"https://lnurl.bigsun.xyz/lnurl-withdraw/callback/?param1=1&param2=2","maxWithdrawable":478980,"minWithdrawable":478980,"defaultDescription":"sample withdraw"}'
+        '{"tag":"withdrawRequest","k1":"c67a8aa61f7c6cd457058916356ca80f5bfd00fa78ac2c1b3157391c2e9787de",'
+        '"callback":"https://lnurl.bigsun.xyz/lnurl-withdraw/callback/?param1=1&param2=2",'
+        '"maxWithdrawable":478980,"minWithdrawable":478980,"defaultDescription":"sample withdraw"}'
     )  # noqa
 
     def test_error(self):
