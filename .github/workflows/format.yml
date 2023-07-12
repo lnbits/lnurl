@@ -23,7 +23,7 @@ jobs:
           poetry install
       - name: Check black
         run: |
-          make check-black
+          make checkblack
       - name: Check isort
         run: |
-          make check-isort
+          make checkisort
