@@ -16,7 +16,7 @@ lnurl = "lnurl.cli:main"
 [tool.poetry.dependencies]
 python = "^3.9"
 requests = "^2.31.0"
-pydantic = "^1"
+pydantic = "^2.1.1"
 bech32 = "^1.2.0"
 
 [tool.poetry.group.dev.dependencies]
