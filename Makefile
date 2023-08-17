@@ -1,25 +1,22 @@
-all: black isort mypy flake8 test
-format: black isort
-lint: flake8 mypy
-check: checkblack checkisort
+all: black ruff mypy test
+format: black ruff isort
+lint: ruff mypy
+check: checkblack checkruff
 
 black:
 	poetry run black .
 
-isort:
-	poetry run isort .
+ruff:
+	poetry run ruff check . --fix
+
+checkruff:
+	poetry run ruff check .
 
 checkblack:
 	poetry run black --check .
 
-checkisort:
-	poetry run isort --check-only .
-
 mypy:
 	poetry run mypy .
-
-flake8:
-	poetry run flake8
 
 test:
 	poetry run pytest tests --cov=lnurl --cov-report=xml

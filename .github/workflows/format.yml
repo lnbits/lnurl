@@ -1,4 +1,4 @@
-name: format
+name: black
 on: [push, pull_request]
 jobs:
   build:
@@ -24,6 +24,3 @@ jobs:
       - name: Check black
         run: |
           make checkblack
-      - name: Check isort
-        run: |
-          make checkisort
