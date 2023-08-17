@@ -37,7 +37,11 @@ def strict_rfc3986_validator(value: str) -> str:
 
 class ReprMixin:
     def __repr__(self) -> str:
-        attrs = [n for n in [n for n in self.__slots__ if not n.startswith("_")] if getattr(self, n) is not None]  # type: ignore
+        attrs = [  # type: ignore
+            outer_slot  # type: ignore
+            for outer_slot in [slot for slot in self.__slots__ if not slot.startswith("_")]  # type: ignore
+            if getattr(self, outer_slot)  # type: ignore
+        ]  # type: ignore
         extra = ", " + ", ".join(f"{n}={getattr(self, n).__repr__()}" for n in attrs) if attrs else ""
         return f"{self.__class__.__name__}({super().__repr__()}{extra})"
 
@@ -47,7 +51,7 @@ class Bech32(ReprMixin, str):
 
     __slots__ = ("hrp", "data")
 
-    def __new__(cls, bech32: str, **kwargs) -> "Bech32":
+    def __new__(cls, bech32: str, **_) -> "Bech32":
         return str.__new__(cls, bech32)
 
     def __init__(self, bech32: str, *, hrp: Optional[str] = None, data: Optional[List[int]] = None):
