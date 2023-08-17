@@ -89,10 +89,8 @@ class TestLnurlPayResponse:
         assert (
             res.json()
             == res.json(by_alias=True)
-            == (
-                f'{{"tag": "payRequest", "callback": "https://service.io/pay", '
-                f'"minSendable": 1000, "maxSendable": 2000, "metadata": {json.dumps(metadata)}}}'
-            )
+            == '{"tag": "payRequest", "callback": "https://service.io/pay", '
+            f'"minSendable": 1000, "maxSendable": 2000, "metadata": {json.dumps(metadata)}}}'
         )
         assert (
             res.dict()
@@ -154,11 +152,9 @@ class TestLnurlPayResponseComment:
         assert (
             res.json()
             == res.json(by_alias=True)
-            == (
-                f'{{"tag": "payRequest", "callback": "https://service.io/pay", '
-                f'"minSendable": 1000, "maxSendable": 2000, "metadata": {json.dumps(metadata)}, '
-                f'"commentAllowed": 555}}'
-            )
+            == '{"tag": "payRequest", "callback": "https://service.io/pay", '
+            f'"minSendable": 1000, "maxSendable": 2000, "metadata": {json.dumps(metadata)}, '
+            '"commentAllowed": 555}'
         )
         assert (
             res.dict()
@@ -227,10 +223,8 @@ class TestLnurlWithdrawResponse:
         assert (
             res.json()
             == res.json(by_alias=True)
-            == (
-                '{"tag": "withdrawRequest", "callback": "https://service.io/withdraw", "k1": "c3RyaW5n", '
-                '"minWithdrawable": 100, "maxWithdrawable": 200, "defaultDescription": ""}'
-            )
+            == '{"tag": "withdrawRequest", "callback": "https://service.io/withdraw", "k1": "c3RyaW5n", '
+            '"minWithdrawable": 100, "maxWithdrawable": 200, "defaultDescription": ""}'
         )
         assert (
             res.dict()
