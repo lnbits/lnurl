@@ -27,6 +27,7 @@ types-requests = "^2.31.0.2"
 mypy = "^1.5.1"
 ruff = "^0.0.284"
 pre-commit = "^3.3.3"
+pyright = "^1.1.323"
 
 [build-system]
 requires = ["poetry-core"]

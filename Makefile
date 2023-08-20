@@ -1,6 +1,6 @@
-all: black ruff mypy test
-format: black ruff isort
-lint: ruff mypy
+all: black ruff pyright mypy test
+format: black ruff
+lint: pyright mypy checkruff
 check: checkblack checkruff
 
 black:
@@ -14,6 +14,9 @@ checkruff:
 
 checkblack:
 	poetry run black --check .
+
+pyright:
+	poetry run pyright .
 
 mypy:
 	poetry run mypy .
