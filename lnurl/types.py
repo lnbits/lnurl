@@ -2,37 +2,13 @@ import json
 import os
 import re
 from hashlib import sha256
-from typing import List, Optional, Tuple, Union
-from urllib.parse import parse_qs
+from typing import Annotated, List, Optional, Tuple, Union
 
-from pydantic import (
-    ConstrainedStr,
-    HttpUrl,
-    Json,
-    PositiveInt,
-    ValidationError,
-    parse_obj_as,
-)
-from pydantic.errors import UrlHostTldError, UrlSchemeError
-from pydantic.networks import Parts
-from pydantic.validators import str_validator
+from pydantic import Field, HttpUrl, Json, PositiveInt, TypeAdapter, UrlConstraints, ValidationError
+from pydantic.functional_validators import AfterValidator
 
 from .exceptions import InvalidLnurlPayMetadata
 from .helpers import _bech32_decode, _lnurl_clean, _lnurl_decode
-
-
-def ctrl_characters_validator(value: str) -> str:
-    """Checks for control characters (unicode blocks C0 and C1, plus DEL)."""
-    if re.compile(r"[\u0000-\u001f\u007f-\u009f]").search(value):
-        raise ValueError
-    return value
-
-
-def strict_rfc3986_validator(value: str) -> str:
-    """Checks for RFC3986 compliance."""
-    if re.compile(r"[^]a-zA-Z0-9._~:/?#[@!$&'()*+,;=-]").search(value):
-        raise ValueError
-    return value
 
 
 class ReprMixin:
@@ -62,10 +38,10 @@ class Bech32(ReprMixin, str):
     def __get_data__(cls, bech32: str) -> Tuple[str, List[int]]:
         return _bech32_decode(bech32)
 
-    @classmethod
-    def __get_validators__(cls):
-        yield str_validator
-        yield cls.validate
+    # @classmethod
+    # def __get_validators__(cls):
+    #     # yield str_validator
+    #     yield cls.validate
 
     @classmethod
     def validate(cls, value: str) -> "Bech32":
@@ -73,58 +49,69 @@ class Bech32(ReprMixin, str):
         return cls(value, hrp=hrp, data=data)
 
 
-class Url(HttpUrl):
-    """URL with extra validations over pydantic's `HttpUrl`."""
-
-    max_length = 2047  # https://stackoverflow.com/questions/417142/
-
-    @classmethod
-    def __get_validators__(cls):
-        yield ctrl_characters_validator
-        if os.environ.get("LNURL_STRICT_RFC3986", "0") == "1":
-            yield strict_rfc3986_validator
-        yield cls.validate
-
-    @property
-    def base(self) -> str:
-        hostport = f"{self.host}:{self.port}" if self.port else self.host
-        return f"{self.scheme}://{hostport}{self.path}"
-
-    @property
-    def query_params(self) -> dict:
-        return {k: v[0] for k, v in parse_qs(self.query).items()}
+def ctrl_characters_validator(value: str) -> str:
+    """Checks for control characters (unicode blocks C0 and C1, plus DEL)."""
+    if re.compile(r"[\u0000-\u001f\u007f-\u009f]").search(value):
+        raise ValidationError
+    return value
 
 
-class DebugUrl(Url):
-    """Unsecure web URL, to make developers life easier."""
-
-    allowed_schemes = {"http"}
-
-    @classmethod
-    def validate_host(cls, parts: Parts) -> Tuple[str, Optional[str], str, bool]:
-        host, tld, host_type, rebuild = super().validate_host(parts)
-        if host not in ["127.0.0.1", "0.0.0.0"]:
-            raise UrlSchemeError()
-        return host, tld, host_type, rebuild
+def strict_rfc3986_validator(value: str) -> str:
+    """Checks for RFC3986 compliance."""
+    if os.environ.get("LNURL_STRICT_RFC3986", "0") == "1":
+        if re.compile(r"[^]a-zA-Z0-9._~:/?#[@!$&'()*+,;=-]").search(value):
+            raise ValidationError
+    return value
 
 
-class ClearnetUrl(Url):
-    """Secure web URL."""
+# Secure web URL
+ClearnetUrl = Annotated[
+    HttpUrl,
+    UrlConstraints(
+        max_length=2047,  # https://stackoverflow.com/questions/417142/
+        allowed_schemes=["https"],
+    ),
+    AfterValidator(ctrl_characters_validator),
+    AfterValidator(strict_rfc3986_validator),
+]
 
-    allowed_schemes = {"https"}
+
+def onion_validator(value: str) -> None:
+    """checks if it is a valid onion address"""
+    if not value.endswith(".onion"):
+        raise ValidationError
 
 
-class OnionUrl(Url):
-    """Tor anonymous onion service."""
+# Tor anonymous onion service
+OnionUrl = Annotated[
+    HttpUrl,
+    UrlConstraints(
+        max_length=2047,  # https://stackoverflow.com/questions/417142/
+        allowed_schemes=["http"],
+    ),
+    AfterValidator(ctrl_characters_validator),
+    AfterValidator(strict_rfc3986_validator),
+    AfterValidator(onion_validator),
+]
 
-    allowed_schemes = {"https", "http"}
 
-    @classmethod
-    def validate_host(cls, parts: Parts) -> Tuple[str, Optional[str], str, bool]:
-        host, tld, host_type, rebuild = super().validate_host(parts)
-        if tld != "onion":
-            raise UrlHostTldError()
-        return host, tld, host_type, rebuild
+def localhost_validator(value: str) -> None:
+    # host, tld, host_type, rebuild = super().validate_host(parts)
+    if not value.find("127.0.0.1") or not value.find("0.0.0.0"):
+        raise ValidationError
+
+
+# Unsecure web URL, to make developers life easier
+DebugUrl = Annotated[
+    HttpUrl,
+    UrlConstraints(
+        max_length=2047,  # https://stackoverflow.com/questions/417142/
+        allowed_schemes=["http"],
+    ),
+    AfterValidator(ctrl_characters_validator),
+    AfterValidator(strict_rfc3986_validator),
+    AfterValidator(localhost_validator),
+]
 
 
 class LightningInvoice(Bech32):
@@ -146,31 +133,31 @@ class LightningInvoice(Bech32):
 class LightningNodeUri(ReprMixin, str):
     """Remote node address of form `node_key@ip_address:port_number`."""
 
-    __slots__ = ("key", "ip", "port")
+    # __slots__ = ("key", "ip", "port")
 
-    def __new__(cls, uri: str, **kwargs) -> "LightningNodeUri":
-        return str.__new__(cls, uri)
+    # def __new__(cls, uri: str, **_) -> "LightningNodeUri":
+    #     return str.__new__(cls, uri)
 
-    def __init__(self, uri: str, *, key: Optional[str] = None, ip: Optional[str] = None, port: Optional[str] = None):
-        str.__init__(uri)
-        self.key = key
-        self.ip = ip
-        self.port = port
+    # def __init__(self, uri: str, *, key: Optional[str] = None, ip: Optional[str] = None, port: Optional[str] = None):
+    #     str.__init__(uri)
+    #     self.key = key
+    #     self.ip = ip
+    #     self.port = port
 
-    @classmethod
-    def __get_validators__(cls):
-        yield str_validator
-        yield cls.validate
+    # @classmethod
+    # def __get_validators__(cls):
+    #     yield str_validator
+    #     yield cls.validate
 
-    @classmethod
-    def validate(cls, value: str) -> "LightningNodeUri":
-        try:
-            key, netloc = value.split("@")
-            ip, port = netloc.split(":")
-        except Exception:
-            raise ValueError
+    # @classmethod
+    # def validate(cls, value: str) -> "LightningNodeUri":
+    #     try:
+    #         key, netloc = value.split("@")
+    #         ip, port = netloc.split(":")
+    #     except Exception:
+    #         raise ValueError
 
-        return cls(value, key=key, ip=ip, port=port)
+    #     return cls(value, key=key, ip=ip, port=port)
 
 
 class Lnurl(ReprMixin, str):
@@ -188,12 +175,13 @@ class Lnurl(ReprMixin, str):
     @classmethod
     def __get_url__(cls, bech32: str) -> Union[OnionUrl, ClearnetUrl, DebugUrl]:
         url: str = _lnurl_decode(bech32)
-        return parse_obj_as(Union[OnionUrl, ClearnetUrl, DebugUrl], url)  # type: ignore
+        adapter = TypeAdapter(Union[OnionUrl, ClearnetUrl, DebugUrl])
+        return adapter.validate_python(url)
 
-    @classmethod
-    def __get_validators__(cls):
-        yield str_validator
-        yield cls.validate
+    # @classmethod
+    # def __get_validators__(cls):
+    #     yield str_validator
+    #     yield cls.validate
 
     @classmethod
     def validate(cls, value: str) -> "Lnurl":
@@ -201,7 +189,8 @@ class Lnurl(ReprMixin, str):
 
     @property
     def is_login(self) -> bool:
-        return "tag" in self.url.query_params and self.url.query_params["tag"] == "login"
+        params = {k: v for k, v in self.url.query_params()}
+        return params.get("tag") == "login"
 
 
 class LnurlPayMetadata(ReprMixin, str):
@@ -209,7 +198,7 @@ class LnurlPayMetadata(ReprMixin, str):
 
     __slots__ = ("_list",)
 
-    def __new__(cls, json_str: str, **kwargs) -> "LnurlPayMetadata":
+    def __new__(cls, json_str: str, **_) -> "LnurlPayMetadata":
         return str.__new__(cls, json_str)
 
     def __init__(self, json_str: str, *, json_obj: Optional[List] = None):
@@ -219,7 +208,8 @@ class LnurlPayMetadata(ReprMixin, str):
     @classmethod
     def __validate_metadata__(cls, json_str: str) -> List[Tuple[str, str]]:
         try:
-            parse_obj_as(Json[List[Tuple[str, str]]], json_str)
+            adapter = TypeAdapter(Json[List[Tuple[str, str]]])
+            adapter.validate_python(json_str)
             data = [(str(item[0]), str(item[1])) for item in json.loads(json_str)]
         except ValidationError:
             raise InvalidLnurlPayMetadata
@@ -233,10 +223,10 @@ class LnurlPayMetadata(ReprMixin, str):
 
         return clean_data
 
-    @classmethod
-    def __get_validators__(cls):
-        yield str_validator
-        yield cls.validate
+    # @classmethod
+    # def __get_validators__(cls):
+    #     yield str_validator
+    #     yield cls.validate
 
     @classmethod
     def validate(cls, value: str) -> "LnurlPayMetadata":
@@ -265,13 +255,8 @@ class LnurlPayMetadata(ReprMixin, str):
         return self._list
 
 
-class InitializationVector(ConstrainedStr):
-    min_length = 24
-    max_length = 24
-
-
-class Max144Str(ConstrainedStr):
-    max_length = 144
+InitializationVector = Annotated[str, Field(max_length=24, min_length=24)]
+Max144Str = Annotated[str, Field(max_length=144)]
 
 
 class MilliSatoshi(PositiveInt):

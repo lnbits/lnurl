@@ -48,4 +48,4 @@ def handle(
     if lnurl.is_login:
         return LnurlAuthResponse(callback=lnurl.url, k1=lnurl.url.query_params["k1"])
 
-    return get(lnurl.url, response_class=response_class)
+    return get(str(lnurl.url), response_class=response_class, verify=verify)

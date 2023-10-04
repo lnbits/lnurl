@@ -1,7 +1,7 @@
 import math
 from typing import List, Literal, Optional, Union
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .exceptions import LnurlResponseException
 from .types import (
@@ -45,16 +45,15 @@ class UrlAction(LnurlPaySuccessAction):
 
 
 class LnurlResponseModel(BaseModel):
-    class Config:
-        allow_population_by_field_name = True
+    model_config = ConfigDict(populate_by_name=True)
 
     def dict(self, **kwargs):
         kwargs.setdefault("by_alias", True)
-        return super().dict(**kwargs)
+        return super().model_dump(**kwargs)
 
     def json(self, **kwargs):
         kwargs.setdefault("by_alias", True)
-        return super().json(**kwargs)
+        return super().model_dump_json(**kwargs)
 
     @property
     def ok(self) -> bool:
@@ -95,7 +94,7 @@ class LnurlHostedChannelResponse(LnurlResponseModel):
     tag: Literal["hostedChannelRequest"] = "hostedChannelRequest"
     uri: LightningNodeUri
     k1: str
-    alias: Optional[str]
+    alias: Optional[str] = None
 
 
 class LnurlPayResponse(LnurlResponseModel):
@@ -105,8 +104,8 @@ class LnurlPayResponse(LnurlResponseModel):
     max_sendable: MilliSatoshi = Field(..., alias="maxSendable")
     metadata: LnurlPayMetadata
 
-    @validator("max_sendable")
-    def max_less_than_min(cls, value, values, **kwargs):  # noqa
+    @field_validator("max_sendable")
+    def max_less_than_min(cls, value, values, **_):
         if "min_sendable" in values and value < values["min_sendable"]:
             raise ValueError("`max_sendable` cannot be less than `min_sendable`.")
         return value
@@ -147,8 +146,8 @@ class LnurlWithdrawResponse(LnurlResponseModel):
     max_withdrawable: MilliSatoshi = Field(..., alias="maxWithdrawable")
     default_description: str = Field("", alias="defaultDescription")
 
-    @validator("max_withdrawable")
-    def max_less_than_min(cls, value, values, **kwargs):  # noqa
+    @field_validator("max_withdrawable")
+    def max_less_than_min(cls, value, values, **_):
         if "min_withdrawable" in values and value < values["min_withdrawable"]:
             raise ValueError("`max_withdrawable` cannot be less than `min_withdrawable`.")
         return value
