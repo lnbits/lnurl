@@ -1,4 +1,5 @@
 """ lnurl CLI """
+
 import json
 import sys
 
