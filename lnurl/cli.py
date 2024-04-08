@@ -1,4 +1,4 @@
-""" lnurl CLI """
+"""lnurl CLI"""
 
 import json
 import sys

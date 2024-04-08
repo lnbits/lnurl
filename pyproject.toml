@@ -20,7 +20,7 @@ pydantic = "^1"
 bech32 = "^1.2.0"
 
 [tool.poetry.group.dev.dependencies]
-black = "^23.7.0"
+black = "^24.3.0"
 pytest = "^7.4.0"
 pytest-cov = "^4.1.0"
 types-requests = "^2.31.0.2"
