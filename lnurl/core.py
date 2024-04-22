@@ -6,7 +6,7 @@ from pydantic import ValidationError
 from .exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
 from .helpers import _url_encode
 from .models import LnurlAuthResponse, LnurlResponse, LnurlResponseModel
-from .types import ClearnetUrl, DebugUrl, Lnurl, OnionUrl
+from .types import ClearnetUrl, DebugUrl, Lnaddress, Lnurl, OnionUrl
 
 
 def decode(bech32_lnurl: str) -> Union[OnionUrl, ClearnetUrl, DebugUrl]:
@@ -41,6 +41,9 @@ def handle(
     bech32_lnurl: str, *, response_class: Optional[LnurlResponseModel] = None, verify: Union[str, bool] = True
 ) -> LnurlResponseModel:
     try:
+        if "@" in bech32_lnurl:
+            lnaddress = Lnaddress(bech32_lnurl)
+            return get(lnaddress.url, response_class=response_class, verify=verify)
         lnurl = Lnurl(bech32_lnurl)
     except (ValidationError, ValueError):
         raise InvalidLnurl
@@ -48,4 +51,4 @@ def handle(
     if lnurl.is_login:
         return LnurlAuthResponse(callback=lnurl.url, k1=lnurl.url.query_params["k1"])
 
-    return get(lnurl.url, response_class=response_class)
+    return get(lnurl.url, response_class=response_class, verify=verify)

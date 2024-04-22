@@ -204,6 +204,28 @@ class Lnurl(ReprMixin, str):
         return "tag" in self.url.query_params and self.url.query_params["tag"] == "login"
 
 
+class Lnaddress(ReprMixin, str):
+    """Lightning address of form `user@host`"""
+
+    def __new__(cls, address: str, **_) -> "Lnaddress":
+        return str.__new__(cls, address)
+
+    def __init__(self, address: str):
+        str.__init__(address)
+        self.address = address
+        self.url = self.__get_url__(address)
+
+    @classmethod
+    def __get_url__(cls, address: str) -> Union[OnionUrl, ClearnetUrl, DebugUrl]:
+        name_domain = address.split("@")
+        if len(name_domain) != 2 or len(name_domain[1].split(".")) < 2:
+            raise ValueError("Invalid Lightning address.")
+
+        name, domain = name_domain
+        url = ("http://" if domain.endswith(".onion") else "https://") + domain + "/.well-known/lnurlp/" + name
+        return parse_obj_as(Union[OnionUrl, ClearnetUrl, DebugUrl], url)  # type: ignore
+
+
 class LnurlPayMetadata(ReprMixin, str):
     valid_metadata_mime_types = {"text/plain", "image/png;base64", "image/jpeg;base64"}
 

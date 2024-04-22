@@ -9,6 +9,7 @@ from lnurl.types import (
     DebugUrl,
     LightningInvoice,
     LightningNodeUri,
+    Lnaddress,
     Lnurl,
     LnurlPayMetadata,
     OnionUrl,
@@ -185,3 +186,25 @@ class TestLnurlPayMetadata:
     def test_invalid_data(self, metadata):
         with pytest.raises(ValidationError):
             parse_obj_as(LnurlPayMetadata, metadata)
+
+
+    @pytest.mark.parametrize(
+        "lnaddress",
+        [
+            "donate@legend.lnbits.com",
+        ],
+    )
+    def test_valid_lnaddress(self, lnaddress):
+        lnaddress = Lnaddress(lnaddress)
+        assert isinstance(lnaddress.url, (OnionUrl, DebugUrl, ClearnetUrl))
+
+
+    @pytest.mark.parametrize(
+        "lnaddress",
+        [
+            "legend.lnbits.com",
+        ],
+    )
+    def test_invalid_lnaddress(self, lnaddress):
+        with pytest.raises(ValueError):
+            lnaddress = Lnaddress(lnaddress)
