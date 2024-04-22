@@ -1,5 +1,6 @@
 from .core import decode, encode, get, handle
 from .models import (
+    LnurlAuthResponse,
     LnurlChannelResponse,
     LnurlErrorResponse,
     LnurlHostedChannelResponse,
@@ -18,6 +19,7 @@ __all__ = [
     "get",
     "handle",
     "Lnurl",
+    "LnurlAuthResponse",
     "LnurlChannelResponse",
     "LnurlErrorResponse",
     "LnurlHostedChannelResponse",
