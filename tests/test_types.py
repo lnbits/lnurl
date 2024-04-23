@@ -9,7 +9,7 @@ from lnurl.types import (
     DebugUrl,
     LightningInvoice,
     LightningNodeUri,
-    Lnaddress,
+    LnAddress,
     Lnurl,
     LnurlPayMetadata,
     OnionUrl,
@@ -194,7 +194,7 @@ class TestLnurlPayMetadata:
         ],
     )
     def test_valid_lnaddress(self, lnaddress):
-        lnaddress = Lnaddress(lnaddress)
+        lnaddress = LnAddress(lnaddress)
         assert isinstance(lnaddress.url, (OnionUrl, DebugUrl, ClearnetUrl))
 
     @pytest.mark.parametrize(
@@ -205,4 +205,4 @@ class TestLnurlPayMetadata:
     )
     def test_invalid_lnaddress(self, lnaddress):
         with pytest.raises(ValueError):
-            lnaddress = Lnaddress(lnaddress)
+            lnaddress = LnAddress(lnaddress)

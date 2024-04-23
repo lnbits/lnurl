@@ -204,10 +204,10 @@ class Lnurl(ReprMixin, str):
         return "tag" in self.url.query_params and self.url.query_params["tag"] == "login"
 
 
-class Lnaddress(ReprMixin, str):
+class LnAddress(ReprMixin, str):
     """Lightning address of form `user@host`"""
 
-    def __new__(cls, address: str, **_) -> "Lnaddress":
+    def __new__(cls, address: str, **_) -> "LnAddress":
         return str.__new__(cls, address)
 
     def __init__(self, address: str):
