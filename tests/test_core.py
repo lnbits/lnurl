@@ -129,6 +129,7 @@ class TestPayFlow:
 class TestLoginFlow:
     """Full LNURL-login flow interacting with https://lnmarkets.com/"""
 
+    @pytest.mark.xfail(reason="need online lnurl auth server to test this flow")
     @pytest.mark.parametrize(
         "url",
         [
