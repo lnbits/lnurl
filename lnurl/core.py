@@ -71,7 +71,8 @@ def execute(bech32_or_address: str, value: str) -> LnurlResponseModel:
 
 
 def execute_pay_request(res: LnurlPayResponse, msat: str) -> LnurlResponseModel:
-    if res.max_sendable < MilliSatoshi(msat) < res.min_sendable:
+    print(res)
+    if res.min_sendable > MilliSatoshi(msat) > res.max_sendable:
         raise LnurlResponseException(f"Amount {msat} not in range {res.min_sendable} - {res.max_sendable}")
     try:
         req = requests.get(

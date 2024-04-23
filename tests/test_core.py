@@ -1,14 +1,14 @@
-from urllib.parse import urlencode
-
 import pytest
 
-from lnurl.core import decode, encode, get, handle
+from lnurl.core import decode, encode, execute_login, execute_pay_request, get, handle
 from lnurl.exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
 from lnurl.models import (
+    LnurlAuthResponse,
     LnurlPayActionResponse,
     LnurlPayResponse,
     LnurlPaySuccessAction,
     LnurlWithdrawResponse,
+    LnurlSuccessResponse
 )
 from lnurl.types import Lnurl, Url
 
@@ -103,24 +103,44 @@ class TestPayFlow:
     """Full LNURL-pay flow interacting with https://legend.lnbits.com/"""
 
     @pytest.mark.parametrize(
-        "bech32",
+        "bech32, amount",
         [
-            "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AKXUATJD3CZ7JN9F4EHQJQC25ZZY",
-            "donate@legend.lnbits.com",
+            (
+                "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AKXUATJD3CZ7JN9F4EHQJQC25ZZY",
+                "1000",
+            ),
+            (
+                "donate@legend.lnbits.com", "100000"
+            ),
         ],
     )
-    def test_pay_flow(self, bech32):
+    def test_pay_flow(self, bech32: str, amount: str):
         res = handle(bech32)
-        assert isinstance(res, LnurlPayResponse) is True
+        assert isinstance(res, LnurlPayResponse)
         assert res.tag == "payRequest"
         assert res.callback.host == "legend.lnbits.com"
         assert len(res.metadata.list()) >= 1
         assert res.metadata.text != ""
 
-        query = urlencode({**res.callback.query_params, **{"amount": res.max_sendable}})
-        url = "".join([res.callback.base, "?", query])
-
-        res2 = get(url, response_class=LnurlPayActionResponse)
-        res3 = get(url)
-        assert res2.__class__ == res3.__class__
+        res2 = execute_pay_request(res, amount)
+        assert isinstance(res2, LnurlPayActionResponse)
         assert res2.success_action is None or isinstance(res2.success_action, LnurlPaySuccessAction)
+
+
+class TestLoginFlow:
+    """Full LNURL-login flow interacting with https://stacker.news/"""
+
+    @pytest.mark.parametrize(
+        "bech32",
+        [
+            "lnurl1dp68gurn8ghj7um5v93kketj9ehx2amn9ashq6f0d3hxzat5dqlhgct884kx7emfdcnxkvfavyunsvrpx5uxxvfnx56nqvesx33ngdf4xu6kve35xs6kyepevyenqefcx5mrzcmzvd3kxv34xe3kxc35x56nzden8qun2wr9x9sngestdmx85"
+        ],
+    )
+    def test_login_flow(self, bech32: str):
+        res = handle(bech32)
+        assert isinstance(res, LnurlAuthResponse)
+        assert res.tag == "login"
+        assert res.callback.host == "stacker.news"
+
+        res2 = execute_login(res, "my-secret")
+        assert isinstance(res2, LnurlSuccessResponse)
