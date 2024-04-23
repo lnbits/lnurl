@@ -45,6 +45,7 @@ class UrlAction(LnurlPaySuccessAction):
 
 
 class LnurlResponseModel(BaseModel):
+
     class Config:
         allow_population_by_field_name = True
 
