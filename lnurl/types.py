@@ -12,6 +12,7 @@ from pydantic import (
     PositiveInt,
     ValidationError,
     parse_obj_as,
+    validator,
 )
 from pydantic.errors import UrlHostTldError, UrlSchemeError
 from pydantic.networks import Parts
@@ -202,6 +203,29 @@ class Lnurl(ReprMixin, str):
     @property
     def is_login(self) -> bool:
         return "tag" in self.url.query_params and self.url.query_params["tag"] == "login"
+
+
+class LnAddress(ReprMixin, str):
+    """Lightning address of form `user@host`"""
+
+    def __new__(cls, address: str, **_) -> "LnAddress":
+        return str.__new__(cls, address)
+
+    def __init__(self, address: str):
+        str.__init__(address)
+        self.address = address
+        self.url = self.__get_url__(address)
+
+    @validator("address")
+    def is_valid_email_address(cls, email: str) -> bool:
+        email_regex = r"[A-Za-z0-9\._%+-]+@[A-Za-z0-9\.-]+\.[A-Za-z]{2,63}"
+        return re.fullmatch(email_regex, email) is not None
+
+    @classmethod
+    def __get_url__(cls, address: str) -> Union[OnionUrl, ClearnetUrl, DebugUrl]:
+        name, domain = address.split("@")
+        url = ("http://" if domain.endswith(".onion") else "https://") + domain + "/.well-known/lnurlp/" + name
+        return parse_obj_as(Union[OnionUrl, ClearnetUrl, DebugUrl], url)  # type: ignore
 
 
 class LnurlPayMetadata(ReprMixin, str):

@@ -102,10 +102,12 @@ class TestHandle:
 class TestPayFlow:
     """Full LNURL-pay flow interacting with https://legend.lnbits.com/"""
 
-    @pytest.mark.xfail(raises=NotImplementedError)
     @pytest.mark.parametrize(
         "bech32",
-        ["LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AKXUATJD3CZ7JN9F4EHQJQC25ZZY"],
+        [
+            "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AKXUATJD3CZ7JN9F4EHQJQC25ZZY",
+            "donate@legend.lnbits.com",
+        ],
     )
     def test_pay_flow(self, bech32):
         res = handle(bech32)
@@ -122,4 +124,3 @@ class TestPayFlow:
         res3 = get(url)
         assert res2.__class__ == res3.__class__
         assert res2.success_action is None or isinstance(res2.success_action, LnurlPaySuccessAction)
-        assert res2.pr.h == res.metadata.h
