@@ -4,7 +4,7 @@ import requests
 from pydantic import ValidationError
 
 from .exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
-from .helpers import encode_strict_der, lnurlauth_key, url_encode
+from .helpers import lnurlauth_signature, url_encode
 from .models import LnurlAuthResponse, LnurlPayResponse, LnurlResponse, LnurlResponseModel
 from .types import ClearnetUrl, DebugUrl, LnAddress, Lnurl, MilliSatoshi, OnionUrl
 
@@ -86,18 +86,15 @@ def execute_pay_request(res: LnurlPayResponse, msat: str) -> LnurlResponseModel:
         raise LnurlResponseException(str(exc))
 
 
-def execute_login(res: LnurlAuthResponse, value: str) -> LnurlResponseModel:
+def execute_login(res: LnurlAuthResponse, secret: str) -> LnurlResponseModel:
     try:
-        k1 = bytes.fromhex(res.k1)
         assert res.callback.host, "LNURLauth host does not exist"
-        auth_key = lnurlauth_key(res.callback.host, value)
-        sig = auth_key.sign_digest_deterministic(k1, sigencode=encode_strict_der)
-        assert auth_key.verifying_key, "LNURLauth verifying_key does not exist"
+        key, sig = lnurlauth_signature(res.callback.host, secret, res.k1)
         req = requests.get(
             res.callback,
             params={
-                "key": auth_key.verifying_key.to_string("compressed").hex(),
-                "sig": sig.hex(),
+                "key": key,
+                "sig": sig,
             },
         )
         req.raise_for_status()

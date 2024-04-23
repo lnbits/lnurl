@@ -1,4 +1,4 @@
-from .core import decode, encode, get, handle
+from .core import decode, encode, get, handle, execute, execute_login, execute_pay_request
 from .models import (
     LnurlAuthResponse,
     LnurlChannelResponse,
@@ -16,6 +16,9 @@ from .types import Lnurl
 __all__ = [
     "decode",
     "encode",
+    "execute",
+    "execute_login",
+    "execute_pay_request",
     "get",
     "handle",
     "Lnurl",

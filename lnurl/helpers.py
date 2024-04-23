@@ -9,11 +9,14 @@ from ecdsa import SECP256k1, SigningKey
 from .exceptions import InvalidLnurl, InvalidUrl
 
 
-def lnurlauth_key(domain: str, key: str) -> SigningKey:
-    hashing_key = hashlib.sha256(key.encode()).digest()
+def lnurlauth_signature(domain: str, secret: str, k1: str) -> tuple[str, str]:
+    hashing_key = hashlib.sha256(secret.encode()).digest()
     linking_key = hmac.digest(hashing_key, domain.encode(), "sha256")
-
-    return SigningKey.from_string(linking_key, curve=SECP256k1, hashfunc=hashlib.sha256)
+    auth_key = SigningKey.from_string(linking_key, curve=SECP256k1, hashfunc=hashlib.sha256)
+    sig = auth_key.sign_digest_deterministic(k1, sigencode=encode_strict_der)
+    assert auth_key.verifying_key, "LNURLauth verifying_key does not exist"
+    key = auth_key.verifying_key.to_string("compressed")
+    return key.hex(), sig.hex()
 
 
 def _bech32_decode(bech32: str, *, allowed_hrp: Optional[Set[str]] = None) -> Tuple[str, List[int]]:
