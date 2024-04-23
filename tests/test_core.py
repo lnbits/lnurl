@@ -137,7 +137,9 @@ class TestLoginFlow:
     )
     def test_login_flow(self, url: str):
 
-        bech32 = requests.get(url).json()["result"]["data"]["json"]["lnurl"]
+        init = requests.get(url)
+        init.raise_for_status()
+        bech32 = init.json()["result"]["data"]["json"]["lnurl"]
 
         res = handle(bech32)
         assert isinstance(res, LnurlAuthResponse)
