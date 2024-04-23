@@ -12,6 +12,7 @@ from pydantic import (
     PositiveInt,
     ValidationError,
     parse_obj_as,
+    validator,
 )
 from pydantic.errors import UrlHostTldError, UrlSchemeError
 from pydantic.networks import Parts
@@ -215,12 +216,14 @@ class LnAddress(ReprMixin, str):
         self.address = address
         self.url = self.__get_url__(address)
 
+    @validator("address")
+    def is_valid_email_address(cls, email: str) -> bool:
+        email_regex = r"[A-Za-z0-9\._%+-]+@[A-Za-z0-9\.-]+\.[A-Za-z]{2,63}"
+        return re.fullmatch(email_regex, email) is not None
+
     @classmethod
     def __get_url__(cls, address: str) -> Union[OnionUrl, ClearnetUrl, DebugUrl]:
         name_domain = address.split("@")
-        if len(name_domain) != 2 or len(name_domain[1].split(".")) < 2:
-            raise ValueError("Invalid Lightning address.")
-
         name, domain = name_domain
         url = ("http://" if domain.endswith(".onion") else "https://") + domain + "/.well-known/lnurlp/" + name
         return parse_obj_as(Union[OnionUrl, ClearnetUrl, DebugUrl], url)  # type: ignore
