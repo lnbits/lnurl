@@ -1,13 +1,14 @@
-from urllib.parse import urlencode
-
 import pytest
+import requests
 
-from lnurl.core import decode, encode, get, handle
+from lnurl.core import decode, encode, execute_login, execute_pay_request, get, handle
 from lnurl.exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
 from lnurl.models import (
+    LnurlAuthResponse,
     LnurlPayActionResponse,
     LnurlPayResponse,
     LnurlPaySuccessAction,
+    LnurlSuccessResponse,
     LnurlWithdrawResponse,
 )
 from lnurl.types import Lnurl, Url
@@ -103,24 +104,48 @@ class TestPayFlow:
     """Full LNURL-pay flow interacting with https://legend.lnbits.com/"""
 
     @pytest.mark.parametrize(
-        "bech32",
+        "bech32, amount",
         [
-            "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AKXUATJD3CZ7JN9F4EHQJQC25ZZY",
-            "donate@legend.lnbits.com",
+            (
+                "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AKXUATJD3CZ7JN9F4EHQJQC25ZZY",
+                "1000",
+            ),
+            ("donate@legend.lnbits.com", "100000"),
         ],
     )
-    def test_pay_flow(self, bech32):
+    def test_pay_flow(self, bech32: str, amount: str):
         res = handle(bech32)
-        assert isinstance(res, LnurlPayResponse) is True
+        assert isinstance(res, LnurlPayResponse)
         assert res.tag == "payRequest"
         assert res.callback.host == "legend.lnbits.com"
         assert len(res.metadata.list()) >= 1
         assert res.metadata.text != ""
 
-        query = urlencode({**res.callback.query_params, **{"amount": res.max_sendable}})
-        url = "".join([res.callback.base, "?", query])
-
-        res2 = get(url, response_class=LnurlPayActionResponse)
-        res3 = get(url)
-        assert res2.__class__ == res3.__class__
+        res2 = execute_pay_request(res, amount)
+        assert isinstance(res2, LnurlPayActionResponse)
         assert res2.success_action is None or isinstance(res2.success_action, LnurlPaySuccessAction)
+
+
+class TestLoginFlow:
+    """Full LNURL-login flow interacting with https://lnmarkets.com/"""
+
+    @pytest.mark.xfail(reason="need online lnurl auth server to test this flow")
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "https://api.lnmarkets.com/trpc/lnurl.auth.new",
+        ],
+    )
+    def test_login_flow(self, url: str):
+
+        init = requests.get(url)
+        init.raise_for_status()
+        bech32 = init.json()["result"]["data"]["json"]["lnurl"]
+
+        res = handle(bech32)
+        assert isinstance(res, LnurlAuthResponse)
+        assert res.tag == "login"
+        assert res.callback.host == "api.lnmarkets.com"
+
+        res2 = execute_login(res, "my-secret")
+        assert isinstance(res2, LnurlSuccessResponse)
