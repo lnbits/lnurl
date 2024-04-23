@@ -1,4 +1,5 @@
 import pytest
+import requests
 
 from lnurl.core import decode, encode, execute_login, execute_pay_request, get, handle
 from lnurl.exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
@@ -7,8 +8,8 @@ from lnurl.models import (
     LnurlPayActionResponse,
     LnurlPayResponse,
     LnurlPaySuccessAction,
+    LnurlSuccessResponse,
     LnurlWithdrawResponse,
-    LnurlSuccessResponse
 )
 from lnurl.types import Lnurl, Url
 
@@ -109,9 +110,7 @@ class TestPayFlow:
                 "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AKXUATJD3CZ7JN9F4EHQJQC25ZZY",
                 "1000",
             ),
-            (
-                "donate@legend.lnbits.com", "100000"
-            ),
+            ("donate@legend.lnbits.com", "100000"),
         ],
     )
     def test_pay_flow(self, bech32: str, amount: str):
@@ -128,19 +127,22 @@ class TestPayFlow:
 
 
 class TestLoginFlow:
-    """Full LNURL-login flow interacting with https://stacker.news/"""
+    """Full LNURL-login flow interacting with https://lnmarkets.com/"""
 
     @pytest.mark.parametrize(
-        "bech32",
+        "url",
         [
-            "lnurl1dp68gurn8ghj7um5v93kketj9ehx2amn9ashq6f0d3hxzat5dqlhgct884kx7emfdcnxkvfavyunsvrpx5uxxvfnx56nqvesx33ngdf4xu6kve35xs6kyepevyenqefcx5mrzcmzvd3kxv34xe3kxc35x56nzden8qun2wr9x9sngestdmx85"
+            "https://api.lnmarkets.com/trpc/lnurl.auth.new",
         ],
     )
-    def test_login_flow(self, bech32: str):
+    def test_login_flow(self, url: str):
+
+        bech32 = requests.get(url).json()["result"]["data"]["json"]["lnurl"]
+
         res = handle(bech32)
         assert isinstance(res, LnurlAuthResponse)
         assert res.tag == "login"
-        assert res.callback.host == "stacker.news"
+        assert res.callback.host == "api.lnmarkets.com"
 
         res2 = execute_login(res, "my-secret")
         assert isinstance(res2, LnurlSuccessResponse)
