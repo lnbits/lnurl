@@ -67,7 +67,7 @@ def execute(bech32_or_address: str, value: str) -> LnurlResponseModel:
     elif isinstance(res, LnurlAuthResponse) and res.tag == "login":
         return execute_login(res, value)
 
-    raise Exception(f"{res.tag} not implemented")  # type: ignore
+    raise LnurlResponseException(f"{res.tag} not implemented")  # type: ignore
 
 
 def execute_pay_request(res: LnurlPayResponse, msat: str) -> LnurlResponseModel:
