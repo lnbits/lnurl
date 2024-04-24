@@ -53,32 +53,40 @@ The different types of responses defined in the [LNURL spec][lnurl-spec] have a 
 with different properties (see `models.py`):
 
 ```python
-import requests
+import httpx
 
 from lnurl import Lnurl, LnurlResponse
 
 lnurl = Lnurl('LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94MKJARGV3EXZAELWDJHXUMFDAHR6WFHXQERSVPCA649RV')
+try:
+  async with httpx.AsyncClient() as client:
+    r = await client.get(lnurl.url)
+    res = LnurlResponse.from_dict(r.json())  # LnurlPayResponse
+    res.ok  # bool
+    res.max_sendable  # int
+    res.max_sats  # int
+    res.callback.base  # str
+    res.callback.query_params # dict
+    res.metadata  # str
+    res.metadata.list()  # list
+    res.metadata.text  # str
+    res.metadata.images  # list
 r = requests.get(lnurl.url)
-
-res = LnurlResponse.from_dict(r.json())  # LnurlPayResponse
-res.ok  # bool
-res.max_sendable  # int
-res.max_sats  # int
-res.callback.base  # str
-res.callback.query_params # dict
-res.metadata  # str
-res.metadata.list()  # list
-res.metadata.text  # str
-res.metadata.images  # list
 ```
 
-If you have already `requests` installed, you can also use the `.handle()` function directly.
+If you have already `httpx` installed, you can also use the `.handle()` function directly.
 It will return the appropriate response for a LNURL.
 
 ```python
 >>> import lnurl
 >>> lnurl.handle('lightning:LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94CXZ7FLWDJHXUMFDAHR6V33XCUNSVE38QV6UF')
 LnurlPayResponse(tag='payRequest', callback=WebUrl('https://lnurl.bigsun.xyz/lnurl-pay/callback/2169831', scheme='https', host='lnurl.bigsun.xyz', tld='xyz', host_type='domain', path='/lnurl-pay/callback/2169831'), min_sendable=10000, max_sendable=10000, metadata=LnurlPayMetadata('[["text/plain","NgHaEyaZNDnW iI DsFYdkI"],["image/png;base64","iVBOR...uQmCC"]]'))
+```
+
+You can execute and LNURL with either payRequest, withdrawRequest or login tag using the `execute` function.
+```python
+>>> import lnurl
+>>> lnurl.execute('lightning:LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94CXZ7FLWDJHXUMFDAHR6V33XCUNSVE38QV6UF', 100000)
 ```
 
 Building your own LNURL responses
@@ -142,5 +150,5 @@ Commands:
   decode           decode a LNURL
   encode           encode a URL
   handle           handle a LNURL
-  payment-request  make a payment_request
+  execute          execute a LNURL
 ```

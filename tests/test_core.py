@@ -1,5 +1,5 @@
 import pytest
-import requests
+import httpx
 
 from lnurl.core import decode, encode, execute_login, execute_pay_request, get, handle
 from lnurl.exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
@@ -90,14 +90,14 @@ class TestHandle:
         assert res.max_withdrawable >= res.min_withdrawable
 
     @pytest.mark.parametrize("bech32", ["BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4"])
-    def test_handle_nolnurl(self, bech32):
+    async def test_handle_nolnurl(self, bech32):
         with pytest.raises(InvalidLnurl):
-            handle(bech32)
+            await handle(bech32)
 
     @pytest.mark.parametrize("url", ["https://lnurl.thisshouldfail.io/"])
-    def test_get_requests_error(self, url):
+    async def test_get_requests_error(self, url):
         with pytest.raises(LnurlResponseException):
-            get(url)
+            await get(url)
 
 
 class TestPayFlow:
@@ -136,16 +136,16 @@ class TestLoginFlow:
             "https://api.lnmarkets.com/trpc/lnurl.auth.new",
         ],
     )
-    def test_login_flow(self, url: str):
+    async def test_login_flow(self, url: str):
+        async with httpx.AsyncClient() as client:
+            init = await client.get(url)
+            init.raise_for_status()
+            bech32 = init.json()["result"]["data"]["json"]["lnurl"]
 
-        init = requests.get(url)
-        init.raise_for_status()
-        bech32 = init.json()["result"]["data"]["json"]["lnurl"]
+            res = handle(bech32)
+            assert isinstance(res, LnurlAuthResponse)
+            assert res.tag == "login"
+            assert res.callback.host == "api.lnmarkets.com"
 
-        res = handle(bech32)
-        assert isinstance(res, LnurlAuthResponse)
-        assert res.tag == "login"
-        assert res.callback.host == "api.lnmarkets.com"
-
-        res2 = execute_login(res, "my-secret")
-        assert isinstance(res2, LnurlSuccessResponse)
+            res2 = execute_login(res, "my-secret")
+            assert isinstance(res2, LnurlSuccessResponse)
