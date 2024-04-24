@@ -1,12 +1,14 @@
 from typing import Any, Optional, Union
 
 import requests
+from bolt11 import Bolt11Exception, MilliSatoshi
+from bolt11 import decode as bolt11_decode
 from pydantic import ValidationError
 
 from .exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
 from .helpers import lnurlauth_signature, url_encode
-from .models import LnurlAuthResponse, LnurlPayResponse, LnurlResponse, LnurlResponseModel
-from .types import ClearnetUrl, DebugUrl, LnAddress, Lnurl, MilliSatoshi, OnionUrl
+from .models import LnurlAuthResponse, LnurlPayResponse, LnurlResponse, LnurlResponseModel, LnurlWithdrawResponse
+from .types import ClearnetUrl, DebugUrl, LnAddress, Lnurl, OnionUrl
 
 
 def decode(bech32_lnurl: str) -> Union[OnionUrl, ClearnetUrl, DebugUrl]:
@@ -66,13 +68,14 @@ def execute(bech32_or_address: str, value: str) -> LnurlResponseModel:
         return execute_pay_request(res, value)
     elif isinstance(res, LnurlAuthResponse) and res.tag == "login":
         return execute_login(res, value)
+    elif isinstance(res, LnurlWithdrawResponse) and res.tag == "withdrawRequest":
+        return execute_withdraw(res, value)
 
     raise LnurlResponseException(f"{res.tag} not implemented")  # type: ignore
 
 
 def execute_pay_request(res: LnurlPayResponse, msat: str) -> LnurlResponseModel:
-    print(res)
-    if res.min_sendable > MilliSatoshi(msat) > res.max_sendable:
+    if not res.min_sendable <= MilliSatoshi(msat) <= res.max_sendable:
         raise LnurlResponseException(f"Amount {msat} not in range {res.min_sendable} - {res.max_sendable}")
     try:
         req = requests.get(
@@ -102,3 +105,26 @@ def execute_login(res: LnurlAuthResponse, secret: str) -> LnurlResponseModel:
         return LnurlResponse.from_dict(req.json())
     except Exception as e:
         raise LnurlResponseException(str(e))
+
+
+def execute_withdraw(res: LnurlWithdrawResponse, pr: str) -> LnurlResponseModel:
+    try:
+        invoice = bolt11_decode(pr)
+    except Bolt11Exception as exc:
+        raise LnurlResponseException(str(exc))
+    # if invoice does not have amount use the min withdrawable amount
+    amount = invoice.amount_msat or res.min_withdrawable
+    if not res.min_withdrawable <= MilliSatoshi(amount) <= res.max_withdrawable:
+        raise LnurlResponseException(f"Amount {amount} not in range {res.min_withdrawable} - {res.max_withdrawable}")
+    try:
+        req = requests.get(
+            res.callback,
+            params={
+                "k1": res.k1,
+                "pr": pr,
+            },
+        )
+        req.raise_for_status()
+        return LnurlResponse.from_dict(req.json())
+    except Exception as exc:
+        raise LnurlResponseException(str(exc))
