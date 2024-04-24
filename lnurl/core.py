@@ -1,6 +1,6 @@
-import httpx
 from typing import Any, Optional, Union
 
+import httpx
 from bolt11 import Bolt11Exception, MilliSatoshi
 from bolt11 import decode as bolt11_decode
 from pydantic import ValidationError
