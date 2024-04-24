@@ -9,7 +9,6 @@ from pydantic import (
     ConstrainedStr,
     HttpUrl,
     Json,
-    PositiveInt,
     ValidationError,
     parse_obj_as,
     validator,
@@ -130,18 +129,6 @@ class OnionUrl(Url):
 
 class LightningInvoice(Bech32):
     """Bech32 Lightning invoice."""
-
-    @property
-    def amount(self) -> int:
-        raise NotImplementedError
-
-    @property
-    def prefix(self) -> str:
-        raise NotImplementedError
-
-    @property
-    def h(self):
-        raise NotImplementedError
 
 
 class LightningNodeUri(ReprMixin, str):
@@ -296,7 +283,3 @@ class InitializationVector(ConstrainedStr):
 
 class Max144Str(ConstrainedStr):
     max_length = 144
-
-
-class MilliSatoshi(PositiveInt):
-    """A thousandth of a satoshi."""
