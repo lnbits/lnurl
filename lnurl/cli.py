@@ -1,5 +1,6 @@
 """lnurl CLI"""
 
+import asyncio
 import sys
 
 import click
@@ -46,7 +47,7 @@ def handle(lnurl):
     """
     handle a LNURL
     """
-    decoded = handle_lnurl(lnurl)
+    decoded = asyncio.run(handle_lnurl(lnurl))
     click.echo(decoded.json())
 
 
@@ -59,7 +60,7 @@ def execute(lnurl, msat_or_login):
     """
     if not msat_or_login:
         raise ValueError("You must provide either an amount_msat or a login_id.")
-    res = execute_lnurl(lnurl, msat_or_login)
+    res = asyncio.run(execute_lnurl(lnurl, msat_or_login))
     click.echo(res.json())
 
 
