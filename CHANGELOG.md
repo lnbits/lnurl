@@ -3,6 +3,14 @@ Changelog
 
 All notable changes to this project will be documented in this file.
 
+## [v0.5.0] - 2024-04-25
+- f92b14a feat: add withdraw execute to core and cli (#31)
+- 10cb8a2 feat: add lnurlauth from lnbits (#28)
+- 054bae3 chore: only run ci once on PR (#30)
+- 65951bb feat: add lnaddress (#29)
+- 9fb7e5e chore(deps): bump idna from 3.6 to 3.7 (#27)
+- 61fe7e3 chore(deps-dev): bump black from 23.11.0 to 24.3.0 (#26)
+
 ## [0.4.0] - 2023-07-05
 - sanity release
 
@@ -118,18 +126,3 @@ All notable changes to this project will be documented in this file.
 ### Added
 - Initial commit, based on `bech32` package.
 - `encode()` and `decode()` functions.
-
-
-[unreleased]: https://github.com/lnbits/lnurl/compare/0.3.6...HEAD
-[0.3.6]: https://github.com/lnbits/lnurl/compare/0.3.5...0.3.6
-[0.3.5]: https://github.com/lnbits/lnurl/compare/0.3.4...0.3.5
-[0.3.4]: https://github.com/lnbits/lnurl/compare/0.3.3...0.3.4
-[0.3.3]: https://github.com/lnbits/lnurl/compare/0.3.2...0.3.3
-[0.3.2]: https://github.com/lnbits/lnurl/compare/0.3.1...0.3.2
-[0.3.1]: https://github.com/lnbits/lnurl/compare/0.3.0...0.3.1
-[0.3.0]: https://github.com/lnbits/lnurl/compare/0.2.0...0.3.0
-[0.2.0]: https://github.com/lnbits/lnurl/compare/0.1.1...0.2.0
-[0.1.1]: https://github.com/lnbits/lnurl/compare/0.1.0...0.1.1
-[0.1.0]: https://github.com/lnbits/lnurl/compare/0.0.2...0.1.0
-[0.0.2]: https://github.com/lnbits/lnurl/compare/0.0.1...0.0.2
-[0.0.1]: https://github.com/lnbits/lnurl/releases/tag/0.0.1
