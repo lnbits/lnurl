@@ -10,6 +10,9 @@ from .helpers import lnurlauth_signature, url_encode
 from .models import LnurlAuthResponse, LnurlPayResponse, LnurlResponse, LnurlResponseModel, LnurlWithdrawResponse
 from .types import ClearnetUrl, DebugUrl, LnAddress, Lnurl, OnionUrl
 
+USER_AGENT = "lnbits/lnurl"
+TIMEOUT = 5
+
 
 def decode(bech32_lnurl: str) -> Union[OnionUrl, ClearnetUrl, DebugUrl]:
     try:
@@ -25,13 +28,20 @@ def encode(url: str) -> Lnurl:
         raise InvalidUrl
 
 
-async def get(url: str, *, response_class: Optional[Any] = None) -> LnurlResponseModel:
-    async with httpx.AsyncClient() as client:
+async def get(
+    url: str,
+    *,
+    response_class: Optional[Any] = None,
+    user_agent: Optional[str] = None,
+    timeout: Optional[int] = None,
+) -> LnurlResponseModel:
+    headers = {"User-Agent": user_agent or USER_AGENT}
+    async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
         try:
-            res = await client.get(url)
+            res = await client.get(url, timeout=timeout or TIMEOUT)
             res.raise_for_status()
-        except Exception as e:
-            raise LnurlResponseException(str(e))
+        except Exception as exc:
+            raise LnurlResponseException(str(exc)) from exc
 
         if response_class:
             assert issubclass(response_class, LnurlResponseModel), "Use a valid `LnurlResponseModel` subclass."
@@ -43,11 +53,13 @@ async def get(url: str, *, response_class: Optional[Any] = None) -> LnurlRespons
 async def handle(
     bech32_lnurl: str,
     response_class: Optional[LnurlResponseModel] = None,
+    user_agent: Optional[str] = None,
+    timeout: Optional[int] = None,
 ) -> LnurlResponseModel:
     try:
         if "@" in bech32_lnurl:
             lnaddress = LnAddress(bech32_lnurl)
-            return await get(lnaddress.url, response_class=response_class)
+            return await get(lnaddress.url, response_class=response_class, user_agent=user_agent, timeout=timeout)
         lnurl = Lnurl(bech32_lnurl)
     except (ValidationError, ValueError):
         raise InvalidLnurl
@@ -55,35 +67,47 @@ async def handle(
     if lnurl.is_login:
         return LnurlAuthResponse(callback=lnurl.url, k1=lnurl.url.query_params["k1"])
 
-    return await get(lnurl.url, response_class=response_class)
+    return await get(lnurl.url, response_class=response_class, user_agent=user_agent, timeout=timeout)
 
 
-async def execute(bech32_or_address: str, value: str) -> LnurlResponseModel:
+async def execute(
+    bech32_or_address: str,
+    value: str,
+    user_agent: Optional[str] = None,
+    timeout: Optional[int] = None,
+) -> LnurlResponseModel:
     try:
-        res = handle(bech32_or_address)
+        res = handle(bech32_or_address, user_agent=user_agent, timeout=timeout)
     except Exception as exc:
         raise LnurlResponseException(str(exc))
 
     if isinstance(res, LnurlPayResponse) and res.tag == "payRequest":
-        return await execute_pay_request(res, value)
+        return await execute_pay_request(res, value, user_agent=user_agent, timeout=timeout)
     elif isinstance(res, LnurlAuthResponse) and res.tag == "login":
-        return await execute_login(res, value)
+        return await execute_login(res, value, user_agent=user_agent, timeout=timeout)
     elif isinstance(res, LnurlWithdrawResponse) and res.tag == "withdrawRequest":
-        return await execute_withdraw(res, value)
+        return await execute_withdraw(res, value, user_agent=user_agent, timeout=timeout)
 
     raise LnurlResponseException(f"{res.tag} not implemented")  # type: ignore
 
 
-async def execute_pay_request(res: LnurlPayResponse, msat: str) -> LnurlResponseModel:
+async def execute_pay_request(
+    res: LnurlPayResponse,
+    msat: str,
+    user_agent: Optional[str] = None,
+    timeout: Optional[int] = None,
+) -> LnurlResponseModel:
     if not res.min_sendable <= MilliSatoshi(msat) <= res.max_sendable:
         raise LnurlResponseException(f"Amount {msat} not in range {res.min_sendable} - {res.max_sendable}")
     try:
-        async with httpx.AsyncClient() as client:
+        headers = {"User-Agent": user_agent or USER_AGENT}
+        async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
             res2 = await client.get(
                 url=res.callback,
                 params={
                     "amount": msat,
                 },
+                timeout=timeout or TIMEOUT,
             )
             res2.raise_for_status()
             return LnurlResponse.from_dict(res2.json())
@@ -91,17 +115,24 @@ async def execute_pay_request(res: LnurlPayResponse, msat: str) -> LnurlResponse
         raise LnurlResponseException(str(exc))
 
 
-async def execute_login(res: LnurlAuthResponse, secret: str) -> LnurlResponseModel:
+async def execute_login(
+    res: LnurlAuthResponse,
+    secret: str,
+    user_agent: Optional[str] = None,
+    timeout: Optional[int] = None,
+) -> LnurlResponseModel:
     try:
         assert res.callback.host, "LNURLauth host does not exist"
         key, sig = lnurlauth_signature(res.callback.host, secret, res.k1)
-        async with httpx.AsyncClient() as client:
+        headers = {"User-Agent": user_agent or USER_AGENT}
+        async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
             res2 = await client.get(
                 url=res.callback,
                 params={
                     "key": key,
                     "sig": sig,
                 },
+                timeout=timeout or TIMEOUT,
             )
             res2.raise_for_status()
             return LnurlResponse.from_dict(res2.json())
@@ -109,7 +140,12 @@ async def execute_login(res: LnurlAuthResponse, secret: str) -> LnurlResponseMod
         raise LnurlResponseException(str(e))
 
 
-async def execute_withdraw(res: LnurlWithdrawResponse, pr: str) -> LnurlResponseModel:
+async def execute_withdraw(
+    res: LnurlWithdrawResponse,
+    pr: str,
+    user_agent: Optional[str] = None,
+    timeout: Optional[int] = None,
+) -> LnurlResponseModel:
     try:
         invoice = bolt11_decode(pr)
     except Bolt11Exception as exc:
@@ -119,13 +155,15 @@ async def execute_withdraw(res: LnurlWithdrawResponse, pr: str) -> LnurlResponse
     if not res.min_withdrawable <= MilliSatoshi(amount) <= res.max_withdrawable:
         raise LnurlResponseException(f"Amount {amount} not in range {res.min_withdrawable} - {res.max_withdrawable}")
     try:
-        async with httpx.AsyncClient() as client:
+        headers = {"User-Agent": user_agent or USER_AGENT}
+        async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
             res2 = await client.get(
                 url=res.callback,
                 params={
                     "k1": res.k1,
                     "pr": pr,
                 },
+                timeout=timeout or TIMEOUT,
             )
             res2.raise_for_status()
             return LnurlResponse.from_dict(res2.json())
