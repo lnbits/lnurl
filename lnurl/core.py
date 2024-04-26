@@ -7,7 +7,14 @@ from pydantic import ValidationError
 
 from .exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
 from .helpers import lnurlauth_signature, url_encode
-from .models import LnurlAuthResponse, LnurlPayResponse, LnurlResponse, LnurlResponseModel, LnurlWithdrawResponse
+from .models import (
+    LnurlAuthResponse,
+    LnurlPayResponse,
+    LnurlResponse,
+    LnurlResponseModel,
+    LnurlWithdrawResponse,
+    LnurlPayActionResponse,
+)
 from .types import ClearnetUrl, DebugUrl, LnAddress, Lnurl, OnionUrl
 
 USER_AGENT = "lnbits/lnurl"
@@ -99,6 +106,7 @@ async def execute_pay_request(
 ) -> LnurlResponseModel:
     if not res.min_sendable <= MilliSatoshi(msat) <= res.max_sendable:
         raise LnurlResponseException(f"Amount {msat} not in range {res.min_sendable} - {res.max_sendable}")
+
     try:
         headers = {"User-Agent": user_agent or USER_AGENT}
         async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
@@ -110,6 +118,13 @@ async def execute_pay_request(
                 timeout=timeout or TIMEOUT,
             )
             res2.raise_for_status()
+            assert isinstance(res2, LnurlPayActionResponse), "Invalid response in execute_pay_request."
+            invoice = bolt11_decode(res2.pr)
+            if invoice.amount_msat != int(msat):
+                raise LnurlResponseException(
+                    f"{res.callback.host} returned an invalid invoice."
+                    f"Excepted `{msat}` msat, got `{invoice.amount_msat}`."
+                )
             return LnurlResponse.from_dict(res2.json())
     except Exception as exc:
         raise LnurlResponseException(str(exc))
