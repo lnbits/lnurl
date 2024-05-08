@@ -138,6 +138,7 @@ class LnurlPayActionResponse(LnurlResponseModel):
     pr: LightningInvoice
     success_action: Optional[Union[MessageAction, UrlAction, AesAction]] = Field(None, alias="successAction")
     routes: List[List[LnurlPayRouteHop]] = []
+    verify: Optional[str] = None
 
 
 class LnurlWithdrawResponse(LnurlResponseModel):

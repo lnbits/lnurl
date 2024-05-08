@@ -118,14 +118,15 @@ async def execute_pay_request(
                 timeout=timeout or TIMEOUT,
             )
             res2.raise_for_status()
-            assert isinstance(res2, LnurlPayActionResponse), "Invalid response in execute_pay_request."
-            invoice = bolt11_decode(res2.pr)
+            pay_res = LnurlResponse.from_dict(res2.json())
+            assert isinstance(pay_res, LnurlPayActionResponse), "Invalid response in execute_pay_request."
+            invoice = bolt11_decode(pay_res.pr)
             if invoice.amount_msat != int(msat):
                 raise LnurlResponseException(
                     f"{res.callback.host} returned an invalid invoice."
                     f"Excepted `{msat}` msat, got `{invoice.amount_msat}`."
                 )
-            return LnurlResponse.from_dict(res2.json())
+            return pay_res
     except Exception as exc:
         raise LnurlResponseException(str(exc))
 
