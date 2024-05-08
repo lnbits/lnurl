@@ -9,11 +9,11 @@ from .exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
 from .helpers import lnurlauth_signature, url_encode
 from .models import (
     LnurlAuthResponse,
+    LnurlPayActionResponse,
     LnurlPayResponse,
     LnurlResponse,
     LnurlResponseModel,
     LnurlWithdrawResponse,
-    LnurlPayActionResponse,
 )
 from .types import ClearnetUrl, DebugUrl, LnAddress, Lnurl, OnionUrl
 

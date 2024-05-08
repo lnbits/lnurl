@@ -72,8 +72,9 @@ class TestEncode:
 
 
 class TestHandle:
-    """Responses from the LNURL: https://legend.lnbits.com/"""
+    """Responses from the LNURL: https://demo.lnbits.com/"""
 
+    @pytest.mark.xfail(reason="legend.lnbits.com is down")
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "bech32",
@@ -86,7 +87,7 @@ class TestHandle:
         res = await handle(bech32)
         assert isinstance(res, LnurlWithdrawResponse)
         assert res.tag == "withdrawRequest"
-        assert res.callback.host == "legend.lnbits.com"
+        assert res.callback.host == "demo.lnbits.com"
         assert res.default_description == "sample withdraw"
         assert res.max_withdrawable >= res.min_withdrawable
 
@@ -104,8 +105,9 @@ class TestHandle:
 
 
 class TestPayFlow:
-    """Full LNURL-pay flow interacting with https://legend.lnbits.com/"""
+    """Full LNURL-pay flow interacting with https://demo.lnbits.com/"""
 
+    @pytest.mark.xfail(reason="legend.lnbits.com is down")
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "bech32, amount",
@@ -114,14 +116,14 @@ class TestPayFlow:
                 "LNURL1DP68GURN8GHJ7MR9VAJKUEPWD3HXY6T5WVHXXMMD9AKXUATJD3CZ7JN9F4EHQJQC25ZZY",
                 "1000",
             ),
-            ("donate@legend.lnbits.com", "100000"),
+            ("donate@demo.lnbits.com", "100000"),
         ],
     )
     async def test_pay_flow(self, bech32: str, amount: str):
         res = await handle(bech32)
         assert isinstance(res, LnurlPayResponse)
         assert res.tag == "payRequest"
-        assert res.callback.host == "legend.lnbits.com"
+        assert res.callback.host == "demo.lnbits.com"
         assert len(res.metadata.list()) >= 1
         assert res.metadata.text != ""
 
