@@ -84,7 +84,7 @@ async def execute(
     timeout: Optional[int] = None,
 ) -> LnurlResponseModel:
     try:
-        res = handle(bech32_or_address, user_agent=user_agent, timeout=timeout)
+        res = await handle(bech32_or_address, user_agent=user_agent, timeout=timeout)
     except Exception as exc:
         raise LnurlResponseException(str(exc))
 
