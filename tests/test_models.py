@@ -8,7 +8,6 @@ from lnurl.models import (
     LnurlErrorResponse,
     LnurlHostedChannelResponse,
     LnurlPayResponse,
-    LnurlPayResponseComment,
     LnurlSuccessResponse,
     LnurlWithdrawResponse,
 )
@@ -62,7 +61,7 @@ class TestLnurlHostedChannelResponse:
     def test_channel_response(self, d):
         res = LnurlHostedChannelResponse(**d)
         assert res.ok
-        assert res.dict() == {**{"tag": "hostedChannelRequest", "alias": None}, **d}
+        assert res.dict() == {**{"tag": "hostedChannelRequest"}, **d}
 
     @pytest.mark.parametrize(
         "d", [{"uri": "invalid", "k1": "c3RyaW5n"}, {"uri": "node_key@ip_address:port_number", "k1": None}]
@@ -145,7 +144,7 @@ class TestLnurlPayResponseComment:
         ],
     )
     def test_success_response(self, d):
-        res = LnurlPayResponseComment(**d)
+        res = LnurlPayResponse(**d)
         assert res.ok
         assert (
             res.json() == res.json(by_alias=True) == '{"tag": "payRequest", "callback": "https://service.io/pay", '
@@ -192,7 +191,7 @@ class TestLnurlPayResponseComment:
     )
     def test_invalid_data(self, d):
         with pytest.raises(ValidationError):
-            LnurlPayResponseComment(**d)
+            LnurlPayResponse(**d)
 
 
 class TestLnurlWithdrawResponse:
