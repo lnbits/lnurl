@@ -1,3 +1,6 @@
+# backward compatibility, MilliSatoshi is now imported from bolt11
+from bolt11 import MilliSatoshi
+
 from .core import decode, encode, execute, execute_login, execute_pay_request, execute_withdraw, get, handle
 from .models import (
     LnurlAuthResponse,
@@ -33,4 +36,5 @@ __all__ = [
     "LnurlResponse",
     "LnurlSuccessResponse",
     "LnurlWithdrawResponse",
+    "MilliSatoshi",
 ]
