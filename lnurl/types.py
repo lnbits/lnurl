@@ -20,6 +20,10 @@ from pydantic.validators import str_validator
 from .exceptions import InvalidLnurlPayMetadata
 from .helpers import _bech32_decode, _lnurl_clean, lnurl_decode
 
+# needed for old lnbits extension imports
+# TODO: should be changed in extension to root package
+from .models import MilliSatoshi
+
 
 def ctrl_characters_validator(value: str) -> str:
     """Checks for control characters (unicode blocks C0 and C1, plus DEL)."""
@@ -283,3 +287,6 @@ class InitializationVector(ConstrainedStr):
 
 class Max144Str(ConstrainedStr):
     max_length = 144
+
+
+__all__ = ["MilliSatoshi"]

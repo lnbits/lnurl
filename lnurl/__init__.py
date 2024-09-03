@@ -14,7 +14,7 @@ from .models import (
     LnurlSuccessResponse,
     LnurlWithdrawResponse,
 )
-from .types import Lnurl
+from .types import ClearnetUrl, DebugUrl, LightningNodeUri, Lnurl, OnionUrl
 
 __all__ = [
     "decode",
@@ -37,4 +37,8 @@ __all__ = [
     "LnurlSuccessResponse",
     "LnurlWithdrawResponse",
     "MilliSatoshi",
+    "OnionUrl",
+    "ClearnetUrl",
+    "DebugUrl",
+    "LightningNodeUri",
 ]
