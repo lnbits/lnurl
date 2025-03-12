@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 from typing import List, Literal, Optional, Union
 
@@ -51,11 +53,11 @@ class LnurlResponseModel(BaseModel):
 
     def dict(self, **kwargs):
         kwargs.setdefault("by_alias", True)
-        return super().dict(**kwargs)
+        return super().dict(**kwargs, exclude_none=True)
 
     def json(self, **kwargs):
         kwargs.setdefault("by_alias", True)
-        return super().json(**kwargs)
+        return super().json(**kwargs, exclude_none=True)
 
     @property
     def ok(self) -> bool:
@@ -106,8 +108,16 @@ class LnurlPayResponse(LnurlResponseModel):
     max_sendable: MilliSatoshi = Field(..., alias="maxSendable", gt=0)
     metadata: LnurlPayMetadata
 
+    # Adds the optional comment_allowed field to the LnurlPayResponse
+    # ref LUD-12: Comments in payRequest.
+    comment_allowed: Optional[int] = Field(
+        None,
+        description="Length of comment which can be sent",
+        alias="commentAllowed",
+    )
+
     @validator("max_sendable")
-    def max_less_than_min(cls, value, values, **kwargs):  # noqa
+    def max_less_than_min(cls, value, values):  # noqa
         if "min_sendable" in values and value < values["min_sendable"]:
             raise ValueError("`max_sendable` cannot be less than `min_sendable`.")
         return value
@@ -119,19 +129,6 @@ class LnurlPayResponse(LnurlResponseModel):
     @property
     def max_sats(self) -> int:
         return int(math.floor(self.max_sendable / 1000))
-
-
-class LnurlPayResponseComment(LnurlPayResponse):
-    """
-    Adds the optional comment_allowed field to the LnurlPayResponse
-    ref LUD-12: Comments in payRequest.
-    """
-
-    comment_allowed: int = Field(
-        1000,
-        description="Length of comment which can be sent",
-        alias="commentAllowed",
-    )
 
 
 class LnurlPayActionResponse(LnurlResponseModel):
@@ -150,7 +147,7 @@ class LnurlWithdrawResponse(LnurlResponseModel):
     default_description: str = Field("", alias="defaultDescription")
 
     @validator("max_withdrawable")
-    def max_less_than_min(cls, value, values, **kwargs):  # noqa
+    def max_less_than_min(cls, value, values):  # noqa
         if "min_withdrawable" in values and value < values["min_withdrawable"]:
             raise ValueError("`max_withdrawable` cannot be less than `min_withdrawable`.")
         return value
