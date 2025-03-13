@@ -1,12 +1,56 @@
 import hashlib
 import hmac
+from base64 import b64decode, b64encode
 from io import BytesIO
 from typing import List, Optional, Set, Tuple
 
 from bech32 import bech32_decode, bech32_encode, convertbits
+from Cryptodome import Random
+from Cryptodome.Cipher import AES
 from ecdsa import SECP256k1, SigningKey
 
 from .exceptions import InvalidLnurl, InvalidUrl
+
+
+def aes_decrypt(preimage: bytes, ciphertext_base64: str, iv_base64: str) -> str:
+    """
+    Decrypt a message using AES-CBC. LUD-10
+    LUD-10, used in PayRequest success actions.
+    """
+    if len(preimage) != 32:
+        raise ValueError("AES key must be 32 bytes long")
+    if len(iv_base64) != 24:
+        raise ValueError("IV must be 24 bytes long")
+    cipher = AES.new(preimage, AES.MODE_CBC, b64decode(iv_base64))
+    decrypted = cipher.decrypt(b64decode(ciphertext_base64))
+    size = len(decrypted)
+    pad = decrypted[size - 1]
+    if (0 > pad > 16) or (pad > 1 and decrypted[size - 2] != pad):
+        raise ValueError("Decryption failed. Error with padding.")
+    decrypted = decrypted[: size - pad]
+    if len(decrypted) == 0:
+        raise ValueError("Decryption failed. Empty message.")
+    try:
+        return decrypted.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("Decryption failed. UnicodeDecodeError") from exc
+
+
+def aes_encrypt(preimage: bytes, message: str) -> tuple[str, str]:
+    """
+    Encrypt a message using AES-CBC with a random IV.
+    LUD-10, used in PayRequest success actions.
+    """
+    if len(preimage) != 32:
+        raise ValueError("AES key must be 32 bytes long")
+    if len(message) == 0:
+        raise ValueError("Message must not be empty")
+    iv = Random.get_random_bytes(16)
+    cipher = AES.new(preimage, AES.MODE_CBC, iv)
+    pad = 16 - len(message) % 16
+    message += chr(pad) * pad
+    ciphertext = cipher.encrypt(message.encode("utf-8"))
+    return b64encode(ciphertext).decode(), b64encode(iv).decode("utf-8")
 
 
 def lnurlauth_signature(domain: str, secret: str, k1: str) -> tuple[str, str]:
@@ -14,7 +58,8 @@ def lnurlauth_signature(domain: str, secret: str, k1: str) -> tuple[str, str]:
     linking_key = hmac.digest(hashing_key, domain.encode(), "sha256")
     auth_key = SigningKey.from_string(linking_key, curve=SECP256k1, hashfunc=hashlib.sha256)
     sig = auth_key.sign_digest_deterministic(bytes.fromhex(k1), sigencode=encode_strict_der)
-    assert auth_key.verifying_key, "LNURLauth verifying_key does not exist"
+    if not auth_key.verifying_key:
+        raise ValueError("LNURLauth verifying_key does not exist")
     key = auth_key.verifying_key.to_string("compressed")
     return key.hex(), sig.hex()
 

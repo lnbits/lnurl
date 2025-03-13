@@ -20,6 +20,7 @@ bech32 = "*"
 ecdsa = "*"
 bolt11 = "*"
 httpx = "*"
+pycryptodomex = "^3.21.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.3.0"

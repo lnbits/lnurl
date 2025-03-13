@@ -8,9 +8,10 @@ from pydantic import BaseModel, Field, validator
 
 from .exceptions import LnurlResponseException
 from .types import (
+    CiphertextBase64,
     ClearnetUrl,
     DebugUrl,
-    InitializationVector,
+    InitializationVectorBase64,
     LightningInvoice,
     LightningNodeUri,
     LnurlPayMetadata,
@@ -24,15 +25,9 @@ class LnurlPayRouteHop(BaseModel):
     channel_update: str = Field(..., alias="channelUpdate")
 
 
+# LUD-9: Add successAction field to payRequest.
 class LnurlPaySuccessAction(BaseModel):
     pass
-
-
-class AesAction(LnurlPaySuccessAction):
-    tag: Literal["aes"] = "aes"
-    description: Max144Str
-    ciphertext: str  # TODO
-    iv: InitializationVector
 
 
 class MessageAction(LnurlPaySuccessAction):
@@ -44,6 +39,14 @@ class UrlAction(LnurlPaySuccessAction):
     tag: Literal["url"] = "url"
     url: Union[ClearnetUrl, OnionUrl, DebugUrl]
     description: Max144Str
+
+
+# LUD-10: Add support for AES encrypted messages in payRequest.
+class AesAction(LnurlPaySuccessAction):
+    tag: Literal["aes"] = "aes"
+    description: Max144Str
+    ciphertext: CiphertextBase64
+    iv: InitializationVectorBase64
 
 
 class LnurlResponseModel(BaseModel):
@@ -133,6 +136,7 @@ class LnurlPayResponse(LnurlResponseModel):
 
 class LnurlPayActionResponse(LnurlResponseModel):
     pr: LightningInvoice
+    # LUD-9: successAction field for payRequest.
     success_action: Optional[Union[MessageAction, UrlAction, AesAction]] = Field(None, alias="successAction")
     routes: List[List[LnurlPayRouteHop]] = []
     # LUD-11: Disposable and storeable payRequests.

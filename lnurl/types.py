@@ -280,9 +280,14 @@ class LnurlPayMetadata(ReprMixin, str):
         return self._list
 
 
-class InitializationVector(ConstrainedStr):
+class InitializationVectorBase64(ConstrainedStr):
     min_length = 24
     max_length = 24
+
+
+class CiphertextBase64(ConstrainedStr):
+    min_length = 24
+    max_length = 4096
 
 
 class Max144Str(ConstrainedStr):
