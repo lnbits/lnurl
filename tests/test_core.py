@@ -28,7 +28,9 @@ class TestDecode:
         ],
     )
     def test_decode(self, bech32, url):
-        decoded_url = decode(bech32)
+        decoded = decode(bech32)
+        assert isinstance(decoded, Lnurl)
+        decoded_url = decoded.url
         assert isinstance(decoded_url, Url)
         assert decoded_url == str(decoded_url) == url
         assert decoded_url.host == "service.io"
