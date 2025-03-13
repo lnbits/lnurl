@@ -5,6 +5,7 @@ from io import BytesIO
 from typing import List, Optional, Set, Tuple
 
 from bech32 import bech32_decode, bech32_encode, convertbits
+from Cryptodome import Random
 from Cryptodome.Cipher import AES
 from ecdsa import SECP256k1, SigningKey
 
@@ -44,7 +45,7 @@ def aes_encrypt(preimage: bytes, message: str) -> tuple[str, str]:
         raise ValueError("AES key must be 32 bytes long")
     if len(message) == 0:
         raise ValueError("Message must not be empty")
-    iv = AES.new(preimage, AES.MODE_CBC).iv
+    iv = Random.get_random_bytes(16)
     cipher = AES.new(preimage, AES.MODE_CBC, iv)
     pad = 16 - len(message) % 16
     message += chr(pad) * pad
@@ -57,7 +58,8 @@ def lnurlauth_signature(domain: str, secret: str, k1: str) -> tuple[str, str]:
     linking_key = hmac.digest(hashing_key, domain.encode(), "sha256")
     auth_key = SigningKey.from_string(linking_key, curve=SECP256k1, hashfunc=hashlib.sha256)
     sig = auth_key.sign_digest_deterministic(bytes.fromhex(k1), sigencode=encode_strict_der)
-    assert auth_key.verifying_key, "LNURLauth verifying_key does not exist"
+    if not auth_key.verifying_key:
+        raise ValueError("LNURLauth verifying_key does not exist")
     key = auth_key.verifying_key.to_string("compressed")
     return key.hex(), sig.hex()
 
