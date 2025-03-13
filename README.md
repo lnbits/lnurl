@@ -12,10 +12,10 @@ LNURL implementation for Python
 A collection of helpers for building [LNURL][lnurl] support into wallets and services.
 
 
-LUDS Support
+LUDS support
 ------------
 
-checkout the repositor: [luds](https://github.com/lnurl/luds/)
+Check out the LUDS repository: [luds](https://github.com/lnurl/luds/)
 
 - [x] LUD-01
 - [ ] LUD-02
