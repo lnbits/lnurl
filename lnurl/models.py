@@ -135,6 +135,10 @@ class LnurlPayActionResponse(LnurlResponseModel):
     pr: LightningInvoice
     success_action: Optional[Union[MessageAction, UrlAction, AesAction]] = Field(None, alias="successAction")
     routes: List[List[LnurlPayRouteHop]] = []
+    # LUD-11: Disposable and storeable payRequests.
+    # If disposable is null, it should be interpreted as true,
+    # so if SERVICE intends its LNURL links to be stored it must return disposable: false.
+    disposable: Optional[bool] = None
     verify: Optional[str] = None
 
 
