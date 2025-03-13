@@ -11,6 +11,35 @@ LNURL implementation for Python
 
 A collection of helpers for building [LNURL][lnurl] support into wallets and services.
 
+
+LUDS Support
+------------
+
+[luds]: https://github.com/lnurl/luds/
+
+- [x] LUD-01
+- [ ] LUD-02
+- [x] LUD-03
+- [x] LUD-04
+- [ ] LUD-05
+- [x] LUD-06
+- [ ] LUD-07
+- [ ] LUD-08
+- [x] LUD-09
+- [x] LUD-10
+- [x] LUD-11
+- [x] LUD-12
+- [ ] LUD-13
+- [ ] LUD-14
+- [ ] LUD-15
+- [ ] LUD-16
+- [ ] LUD-17
+- [ ] LUD-18
+- [ ] LUD-19
+- [ ] LUD-20
+- [ ] LUD-21
+
+
 Configuration
 -------------
 
@@ -132,7 +161,6 @@ the `by_alias` parameter: `res.dict(by_alias=False)` (it is `True` by default).
 
 [lnurl]: https://telegra.ph/lnurl-a-protocol-for-seamless-interaction-between-services-and-Lightning-wallets-08-19
 [lnurl-spec]: https://github.com/btcontract/lnurl-rfc/blob/master/spec.md
-[luds]: https://github.com/lnurl/luds/
 [pydantic]: https://github.com/samuelcolvin/pydantic/
 
 
