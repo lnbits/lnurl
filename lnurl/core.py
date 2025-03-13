@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import httpx
 from bolt11 import Bolt11Exception, MilliSatoshi
@@ -15,15 +15,15 @@ from .models import (
     LnurlResponseModel,
     LnurlWithdrawResponse,
 )
-from .types import ClearnetUrl, DebugUrl, LnAddress, Lnurl, OnionUrl
+from .types import LnAddress, Lnurl
 
 USER_AGENT = "lnbits/lnurl"
 TIMEOUT = 5
 
 
-def decode(bech32_lnurl: str) -> Union[OnionUrl, ClearnetUrl, DebugUrl]:
+def decode(bech32_lnurl: str) -> Lnurl:
     try:
-        return Lnurl(bech32_lnurl).url
+        return Lnurl(bech32_lnurl)
     except (ValidationError, ValueError):
         raise InvalidLnurl
 
