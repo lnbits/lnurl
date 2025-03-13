@@ -53,6 +53,9 @@ def aes_encrypt(preimage: bytes, message: str) -> tuple[str, str]:
     return b64encode(ciphertext).decode(), b64encode(iv).decode("utf-8")
 
 
+# TODO: LUD-05: BIP32-based seed generation for auth protocol.
+# https://github.com/lnurl/luds/blob/luds/05.md
+# LUD-04: auth base spec.
 def lnurlauth_signature(domain: str, secret: str, k1: str) -> tuple[str, str]:
     hashing_key = hashlib.sha256(secret.encode()).digest()
     linking_key = hmac.digest(hashing_key, domain.encode(), "sha256")

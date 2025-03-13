@@ -4,7 +4,7 @@ import math
 from typing import List, Literal, Optional, Union
 
 from bolt11 import MilliSatoshi
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, ValidationError, validator
 
 from .exceptions import LnurlResponseException
 from .types import (
@@ -84,12 +84,14 @@ class LnurlSuccessResponse(LnurlResponseModel):
     status: Literal["OK"] = "OK"
 
 
+# LUD-04: auth base spec.
 class LnurlAuthResponse(LnurlResponseModel):
     tag: Literal["login"] = "login"
     callback: Union[ClearnetUrl, OnionUrl, DebugUrl]
     k1: str
 
 
+# LUD-2: channelRequest base spec.
 class LnurlChannelResponse(LnurlResponseModel):
     tag: Literal["channelRequest"] = "channelRequest"
     uri: LightningNodeUri
@@ -97,6 +99,7 @@ class LnurlChannelResponse(LnurlResponseModel):
     k1: str
 
 
+# LUD-07: hostedChannelRequest base spec.
 class LnurlHostedChannelResponse(LnurlResponseModel):
     tag: Literal["hostedChannelRequest"] = "hostedChannelRequest"
     uri: LightningNodeUri
@@ -133,6 +136,9 @@ class LnurlPayResponse(LnurlResponseModel):
     def max_sats(self) -> int:
         return int(math.floor(self.max_sendable / 1000))
 
+    def is_valid_amount(self, amount_msat: int) -> bool:
+        return self.min_sendable <= amount_msat <= self.max_sendable
+
 
 class LnurlPayActionResponse(LnurlResponseModel):
     pr: LightningInvoice
@@ -155,10 +161,15 @@ class LnurlWithdrawResponse(LnurlResponseModel):
     default_description: str = Field("", alias="defaultDescription")
 
     @validator("max_withdrawable")
-    def max_less_than_min(cls, value, values):  # noqa
+    def max_less_than_min(cls, value, values):
         if "min_withdrawable" in values and value < values["min_withdrawable"]:
             raise ValueError("`max_withdrawable` cannot be less than `min_withdrawable`.")
         return value
+
+    # LUD-08: Fast withdrawRequest.
+    @property
+    def fast_withdraw_query(self) -> str:
+        return "&".join([f"{k}={v}" for k, v in self.dict().items()])
 
     @property
     def min_sats(self) -> int:
@@ -168,33 +179,45 @@ class LnurlWithdrawResponse(LnurlResponseModel):
     def max_sats(self) -> int:
         return int(math.floor(self.max_withdrawable / 1000))
 
+    def is_valid_amount(self, amount: int) -> bool:
+        return self.min_withdrawable <= amount <= self.max_withdrawable
+
 
 class LnurlResponse:
     @staticmethod
-    def from_dict(d: dict) -> LnurlResponseModel:
+    def from_dict(data: dict) -> LnurlResponseModel:
+        tag = data.get("tag")
+
+        # some services return `status` here, but it is not in the spec
+        if tag or "successAction" in data:
+            data.pop("status", None)
+
         try:
-            if "tag" in d:
-                # some services return `status` here, but it is not in the spec
-                d.pop("status", None)
+            if tag == "channelRequest":
+                return LnurlChannelResponse(**data)
+            if tag == "hostedChannelRequest":
+                return LnurlHostedChannelResponse(**data)
+            if tag == "payRequest":
+                return LnurlPayResponse(**data)
+            if tag == "withdrawRequest":
+                return LnurlWithdrawResponse(**data)
+            if "successAction" in data:
+                return LnurlPayActionResponse(**data)
+        except ValidationError as exc:
+            raise LnurlResponseException(str(exc)) from exc
 
-                return {
-                    "channelRequest": LnurlChannelResponse,
-                    "hostedChannelRequest": LnurlHostedChannelResponse,
-                    "payRequest": LnurlPayResponse,
-                    "withdrawRequest": LnurlWithdrawResponse,
-                }[d["tag"]](**d)
+        status = data.get("status")
+        if status is None or status == "":
+            raise LnurlResponseException("Expected Success or Error response. But no `status` given.")
 
-            if "successAction" in d:
-                d.pop("status", None)
-                return LnurlPayActionResponse(**d)
+        # some services return `status` in lowercase, but spec says upper
+        status = status.upper()
 
-            # some services return `status` in lowercase, but spec says upper
-            d["status"] = d["status"].upper()
+        if status == "OK":
+            return LnurlSuccessResponse(status=status)
 
-            if "status" in d and d["status"] == "ERROR":
-                return LnurlErrorResponse(**d)
+        if status == "ERROR":
+            return LnurlErrorResponse(status=status, reason=data.get("reason", "Unknown error"))
 
-            return LnurlSuccessResponse(**d)
-
-        except Exception:
-            raise LnurlResponseException
+        # if we reach here, it's an unknown response
+        raise LnurlResponseException(f"Unknown response: {data}")

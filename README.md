@@ -18,13 +18,13 @@ LUDS support
 Check out the LUDS repository: [luds](https://github.com/lnurl/luds/)
 
 - [x] LUD-01
-- [ ] LUD-02
+- [x] LUD-02
 - [x] LUD-03
 - [x] LUD-04
 - [ ] LUD-05
 - [x] LUD-06
-- [ ] LUD-07
-- [ ] LUD-08
+- [x] LUD-07
+- [x] LUD-08
 - [x] LUD-09
 - [x] LUD-10
 - [x] LUD-11
