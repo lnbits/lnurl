@@ -15,7 +15,7 @@ A collection of helpers for building [LNURL][lnurl] support into wallets and ser
 LUDS Support
 ------------
 
-[luds]: https://github.com/lnurl/luds/
+checkout the repositor: [luds](https://github.com/lnurl/luds/)
 
 - [x] LUD-01
 - [ ] LUD-02
@@ -158,10 +158,6 @@ the `by_alias` parameter: `res.dict(by_alias=False)` (it is `True` by default).
 [pypi-badge]: https://badge.fury.io/py/lnurl.svg
 [pypi-versions-badge]: https://img.shields.io/pypi/pyversions/lnurl.svg
 [license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
-
-[lnurl]: https://telegra.ph/lnurl-a-protocol-for-seamless-interaction-between-services-and-Lightning-wallets-08-19
-[lnurl-spec]: https://github.com/btcontract/lnurl-rfc/blob/master/spec.md
-[pydantic]: https://github.com/samuelcolvin/pydantic/
 
 
 CLI
