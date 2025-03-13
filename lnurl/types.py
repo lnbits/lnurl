@@ -204,6 +204,7 @@ class Lnurl(ReprMixin, str):
             and q.get("minWithdrawable") is not None
             and q.get("maxWithdrawable") is not None
             and q.get("defaultDescription") is not None
+            and q.get("callback") is not None
         )
 
 
