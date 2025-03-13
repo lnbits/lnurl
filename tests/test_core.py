@@ -76,7 +76,7 @@ class TestEncode:
 class TestHandle:
     """Responses from the LNURL: https://demo.lnbits.com/"""
 
-    @pytest.mark.xfail(reason="legend.lnbits.com is down")
+    @pytest.mark.xfail(reason="demo.lnbits.com is down")
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "bech32",
@@ -109,7 +109,7 @@ class TestHandle:
 class TestPayFlow:
     """Full LNURL-pay flow interacting with https://demo.lnbits.com/"""
 
-    @pytest.mark.xfail(reason="legend.lnbits.com is down")
+    @pytest.mark.xfail(reason="demo.lnbits.com is down")
     @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "bech32, amount",

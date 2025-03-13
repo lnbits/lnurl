@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import os
 import re
@@ -136,7 +138,7 @@ class LightningNodeUri(ReprMixin, str):
 
     __slots__ = ("key", "ip", "port")
 
-    def __new__(cls, uri: str, **kwargs) -> "LightningNodeUri":
+    def __new__(cls, uri: str, **_) -> "LightningNodeUri":
         return str.__new__(cls, uri)
 
     def __init__(self, uri: str, *, key: Optional[str] = None, ip: Optional[str] = None, port: Optional[str] = None):
@@ -164,7 +166,7 @@ class LightningNodeUri(ReprMixin, str):
 class Lnurl(ReprMixin, str):
     __slots__ = ("bech32", "url")
 
-    def __new__(cls, lightning: str, **_) -> "Lnurl":
+    def __new__(cls, lightning: str, **_) -> Lnurl:
         return str.__new__(cls, _lnurl_clean(lightning))
 
     def __init__(self, lightning: str, *, url: Optional[Union[OnionUrl, ClearnetUrl, DebugUrl]] = None):
@@ -184,18 +186,31 @@ class Lnurl(ReprMixin, str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> "Lnurl":
+    def validate(cls, value: str) -> Lnurl:
         return cls(value, url=cls.__get_url__(value))
 
+    # LUD-04: auth base spec.
     @property
     def is_login(self) -> bool:
-        return "tag" in self.url.query_params and self.url.query_params["tag"] == "login"
+        return self.url.query_params.get("tag") == "login"
+
+    # LUD-08: Fast withdrawRequest.
+    @property
+    def is_fast_withdraw(self) -> bool:
+        q = self.url.query_params
+        return (
+            q.get("tag") == "withdrawRequest"
+            and q.get("k1") is not None
+            and q.get("minWithdrawable") is not None
+            and q.get("maxWithdrawable") is not None
+            and q.get("defaultDescription") is not None
+        )
 
 
 class LnAddress(ReprMixin, str):
     """Lightning address of form `user@host`"""
 
-    def __new__(cls, address: str, **_) -> "LnAddress":
+    def __new__(cls, address: str, **_) -> LnAddress:
         return str.__new__(cls, address)
 
     def __init__(self, address: str):
@@ -220,7 +235,7 @@ class LnurlPayMetadata(ReprMixin, str):
 
     __slots__ = ("_list",)
 
-    def __new__(cls, json_str: str, **kwargs) -> "LnurlPayMetadata":
+    def __new__(cls, json_str: str, **_) -> LnurlPayMetadata:
         return str.__new__(cls, json_str)
 
     def __init__(self, json_str: str, *, json_obj: Optional[List] = None):
@@ -250,7 +265,7 @@ class LnurlPayMetadata(ReprMixin, str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> "LnurlPayMetadata":
+    def validate(cls, value: str) -> LnurlPayMetadata:
         return cls(value, json_obj=cls.__validate_metadata__(value))
 
     @property
