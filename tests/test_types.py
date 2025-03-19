@@ -201,6 +201,7 @@ class TestLnurlPayMetadata:
         [
             "legend.lnbits.com",
             "donate@donate@legend.lnbits.com",
+            "HELLO@lnbits.com",
         ],
     )
     def test_invalid_lnaddress(self, lnaddress):

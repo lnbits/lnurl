@@ -211,18 +211,26 @@ class Lnurl(ReprMixin, str):
 class LnAddress(ReprMixin, str):
     """Lightning address of form `user@host`"""
 
+    slots = ("address", "url")
+
     def __new__(cls, address: str, **_) -> LnAddress:
         return str.__new__(cls, address)
 
     def __init__(self, address: str):
         str.__init__(address)
+        if not self.is_valid_lnaddress(address):
+            raise ValueError("Invalid Lightning address.")
         self.address = address
         self.url = self.__get_url__(address)
 
+    # LUD-16: Paying to static internet identifiers.
     @validator("address")
-    def is_valid_email_address(cls, email: str) -> bool:
-        email_regex = r"[A-Za-z0-9\._%+-]+@[A-Za-z0-9\.-]+\.[A-Za-z]{2,63}"
-        return re.fullmatch(email_regex, email) is not None
+    def is_valid_lnaddress(cls, address: str) -> bool:
+        # A user can then type these on a WALLET. The <username> is limited
+        # to a-z-1-9-_.. Please note that this is way more strict than common
+        # email addresses as it allows fewer symbols and only lowercase characters.
+        lnaddress_regex = r"[a-z0-9\._%+-]+@[A-Za-z0-9\.-]+\.[A-Za-z]{2,63}"
+        return re.fullmatch(lnaddress_regex, address) is not None
 
     @classmethod
     def __get_url__(cls, address: str) -> Union[OnionUrl, ClearnetUrl, DebugUrl]:
