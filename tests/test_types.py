@@ -186,6 +186,7 @@ class TestLnurlPayMetadata:
         with pytest.raises(ValidationError):
             parse_obj_as(LnurlPayMetadata, metadata)
 
+
     @pytest.mark.parametrize(
         "lnaddress",
         [
@@ -201,6 +202,8 @@ class TestLnurlPayMetadata:
         [
             "legend.lnbits.com",
             "donate@donate@legend.lnbits.com",
+            "donate@donate@legend.lnbits.com",
+            "HELLO@lnbits.com",
         ],
     )
     def test_invalid_lnaddress(self, lnaddress):
