@@ -202,7 +202,6 @@ class TestLnurlPayMetadata:
         [
             "legend.lnbits.com",
             "donate@donate@legend.lnbits.com",
-            "donate@donate@legend.lnbits.com",
             "HELLO@lnbits.com",
         ],
     )
