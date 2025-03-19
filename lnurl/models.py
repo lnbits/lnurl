@@ -159,6 +159,8 @@ class LnurlWithdrawResponse(LnurlResponseModel):
     min_withdrawable: MilliSatoshi = Field(..., alias="minWithdrawable", gt=0)
     max_withdrawable: MilliSatoshi = Field(..., alias="maxWithdrawable", gt=0)
     default_description: str = Field("", alias="defaultDescription")
+    # LUD-19: Pay link discoverable from withdraw link.
+    pay_link: Optional[str] = Field(None, alias="payLink")
 
     @validator("max_withdrawable")
     def max_less_than_min(cls, value, values):
