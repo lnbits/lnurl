@@ -267,7 +267,7 @@ class LnurlPayMetadata(ReprMixin, str):
         if (
             not clean_data
             or ("text/plain" not in mime_types and "text/long-desc" not in mime_types)
-            or counts["text/plain"] > 1 or counts["text/long-desc"] > 1
+            or counts["text/plain"] > 1
         ):
             raise InvalidLnurlPayMetadata
 
