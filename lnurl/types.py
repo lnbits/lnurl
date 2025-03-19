@@ -210,6 +210,7 @@ class Lnurl(ReprMixin, str):
 
 class LnAddress(ReprMixin, str):
     """Lightning address of form `user@host`"""
+
     slots = ("address", "url")
 
     def __new__(cls, address: str, **_) -> LnAddress:

@@ -186,7 +186,6 @@ class TestLnurlPayMetadata:
         with pytest.raises(ValidationError):
             parse_obj_as(LnurlPayMetadata, metadata)
 
-
     @pytest.mark.parametrize(
         "lnaddress",
         [
