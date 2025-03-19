@@ -240,7 +240,8 @@ class LnAddress(ReprMixin, str):
 
 
 class LnurlPayMetadata(ReprMixin, str):
-    valid_metadata_mime_types = {"text/plain", "image/png;base64", "image/jpeg;base64"}
+    # LUD-20: Long payment description for pay protocol. "text/long-desc"
+    valid_metadata_mime_types = {"text/plain", "image/png;base64", "image/jpeg;base64", "text/long-desc"}
 
     __slots__ = ("_list",)
 
@@ -263,7 +264,11 @@ class LnurlPayMetadata(ReprMixin, str):
         mime_types = [x[0] for x in clean_data]
         counts = {x: mime_types.count(x) for x in mime_types}
 
-        if not clean_data or "text/plain" not in mime_types or counts["text/plain"] > 1:
+        if (
+            not clean_data
+            or ("text/plain" not in mime_types and "text/long-desc" not in mime_types)
+            or counts["text/plain"] > 1 or counts["text/long-desc"] > 1
+        ):
             raise InvalidLnurlPayMetadata
 
         return clean_data
