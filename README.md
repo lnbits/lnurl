@@ -30,7 +30,7 @@ Check out the LUDS repository: [luds](https://github.com/lnurl/luds/)
 - [x] LUD-11
 - [x] LUD-12
 - [ ] LUD-13
-- [ ] LUD-14
+- [x] LUD-14
 - [ ] LUD-15
 - [x] LUD-16
 - [ ] LUD-17
