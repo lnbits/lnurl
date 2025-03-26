@@ -29,7 +29,7 @@ class LnurlPayRouteHop(BaseModel):
 
 # LUD-9: Add successAction field to payRequest.
 class LnurlPaySuccessAction(BaseModel):
-    pass
+    """Base class for all success actions"""
 
 
 class MessageAction(LnurlPaySuccessAction):
@@ -55,14 +55,17 @@ class LnurlResponseModel(BaseModel):
 
     class Config:
         allow_population_by_field_name = True
+        by_alias = True
 
     def dict(self, **kwargs):
         kwargs.setdefault("by_alias", True)
-        return super().dict(**kwargs, exclude_none=True)
+        kwargs["exclude_none"] = True
+        return super().dict(**kwargs)
 
     def json(self, **kwargs):
         kwargs.setdefault("by_alias", True)
-        return super().json(**kwargs, exclude_none=True)
+        kwargs["exclude_none"] = True
+        return super().json(**kwargs)
 
     @property
     def ok(self) -> bool:
