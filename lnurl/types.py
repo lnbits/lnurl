@@ -240,8 +240,16 @@ class LnAddress(ReprMixin, str):
 
 
 class LnurlPayMetadata(ReprMixin, str):
+    # LUD-16: Paying to static internet identifiers. "text/identifier", "text/email"
     # LUD-20: Long payment description for pay protocol. "text/long-desc"
-    valid_metadata_mime_types = {"text/plain", "image/png;base64", "image/jpeg;base64", "text/long-desc"}
+    valid_metadata_mime_types = {
+        "text/plain",
+        "image/png;base64",
+        "image/jpeg;base64",
+        "text/identifier",
+        "text/email",
+        "text/long-desc",
+    }
 
     __slots__ = ("_list",)
 
