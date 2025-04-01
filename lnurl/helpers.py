@@ -1,13 +1,13 @@
-import hashlib
 import hmac
 from base64 import b64decode, b64encode
+from hashlib import sha256
 from io import BytesIO
 from typing import List, Optional, Set, Tuple
 
 from bech32 import bech32_decode, bech32_encode, convertbits
 from Cryptodome import Random
 from Cryptodome.Cipher import AES
-from ecdsa import SECP256k1, SigningKey
+from ecdsa import SECP256k1, SigningKey, VerifyingKey
 
 from .exceptions import InvalidLnurl, InvalidUrl
 
@@ -56,15 +56,31 @@ def aes_encrypt(preimage: bytes, message: str) -> tuple[str, str]:
 # TODO: LUD-05: BIP32-based seed generation for auth protocol.
 # https://github.com/lnurl/luds/blob/luds/05.md
 # LUD-04: auth base spec.
-def lnurlauth_signature(domain: str, secret: str, k1: str) -> tuple[str, str]:
-    hashing_key = hashlib.sha256(secret.encode()).digest()
+def lnurlauth_signature(k1: str, secret: str, domain: str) -> tuple[str, str]:
+    """
+    Sign a k1 with a domain and a secret.
+    """
+    hashing_key = sha256(secret.encode()).digest()
     linking_key = hmac.digest(hashing_key, domain.encode(), "sha256")
-    auth_key = SigningKey.from_string(linking_key, curve=SECP256k1, hashfunc=hashlib.sha256)
+    auth_key = SigningKey.from_string(linking_key, curve=SECP256k1, hashfunc=sha256)
     sig = auth_key.sign_digest_deterministic(bytes.fromhex(k1), sigencode=encode_strict_der)
     if not auth_key.verifying_key:
         raise ValueError("LNURLauth verifying_key does not exist")
     key = auth_key.verifying_key.to_string("compressed")
     return key.hex(), sig.hex()
+
+
+def lnurlauth_verify(k1: str, key: str, sig: str) -> bool:
+    """
+    Verify a k1 with a domain, a key and a signature.
+    """
+    try:
+        verifying_key = VerifyingKey.from_string(bytes.fromhex(key), hashfunc=sha256, curve=SECP256k1)
+        verifying_key.verify_digest(bytes.fromhex(sig), bytes.fromhex(k1), sigdecode=decode_strict_der)
+        return True
+    except Exception as exc:
+        print(exc)
+        return False
 
 
 def _bech32_decode(bech32: str, *, allowed_hrp: Optional[Set[str]] = None) -> Tuple[str, List[int]]:
@@ -155,3 +171,17 @@ def encode_strict_der(r: int, s: int, order: int):
     signature.write(s_temp)
 
     return signature.getvalue()
+
+
+def decode_strict_der(sig, _):
+    """
+    Decode a DER signature.
+    """
+    if len(sig) < 8 or sig[0] != 0x30:
+        raise ValueError("Invalid signature")
+    length = sig[1]
+    if length + 2 != len(sig):
+        raise ValueError("Invalid signature")
+    r = int.from_bytes(sig[4 : 4 + sig[3]], "big")
+    s = int.from_bytes(sig[6 + sig[3] :], "big")
+    return r, s
