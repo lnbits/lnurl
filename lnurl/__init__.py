@@ -2,7 +2,7 @@
 from bolt11 import MilliSatoshi
 
 from .core import decode, encode, execute, execute_login, execute_pay_request, execute_withdraw, get, handle
-from .helpers import aes_decrypt, aes_encrypt, url_encode
+from .helpers import aes_decrypt, aes_encrypt, encode_strict_der, lnurlauth_signature, url_decode, url_encode
 from .models import (
     AesAction,
     LnurlAuthResponse,
@@ -36,6 +36,8 @@ __all__ = [
     "aes_decrypt",
     "aes_encrypt",
     "url_encode",
+    "url_decode",
+    "encode_strict_der",
     "decode",
     "encode",
     "execute",
@@ -69,4 +71,5 @@ __all__ = [
     "AesAction",
     "InitializationVectorBase64",
     "CiphertextBase64",
+    "lnurlauth_signature",
 ]

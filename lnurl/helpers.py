@@ -81,7 +81,7 @@ def _lnurl_clean(lnurl: str) -> str:
     return lnurl.replace("lightning:", "") if lnurl.startswith("lightning:") else lnurl
 
 
-def lnurl_decode(lnurl: str) -> str:
+def url_decode(lnurl: str) -> str:
     """
     Decode a LNURL and return a url string without performing any validation on it.
     Use `lnurl.decode()` for validation and to get `Url` object.
@@ -93,7 +93,7 @@ def lnurl_decode(lnurl: str) -> str:
         assert bech32_data
         url = bytes(bech32_data).decode("utf-8")
         return url
-    except UnicodeDecodeError:  # pragma: nocover
+    except UnicodeDecodeError:
         raise InvalidLnurl
 
 
@@ -106,7 +106,7 @@ def url_encode(url: str) -> str:
         bech32_data = convertbits(url.encode("utf-8"), 8, 5, True)
         assert bech32_data
         lnurl = bech32_encode("lnurl", bech32_data)
-    except UnicodeEncodeError:  # pragma: nocover
+    except UnicodeEncodeError:
         raise InvalidUrl
 
     return lnurl.upper()

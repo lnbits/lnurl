@@ -20,7 +20,7 @@ from pydantic.networks import Parts
 from pydantic.validators import str_validator
 
 from .exceptions import InvalidLnurlPayMetadata
-from .helpers import _bech32_decode, _lnurl_clean, lnurl_decode
+from .helpers import _bech32_decode, _lnurl_clean, url_decode
 
 
 def ctrl_characters_validator(value: str) -> str:
@@ -177,7 +177,7 @@ class Lnurl(ReprMixin, str):
 
     @classmethod
     def __get_url__(cls, bech32: str) -> Union[OnionUrl, ClearnetUrl, DebugUrl]:
-        url: str = lnurl_decode(bech32)
+        url: str = url_decode(bech32)
         return parse_obj_as(Union[OnionUrl, ClearnetUrl, DebugUrl], url)  # type: ignore
 
     @classmethod
