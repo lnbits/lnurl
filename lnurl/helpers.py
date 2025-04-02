@@ -1,13 +1,14 @@
 import hmac
 from base64 import b64decode, b64encode
 from hashlib import sha256
-from io import BytesIO
 from typing import List, Optional, Set, Tuple
 
 from bech32 import bech32_decode, bech32_encode, convertbits
+from bip32 import BIP32
 from Cryptodome import Random
 from Cryptodome.Cipher import AES
 from ecdsa import SECP256k1, SigningKey, VerifyingKey
+from ecdsa.util import sigdecode_der, sigencode_der
 
 from .exceptions import InvalidLnurl, InvalidUrl
 
@@ -53,17 +54,15 @@ def aes_encrypt(preimage: bytes, message: str) -> tuple[str, str]:
     return b64encode(ciphertext).decode(), b64encode(iv).decode("utf-8")
 
 
-# TODO: LUD-05: BIP32-based seed generation for auth protocol.
-# https://github.com/lnurl/luds/blob/luds/05.md
 # LUD-04: auth base spec.
-def lnurlauth_signature(k1: str, secret: str, domain: str) -> tuple[str, str]:
+def lnurlauth_signature(k1: str, seed: str, domain: str) -> tuple[str, str]:
     """
-    Sign a k1 with a domain and a secret.
+    Sign a k1 with a derived bip32 key from a seed and a domain.
     """
-    hashing_key = sha256(secret.encode()).digest()
-    linking_key = hmac.digest(hashing_key, domain.encode(), "sha256")
+    # LUD-05: BIP32-based seed generation for auth protocol.
+    linking_key, _ = lnurlauth_derive_linking_key(seed, domain)
     auth_key = SigningKey.from_string(linking_key, curve=SECP256k1, hashfunc=sha256)
-    sig = auth_key.sign_digest_deterministic(bytes.fromhex(k1), sigencode=encode_strict_der)
+    sig = auth_key.sign_digest_deterministic(bytes.fromhex(k1), sigencode=sigencode_der)
     if not auth_key.verifying_key:
         raise ValueError("LNURLauth verifying_key does not exist")
     key = auth_key.verifying_key.to_string("compressed")
@@ -72,15 +71,52 @@ def lnurlauth_signature(k1: str, secret: str, domain: str) -> tuple[str, str]:
 
 def lnurlauth_verify(k1: str, key: str, sig: str) -> bool:
     """
-    Verify a k1 with a domain, a key and a signature.
+    Verify a k1 with a key and a signature.
     """
     try:
         verifying_key = VerifyingKey.from_string(bytes.fromhex(key), hashfunc=sha256, curve=SECP256k1)
-        verifying_key.verify_digest(bytes.fromhex(sig), bytes.fromhex(k1), sigdecode=decode_strict_der)
+        verifying_key.verify_digest(bytes.fromhex(sig), bytes.fromhex(k1), sigdecode=sigdecode_der)
         return True
     except Exception as exc:
         print(exc)
         return False
+
+
+# LUD-05: BIP32-based seed generation for auth protocol.
+def lnurlauth_derive_linking_key(seed: str, domain: str) -> tuple[bytes, bytes]:
+    """
+    Derive a key from a masterkey.
+    RETURN (linking_key, linking_key_pub) in hex
+    """
+    master_key = lnurlauth_master_key_from_seed(seed)
+    hashing_key = BIP32.get_privkey_from_path(master_key, "m/138'/0")
+    _path_suffix = lnurlauth_derive_path(hashing_key, domain)
+    linking_key = BIP32.get_privkey_from_path(master_key, _path_suffix)
+    linking_key_pub = BIP32.get_pubkey_from_path(master_key, _path_suffix)
+    return linking_key, linking_key_pub
+
+
+def lnurlauth_master_key_from_seed(seed: str) -> BIP32:
+    """
+    Derive a masterkey from a seed.
+    RETURN (linking_key, linking_key_pub) in hex
+    """
+    master_key = BIP32.from_seed(bytes.fromhex(seed))
+    assert master_key.privkey
+    return master_key
+
+
+def lnurlauth_derive_path(hashing_private_key: bytes, domain_name: str) -> str:
+    """
+    Derive a path suffix from a hashing_key.
+
+    Take the first 16 bytes of the hash turn it into 4 longs and make a new derivation path with it.
+    m/138'/<long1>/<long2>/<long3>/<long4>
+    """
+    derivation_material = hmac.digest(hashing_private_key, domain_name.encode(), "sha256")
+    _path_suffix_longs = [int.from_bytes(derivation_material[i : i + 4], "big") for i in range(0, 16, 4)]
+    _path_suffix = "m/138'/" + "/".join(str(i) for i in _path_suffix_longs)
+    return _path_suffix
 
 
 def _bech32_decode(bech32: str, *, allowed_hrp: Optional[Set[str]] = None) -> Tuple[str, List[int]]:
@@ -126,62 +162,3 @@ def url_encode(url: str) -> str:
         raise InvalidUrl
 
     return lnurl.upper()
-
-
-def _int_to_bytes_suitable_der(x: int) -> bytes:
-    """for strict DER we need to encode the integer with some quirks"""
-    b = x.to_bytes((x.bit_length() + 7) // 8, "big")
-
-    if len(b) == 0:
-        # ensure there's at least one byte when the int is zero
-        return bytes([0])
-
-    if b[0] & 0x80 != 0:
-        # ensure it doesn't start with a 0x80 and so it isn't
-        # interpreted as a negative number
-        return bytes([0]) + b
-
-    return b
-
-
-def encode_strict_der(r: int, s: int, order: int):
-    # if s > order/2 verification will fail sometimes
-    # so we must fix it here see:
-    # https://github.com/indutny/elliptic/blob/e71b2d9359c5fe9437fbf46f1f05096de447de57/lib/elliptic/ec/index.js#L146-L147
-    if s > order // 2:
-        s = order - s
-
-    # now we do the strict DER encoding copied from
-    # https://github.com/KiriKiri/bip66 (without any checks)
-    r_temp = _int_to_bytes_suitable_der(r)
-    s_temp = _int_to_bytes_suitable_der(s)
-
-    r_len = len(r_temp)
-    s_len = len(s_temp)
-    sign_len = 6 + r_len + s_len
-
-    signature = BytesIO()
-    signature.write(0x30.to_bytes(1, "big", signed=False))
-    signature.write((sign_len - 2).to_bytes(1, "big", signed=False))
-    signature.write(0x02.to_bytes(1, "big", signed=False))
-    signature.write(r_len.to_bytes(1, "big", signed=False))
-    signature.write(r_temp)
-    signature.write(0x02.to_bytes(1, "big", signed=False))
-    signature.write(s_len.to_bytes(1, "big", signed=False))
-    signature.write(s_temp)
-
-    return signature.getvalue()
-
-
-def decode_strict_der(sig, _):
-    """
-    Decode a DER signature.
-    """
-    if len(sig) < 8 or sig[0] != 0x30:
-        raise ValueError("Invalid signature")
-    length = sig[1]
-    if length + 2 != len(sig):
-        raise ValueError("Invalid signature")
-    r = int.from_bytes(sig[4 : 4 + sig[3]], "big")
-    s = int.from_bytes(sig[6 + sig[3] :], "big")
-    return r, s
