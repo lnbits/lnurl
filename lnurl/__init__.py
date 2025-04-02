@@ -5,7 +5,9 @@ from .core import decode, encode, execute, execute_login, execute_pay_request, e
 from .helpers import (
     aes_decrypt,
     aes_encrypt,
-    encode_strict_der,
+    lnurlauth_derive_linking_key,
+    lnurlauth_derive_path,
+    lnurlauth_master_key_from_seed,
     lnurlauth_signature,
     lnurlauth_verify,
     url_decode,
@@ -45,7 +47,6 @@ __all__ = [
     "aes_encrypt",
     "url_encode",
     "url_decode",
-    "encode_strict_der",
     "decode",
     "encode",
     "execute",
@@ -81,4 +82,7 @@ __all__ = [
     "CiphertextBase64",
     "lnurlauth_signature",
     "lnurlauth_verify",
+    "lnurlauth_derive_linking_key",
+    "lnurlauth_master_key_from_seed",
+    "lnurlauth_derive_path",
 ]
