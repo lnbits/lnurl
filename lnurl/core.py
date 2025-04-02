@@ -6,7 +6,12 @@ from bolt11 import decode as bolt11_decode
 from pydantic import ValidationError
 
 from .exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
-from .helpers import lnurlauth_signature, url_encode
+from .helpers import (
+    lnurlauth_derive_linking_key,
+    lnurlauth_derive_linking_key_sign_message,
+    lnurlauth_signature,
+    url_encode,
+)
 from .models import (
     LnurlAuthResponse,
     LnurlPayActionResponse,
@@ -133,13 +138,24 @@ async def execute_pay_request(
 
 async def execute_login(
     res: LnurlAuthResponse,
-    secret: str,
+    seed: str | None = None,
+    signed_message: str | None = None,
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
 ) -> LnurlResponseModel:
+    if not res.callback:
+        raise LnurlResponseException("LNURLauth callback does not exist")
+    host = res.callback.host
+    if not host:
+        raise LnurlResponseException("Invalid host in LNURLauth callback")
+    if seed:
+        linking_key, _ = lnurlauth_derive_linking_key(seed=seed, domain=host)
+    elif signed_message:
+        linking_key, _ = lnurlauth_derive_linking_key_sign_message(domain=host, sig=signed_message.encode())
+    else:
+        raise LnurlResponseException("Seed or signed_message is required for LNURLauth")
     try:
-        assert res.callback.host, "LNURLauth host does not exist"
-        key, sig = lnurlauth_signature(res.callback.host, secret, res.k1)
+        key, sig = lnurlauth_signature(res.k1, linking_key=linking_key)
         headers = {"User-Agent": user_agent or USER_AGENT}
         async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
             res2 = await client.get(

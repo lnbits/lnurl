@@ -12,6 +12,12 @@ from ecdsa.util import sigdecode_der, sigencode_der
 
 from .exceptions import InvalidLnurl, InvalidUrl
 
+LUD13_PHRASE = (
+    "DO NOT EVER SIGN THIS TEXT WITH YOUR PRIVATE KEYS! IT IS ONLY USED "
+    "FOR DERIVATION OF LNURL-AUTH HASHING-KEY, DISCLOSING ITS SIGNATURE "
+    "WILL COMPROMISE YOUR LNURL-AUTH IDENTITY AND MAY LEAD TO LOSS OF FUNDS!"
+)
+
 
 def aes_decrypt(preimage: bytes, ciphertext_base64: str, iv_base64: str) -> str:
     """
@@ -55,12 +61,12 @@ def aes_encrypt(preimage: bytes, message: str) -> tuple[str, str]:
 
 
 # LUD-04: auth base spec.
-def lnurlauth_signature(k1: str, seed: str, domain: str) -> tuple[str, str]:
+def lnurlauth_signature(k1: str, linking_key: bytes) -> tuple[str, str]:
     """
-    Sign a k1 with a derived bip32 key from a seed and a domain.
+    Sign a k1 with a linking_key from (bip32 or signMessage) and a domain.
+
+    Obtain the linking_key from lnurlauth_derive_linking_key or lnurlauth_derive_linking_key_sign_message.
     """
-    # LUD-05: BIP32-based seed generation for auth protocol.
-    linking_key, _ = lnurlauth_derive_linking_key(seed, domain)
     auth_key = SigningKey.from_string(linking_key, curve=SECP256k1, hashfunc=sha256)
     sig = auth_key.sign_digest_deterministic(bytes.fromhex(k1), sigencode=sigencode_der)
     if not auth_key.verifying_key:
@@ -117,6 +123,28 @@ def lnurlauth_derive_path(hashing_private_key: bytes, domain_name: str) -> str:
     _path_suffix_longs = [int.from_bytes(derivation_material[i : i + 4], "big") for i in range(0, 16, 4)]
     _path_suffix = "m/138'/" + "/".join(str(i) for i in _path_suffix_longs)
     return _path_suffix
+
+
+# LUD-13: signMessage-based seed generation for auth protocol.
+def lnurlauth_message_to_sign() -> bytes:
+    """
+    Generate a message to sign for signMessage.
+    """
+    return sha256(LUD13_PHRASE.encode()).digest()
+
+
+def lnurlauth_derive_linking_key_sign_message(domain: str, sig: bytes) -> tuple[bytes, bytes]:
+    """
+    Derive a key from a from signMessage from a node.
+    param `sig` is a RFC6979 deterministic signature.
+    """
+    hashing_key = SigningKey.from_string(sha256(sig).digest(), curve=SECP256k1, hashfunc=sha256)
+    linking_key = SigningKey.from_string(
+        hmac.digest(hashing_key.to_string(), domain.encode(), "sha256"), curve=SECP256k1, hashfunc=sha256
+    )
+    assert linking_key.privkey and linking_key.verifying_key
+    pubkey = linking_key.verifying_key.to_string("compressed")
+    return linking_key.privkey, pubkey
 
 
 def _bech32_decode(bech32: str, *, allowed_hrp: Optional[Set[str]] = None) -> Tuple[str, List[int]]:

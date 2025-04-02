@@ -3,11 +3,14 @@ from bolt11 import MilliSatoshi
 
 from .core import decode, encode, execute, execute_login, execute_pay_request, execute_withdraw, get, handle
 from .helpers import (
+    LUD13_PHRASE,
     aes_decrypt,
     aes_encrypt,
     lnurlauth_derive_linking_key,
+    lnurlauth_derive_linking_key_sign_message,
     lnurlauth_derive_path,
     lnurlauth_master_key_from_seed,
+    lnurlauth_message_to_sign,
     lnurlauth_signature,
     lnurlauth_verify,
     url_decode,
@@ -85,4 +88,7 @@ __all__ = [
     "lnurlauth_derive_linking_key",
     "lnurlauth_master_key_from_seed",
     "lnurlauth_derive_path",
+    "lnurlauth_message_to_sign",
+    "lnurlauth_derive_linking_key_sign_message",
+    "LUD13_PHRASE",
 ]

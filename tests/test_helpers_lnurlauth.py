@@ -1,7 +1,9 @@
 from lnurl import (
     lnurlauth_derive_linking_key,
+    lnurlauth_derive_linking_key_sign_message,
     lnurlauth_derive_path,
     lnurlauth_master_key_from_seed,
+    lnurlauth_message_to_sign,
     lnurlauth_signature,
     lnurlauth_verify,
 )
@@ -19,6 +21,9 @@ domain_name = "site.com"
 hashing_private_key = "7d417a6a5e9a6a4a879aeaba11a11838764c8fa2b959c242d43dea682b3e409b"
 path_suffix = "m/138'/1588488367/2659270754/38110259/4136336762"
 
+# LUD-13 phrase sha256
+phrase = "4b8dac0e71a99c61d2c197e6932fab3ae3cf7900fc19076864aa11e80d83b4d9"
+
 
 class TestHelpersLnurlauth:
 
@@ -32,7 +37,8 @@ class TestHelpersLnurlauth:
         assert lnurlauth_verify(k1, key, sig) is False
 
     def test_signature(self):
-        _key, _sig = lnurlauth_signature(k1, key, domain_name)
+        linking_key, _ = lnurlauth_derive_linking_key(key, domain_name)
+        _key, _sig = lnurlauth_signature(k1, linking_key)
         assert lnurlauth_verify(k1, _key, _sig) is True
         # invalid signature
         assert lnurlauth_verify(k1, key, _sig) is False
@@ -41,12 +47,13 @@ class TestHelpersLnurlauth:
         _path = lnurlauth_derive_path(bytes.fromhex(hashing_private_key), domain_name)
         assert _path == path_suffix
 
-    def test_derive_linking_key(self):
-        _pub, _priv = lnurlauth_derive_linking_key(key, domain_name)
-        assert _pub
-        assert _priv
-
     def test_master_key_from_seed(self):
         _master = lnurlauth_master_key_from_seed(key)
         assert _master
         assert _master.privkey
+
+    def test_phrase_sha256(self):
+        assert lnurlauth_message_to_sign().hex() == phrase
+
+    def test_linking_key_signmessage(self):
+        _ = lnurlauth_derive_linking_key_sign_message(domain_name, b"0" * 32)
