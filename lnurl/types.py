@@ -22,15 +22,13 @@ from .helpers import _bech32_decode, _lnurl_clean, url_decode, url_encode
 
 
 class ReprMixin:
-    __slots__ = ()
-
     def __repr__(self) -> str:
         attrs = [  # type: ignore
             outer_slot  # type: ignore
-            for outer_slot in self.__slots__  # type: ignore
-            if not outer_slot.startswith("_") and getattr(self, outer_slot) is not None  # type: ignore
+            for outer_slot in [slot for slot in self.__slots__ if not slot.startswith("_")]  # type: ignore
+            if getattr(self, outer_slot)  # type: ignore
         ]  # type: ignore
-        extra = ", " + ", ".join(f"{n}={getattr(self, n).__repr__()}" for n in attrs) if attrs else ""  # type: ignore
+        extra = ", " + ", ".join(f"{n}={getattr(self, n).__repr__()}" for n in attrs) if attrs else ""
         return f"{self.__class__.__name__}({super().__repr__()}{extra})"
 
 
@@ -88,8 +86,6 @@ def valid_lnurl_host(url: str) -> AnyUrl:
 
 
 class Url(AnyUrl):
-    """URL with extra validations over pydantic's `HttpUrl`."""
-
     max_length = 2047  # https://stackoverflow.com/questions/417142/
 
     # LUD-17: Protocol schemes and raw (non bech32-encoded) URLs.
@@ -118,7 +114,7 @@ class Url(AnyUrl):
 
 
 class CallbackUrl(Url):
-    """URL for callback purposes."""
+    """URL for callbacks. exlude lud17 schemes."""
 
     allowed_schemes = {"https", "http"}
 
