@@ -2,6 +2,14 @@
 from bolt11 import MilliSatoshi
 
 from .core import decode, encode, execute, execute_login, execute_pay_request, execute_withdraw, get, handle
+from .exceptions import (
+    InvalidLnurl,
+    InvalidLnurlPayMetadata,
+    InvalidUrl,
+    LnAddressError,
+    LnurlException,
+    LnurlResponseException,
+)
 from .helpers import (
     LUD13_PHRASE,
     aes_decrypt,
@@ -33,16 +41,15 @@ from .models import (
 )
 from .types import (
     Bech32,
+    CallbackUrl,
     CiphertextBase64,
-    ClearnetUrl,
-    DebugUrl,
     InitializationVectorBase64,
     LightningInvoice,
     LightningNodeUri,
     LnAddress,
     Lnurl,
     LnurlPayMetadata,
-    OnionUrl,
+    Url,
 )
 
 __all__ = [
@@ -70,9 +77,8 @@ __all__ = [
     "LnurlSuccessResponse",
     "LnurlWithdrawResponse",
     "MilliSatoshi",
-    "OnionUrl",
-    "ClearnetUrl",
-    "DebugUrl",
+    "CallbackUrl",
+    "Url",
     "LightningNodeUri",
     "LnAddress",
     "LightningInvoice",
@@ -91,4 +97,10 @@ __all__ = [
     "lnurlauth_message_to_sign",
     "lnurlauth_derive_linking_key_sign_message",
     "LUD13_PHRASE",
+    "LnurlException",
+    "LnAddressError",
+    "InvalidLnurl",
+    "InvalidLnurlPayMetadata",
+    "InvalidUrl",
+    "LnurlResponseException",
 ]

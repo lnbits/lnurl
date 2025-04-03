@@ -4,37 +4,21 @@ import json
 import os
 import re
 from hashlib import sha256
-from typing import List, Optional, Tuple, Union
+from typing import Generator, Optional
 from urllib.parse import parse_qs
 
 from pydantic import (
+    AnyUrl,
     ConstrainedStr,
-    HttpUrl,
     Json,
     ValidationError,
     parse_obj_as,
     validator,
 )
-from pydantic.errors import UrlHostTldError, UrlSchemeError
-from pydantic.networks import Parts
 from pydantic.validators import str_validator
 
-from .exceptions import InvalidLnurlPayMetadata
-from .helpers import _bech32_decode, _lnurl_clean, url_decode
-
-
-def ctrl_characters_validator(value: str) -> str:
-    """Checks for control characters (unicode blocks C0 and C1, plus DEL)."""
-    if re.compile(r"[\u0000-\u001f\u007f-\u009f]").search(value):
-        raise ValueError
-    return value
-
-
-def strict_rfc3986_validator(value: str) -> str:
-    """Checks for RFC3986 compliance."""
-    if re.compile(r"[^]a-zA-Z0-9._~:/?#[@!$&'()*+,;=-]").search(value):
-        raise ValueError
-    return value
+from .exceptions import InvalidLnurlPayMetadata, InvalidUrl, LnAddressError
+from .helpers import _bech32_decode, _lnurl_clean, url_decode, url_encode
 
 
 class ReprMixin:
@@ -56,12 +40,12 @@ class Bech32(ReprMixin, str):
     def __new__(cls, bech32: str, **_) -> "Bech32":
         return str.__new__(cls, bech32)
 
-    def __init__(self, bech32: str, *, hrp: Optional[str] = None, data: Optional[List[int]] = None):
+    def __init__(self, bech32: str, *, hrp: Optional[str] = None, data: Optional[list[int]] = None):
         str.__init__(bech32)
         self.hrp, self.data = (hrp, data) if hrp and data else self.__get_data__(bech32)
 
     @classmethod
-    def __get_data__(cls, bech32: str) -> Tuple[str, List[int]]:
+    def __get_data__(cls, bech32: str) -> tuple[str, list[int]]:
         return _bech32_decode(bech32)
 
     @classmethod
@@ -75,16 +59,48 @@ class Bech32(ReprMixin, str):
         return cls(value, hrp=hrp, data=data)
 
 
-class Url(HttpUrl):
-    """URL with extra validations over pydantic's `HttpUrl`."""
+def ctrl_characters_validator(value: str) -> str:
+    """Checks for control characters (unicode blocks C0 and C1, plus DEL)."""
+    if re.compile(r"[\u0000-\u001f\u007f-\u009f]").search(value):
+        raise InvalidUrl("URL contains control characters.")
+    return value
 
+
+def strict_rfc3986_validator(value: str) -> str:
+    """Checks for RFC3986 compliance."""
+    if os.environ.get("LNURL_STRICT_RFC3986", "0") == "1":
+        if re.compile(r"[^]a-zA-Z0-9._~:/?#[@!$&'()*+,;=-]").search(value):
+            raise InvalidUrl("URL is not RFC3986 compliant.")
+    return value
+
+
+def valid_lnurl_host(url: str) -> AnyUrl:
+    """Validates the host part of a URL."""
+    _url = parse_obj_as(AnyUrl, url)
+    if not _url.host:
+        raise InvalidUrl("URL host is required.")
+    if _url.scheme == "http":
+        if _url.host not in ["127.0.0.1", "0.0.0.0", "localhost"] and not _url.host.endswith(".onion"):
+            raise InvalidUrl("HTTP scheme is only allowed for localhost or onion addresses.")
+    return _url
+
+
+class Url(AnyUrl):
     max_length = 2047  # https://stackoverflow.com/questions/417142/
 
+    # LUD-17: Protocol schemes and raw (non bech32-encoded) URLs.
+    allowed_schemes = {"https", "http", "lnurlc", "lnurlw", "lnurlp", "keyauth"}
+
+    @property
+    def is_lud17(self) -> bool:
+        uris = ["lnurlc", "lnurlw", "lnurlp", "keyauth"]
+        return any(self.scheme == uri for uri in uris)
+
     @classmethod
-    def __get_validators__(cls):
+    def __get_validators__(cls) -> Generator:
         yield ctrl_characters_validator
-        if os.environ.get("LNURL_STRICT_RFC3986", "0") == "1":
-            yield strict_rfc3986_validator
+        yield strict_rfc3986_validator
+        yield valid_lnurl_host
         yield cls.validate
 
     @property
@@ -97,36 +113,10 @@ class Url(HttpUrl):
         return {k: v[0] for k, v in parse_qs(self.query).items()}
 
 
-class DebugUrl(Url):
-    """Unsecure web URL, to make developers life easier."""
-
-    allowed_schemes = {"http"}
-
-    @classmethod
-    def validate_host(cls, parts: Parts) -> Tuple[str, Optional[str], str, bool]:
-        host, tld, host_type, rebuild = super().validate_host(parts)
-        if host not in ["127.0.0.1", "0.0.0.0"]:
-            raise UrlSchemeError()
-        return host, tld, host_type, rebuild
-
-
-class ClearnetUrl(Url):
-    """Secure web URL."""
-
-    allowed_schemes = {"https"}
-
-
-class OnionUrl(Url):
-    """Tor anonymous onion service."""
+class CallbackUrl(Url):
+    """URL for callbacks. exlude lud17 schemes."""
 
     allowed_schemes = {"https", "http"}
-
-    @classmethod
-    def validate_host(cls, parts: Parts) -> Tuple[str, Optional[str], str, bool]:
-        host, tld, host_type, rebuild = super().validate_host(parts)
-        if tld != "onion":
-            raise UrlHostTldError()
-        return host, tld, host_type, rebuild
 
 
 class LightningInvoice(Bech32):
@@ -164,21 +154,17 @@ class LightningNodeUri(ReprMixin, str):
 
 
 class Lnurl(ReprMixin, str):
-    __slots__ = ("bech32", "url")
+    __slots__ = ("url", "bech32")
 
-    def __new__(cls, lightning: str, **_) -> Lnurl:
-        return str.__new__(cls, _lnurl_clean(lightning))
+    def __new__(cls, lightning: str) -> Lnurl:
+        url, bech32 = cls.clean(lightning)
+        return str.__new__(cls, bech32 or url)
 
-    def __init__(self, lightning: str, *, url: Optional[Union[OnionUrl, ClearnetUrl, DebugUrl]] = None):
-        bech32 = _lnurl_clean(lightning)
-        str.__init__(bech32)
-        self.bech32 = Bech32(bech32)
-        self.url = url if url else self.__get_url__(bech32)
-
-    @classmethod
-    def __get_url__(cls, bech32: str) -> Union[OnionUrl, ClearnetUrl, DebugUrl]:
-        url: str = url_decode(bech32)
-        return parse_obj_as(Union[OnionUrl, ClearnetUrl, DebugUrl], url)  # type: ignore
+    def __init__(self, lightning: str):
+        url, bech32 = self.clean(lightning)
+        self.url = url
+        self.bech32 = bech32
+        return str.__init__(bech32 or url)
 
     @classmethod
     def __get_validators__(cls):
@@ -186,8 +172,29 @@ class Lnurl(ReprMixin, str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str) -> Lnurl:
-        return cls(value, url=cls.__get_url__(value))
+    def clean(cls, lightning: str) -> tuple[Url, Bech32 | None]:
+        lightning = _lnurl_clean(lightning)
+        if lightning.lower().startswith("lnurl1"):
+            bech32 = parse_obj_as(Bech32, lightning)
+            url = parse_obj_as(Url, url_decode(lightning))
+        else:
+            url = parse_obj_as(Url, lightning)
+            if url.is_lud17:
+                # LUD-17: Protocol schemes and raw (non bech32-encoded) URLs.
+                # no bech32 encoding for lud17
+                bech32 = None
+            else:
+                bech32 = parse_obj_as(Bech32, url_encode(url))
+        return url, bech32
+
+    @classmethod
+    def validate(cls, lightning: str) -> Lnurl:
+        _ = cls.clean(lightning)
+        return cls(lightning)
+
+    @property
+    def callback_url(self) -> CallbackUrl:
+        return parse_obj_as(CallbackUrl, self.url)
 
     # LUD-04: auth base spec.
     @property
@@ -207,23 +214,28 @@ class Lnurl(ReprMixin, str):
             and q.get("callback") is not None
         )
 
+    # LUD-17: Protocol schemes and raw (non bech32-encoded) URLs.
+    @property
+    def is_lud17(self) -> bool:
+        return self.url.is_lud17
+
 
 class LnAddress(ReprMixin, str):
     """Lightning address of form `user@host`"""
 
     slots = ("address", "url")
 
-    def __new__(cls, address: str, **_) -> LnAddress:
+    def __new__(cls, address: str) -> LnAddress:
         return str.__new__(cls, address)
 
     def __init__(self, address: str):
         str.__init__(address)
         if not self.is_valid_lnaddress(address):
-            raise ValueError("Invalid Lightning address.")
+            raise LnAddressError("Invalid Lightning address.")
         self.address = address
         self.url = self.__get_url__(address)
 
-    # LUD-16: Paying to static internet identifiers.
+    # LUD-16: Paying to static internet identifiers.
     @validator("address")
     def is_valid_lnaddress(cls, address: str) -> bool:
         # A user can then type these on a WALLET. The <username> is limited
@@ -233,10 +245,10 @@ class LnAddress(ReprMixin, str):
         return re.fullmatch(lnaddress_regex, address) is not None
 
     @classmethod
-    def __get_url__(cls, address: str) -> Union[OnionUrl, ClearnetUrl, DebugUrl]:
+    def __get_url__(cls, address: str) -> CallbackUrl:
         name, domain = address.split("@")
         url = ("http://" if domain.endswith(".onion") else "https://") + domain + "/.well-known/lnurlp/" + name
-        return parse_obj_as(Union[OnionUrl, ClearnetUrl, DebugUrl], url)  # type: ignore
+        return parse_obj_as(CallbackUrl, url)
 
 
 class LnurlPayMetadata(ReprMixin, str):
@@ -256,14 +268,14 @@ class LnurlPayMetadata(ReprMixin, str):
     def __new__(cls, json_str: str, **_) -> LnurlPayMetadata:
         return str.__new__(cls, json_str)
 
-    def __init__(self, json_str: str, *, json_obj: Optional[List] = None):
+    def __init__(self, json_str: str, *, json_obj: Optional[list] = None):
         str.__init__(json_str)
         self._list = json_obj if json_obj else self.__validate_metadata__(json_str)
 
     @classmethod
-    def __validate_metadata__(cls, json_str: str) -> List[Tuple[str, str]]:
+    def __validate_metadata__(cls, json_str: str) -> list[tuple[str, str]]:
         try:
-            parse_obj_as(Json[List[Tuple[str, str]]], json_str)
+            parse_obj_as(Json[list[tuple[str, str]]], json_str)
             data = [(str(item[0]), str(item[1])) for item in json.loads(json_str)]
         except ValidationError:
             raise InvalidLnurlPayMetadata
@@ -306,10 +318,10 @@ class LnurlPayMetadata(ReprMixin, str):
         return output
 
     @property
-    def images(self) -> List[Tuple[str, str]]:
+    def images(self) -> list[tuple[str, str]]:
         return [x for x in self._list if x[0].startswith("image/")]
 
-    def list(self) -> List[Tuple[str, str]]:
+    def list(self) -> list[tuple[str, str]]:
         return self._list
 
 

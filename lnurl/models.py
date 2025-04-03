@@ -8,9 +8,8 @@ from pydantic import BaseModel, Field, ValidationError, validator
 
 from .exceptions import LnurlResponseException
 from .types import (
+    CallbackUrl,
     CiphertextBase64,
-    ClearnetUrl,
-    DebugUrl,
     InitializationVectorBase64,
     LightningInvoice,
     LightningNodeUri,
@@ -18,7 +17,7 @@ from .types import (
     Lnurl,
     LnurlPayMetadata,
     Max144Str,
-    OnionUrl,
+    Url,
 )
 
 
@@ -39,7 +38,7 @@ class MessageAction(LnurlPaySuccessAction):
 
 class UrlAction(LnurlPaySuccessAction):
     tag: Literal["url"] = "url"
-    url: Union[ClearnetUrl, OnionUrl, DebugUrl]
+    url: Url
     description: Max144Str
 
 
@@ -92,7 +91,7 @@ class LnurlSuccessResponse(LnurlResponseModel):
 # LUD-04: auth base spec.
 class LnurlAuthResponse(LnurlResponseModel):
     tag: Literal["login"] = "login"
-    callback: Union[ClearnetUrl, OnionUrl, DebugUrl]
+    callback: CallbackUrl
     k1: str
 
 
@@ -100,7 +99,7 @@ class LnurlAuthResponse(LnurlResponseModel):
 class LnurlChannelResponse(LnurlResponseModel):
     tag: Literal["channelRequest"] = "channelRequest"
     uri: LightningNodeUri
-    callback: Union[ClearnetUrl, OnionUrl, DebugUrl]
+    callback: CallbackUrl
     k1: str
 
 
@@ -114,7 +113,7 @@ class LnurlHostedChannelResponse(LnurlResponseModel):
 
 class LnurlPayResponse(LnurlResponseModel):
     tag: Literal["payRequest"] = "payRequest"
-    callback: Union[ClearnetUrl, OnionUrl, DebugUrl]
+    callback: CallbackUrl
     min_sendable: MilliSatoshi = Field(..., alias="minSendable", gt=0)
     max_sendable: MilliSatoshi = Field(..., alias="maxSendable", gt=0)
     metadata: LnurlPayMetadata
@@ -159,13 +158,13 @@ class LnurlPayActionResponse(LnurlResponseModel):
 
 class LnurlWithdrawResponse(LnurlResponseModel):
     tag: Literal["withdrawRequest"] = "withdrawRequest"
-    callback: Union[ClearnetUrl, OnionUrl, DebugUrl]
+    callback: CallbackUrl
     k1: str
     min_withdrawable: MilliSatoshi = Field(..., alias="minWithdrawable", gt=0)
     max_withdrawable: MilliSatoshi = Field(..., alias="maxWithdrawable", gt=0)
     default_description: str = Field("", alias="defaultDescription")
     # LUD-14: balanceCheck: reusable withdrawRequests
-    balance_check: Optional[Union[ClearnetUrl, OnionUrl, DebugUrl]] = Field(None, alias="balanceCheck")
+    balance_check: CallbackUrl = Field(None, alias="balanceCheck")
     current_balance: Optional[MilliSatoshi] = Field(None, alias="currentBalance")
     # LUD-19: Pay link discoverable from withdraw link.
     pay_link: Optional[Union[LnAddress, Lnurl]] = Field(None, alias="payLink")
