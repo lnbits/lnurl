@@ -118,12 +118,52 @@ class LnurlHostedChannelResponse(LnurlResponseModel):
     alias: Optional[str] = None
 
 
+# LUD-18: Payer identity in payRequest protocol.
+class LnurlPayResponsePayerDataOption(BaseModel):
+    mandatory: bool
+
+
+class LnurlPayResponsePayerDataOptionAuth(LnurlPayResponsePayerDataOption):
+    k1: str
+
+
+class LnurlPayResponsePayerDataExtra(BaseModel):
+    name: str
+    field: LnurlPayResponsePayerDataOption
+
+
+class LnurlPayResponsePayerData(BaseModel):
+    name: Optional[LnurlPayResponsePayerDataOption] = None
+    pubkey: Optional[LnurlPayResponsePayerDataOption] = None
+    identifier: Optional[LnurlPayResponsePayerDataOption] = None
+    email: Optional[LnurlPayResponsePayerDataOption] = None
+    auth: Optional[LnurlPayResponsePayerDataOptionAuth] = None
+    extras: Optional[list[LnurlPayResponsePayerDataExtra]] = None
+
+
+class LnurlPayerDataAuth(BaseModel):
+    key: str
+    k1: str
+    sig: str
+
+
+class LnurlPayerData(BaseModel):
+    name: Optional[str] = None
+    pubkey: Optional[str] = None
+    identifier: Optional[str] = None
+    email: Optional[str] = None
+    auth: Optional[LnurlPayerDataAuth] = None
+    extras: Optional[dict] = None
+
+
 class LnurlPayResponse(LnurlResponseModel):
     tag: Literal["payRequest"] = "payRequest"
     callback: CallbackUrl
     min_sendable: MilliSatoshi = Field(alias="minSendable", gt=0)
     max_sendable: MilliSatoshi = Field(alias="maxSendable", gt=0)
     metadata: LnurlPayMetadata
+    # LUD-18: Payer identity in payRequest protocol.
+    payer_data: Optional[LnurlPayResponsePayerData] = Field(None, alias="payerData")
 
     # Adds the optional comment_allowed field to the LnurlPayResponse
     # ref LUD-12: Comments in payRequest.
