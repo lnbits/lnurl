@@ -113,32 +113,32 @@ class TestLightningNode:
 
 class TestLnurl:
     @pytest.mark.parametrize(
-        "lightning, url",
+        "lightning",
         [
             (
-                (
-                    "LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWE3JX56NXCFK89JN2V3K"
-                    "XUCRSVTY8YMXGCMYXV6RQD3EXDSKVCTZV5CRGCN9XA3RQCMRVSCNWWRYVCYAE0UU"
-                ),
-                "https://service.io/?q=3fc3645b439ce8e7f2553a69e5267081d96dcd340693afabe04be7b0ccd178df",
+                "LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWE3JX56NXCFK89JN2V3K"
+                "XUCRSVTY8YMXGCMYXV6RQD3EXDSKVCTZV5CRGCN9XA3RQCMRVSCNWWRYVCYAE0UU"
             ),
             (
-                (
-                    "lightning:LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWE3JX56NXCFK89JN2V3K"
-                    "XUCRSVTY8YMXGCMYXV6RQD3EXDSKVCTZV5CRGCN9XA3RQCMRVSCNWWRYVCYAE0UU"
-                ),
-                "https://service.io/?q=3fc3645b439ce8e7f2553a69e5267081d96dcd340693afabe04be7b0ccd178df",
+                "lightning:LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWE3JX56NXCFK89JN2V3K"
+                "XUCRSVTY8YMXGCMYXV6RQD3EXDSKVCTZV5CRGCN9XA3RQCMRVSCNWWRYVCYAE0UU"
             ),
+            "https://service.io",
+            "lnurlp://service.io",
         ],
     )
-    def test_valid_lnurl_and_bech32(self, lightning, url):
+    def test_valid_lnurl_and_bech32(self, lightning):
         lnurl = Lnurl(lightning)
-        # assert lnurl == lnurl.bech32
-        assert lnurl == _lnurl_clean(lightning)
         assert lnurl == parse_obj_as(Lnurl, lightning)
-        assert lnurl.bech32.hrp == "lnurl"
-        assert lnurl.url == url
-        assert lnurl.url.query_params == {"q": "3fc3645b439ce8e7f2553a69e5267081d96dcd340693afabe04be7b0ccd178df"}
+        assert lnurl.bech32 == _lnurl_clean(lightning) or lnurl.url == _lnurl_clean(lightning)
+        if lnurl.is_lud17:
+            assert lnurl.bech32 is None
+            assert lnurl == lnurl.url
+        else:
+            assert lnurl.bech32 is not None
+            assert lnurl.bech32.hrp == "lnurl"
+            assert lnurl == lnurl.bech32
+
         assert lnurl.is_login is False
 
     @pytest.mark.parametrize(
@@ -161,7 +161,7 @@ class TestLnurl:
         "url",
         [
             "http://service.io",
-            "lnurlx://service.io" "lnurlp://service.io",
+            "lnurlx://service.io",
         ],
     )
     def test_invalid_lnurl(self, url: str):

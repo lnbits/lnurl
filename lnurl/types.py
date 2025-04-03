@@ -164,6 +164,7 @@ class Lnurl(ReprMixin, str):
         url, bech32 = self.clean(lightning)
         self.url = url
         self.bech32 = bech32
+        return str.__init__(bech32 or url)
 
     @classmethod
     def __get_validators__(cls):
