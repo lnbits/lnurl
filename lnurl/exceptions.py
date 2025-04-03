@@ -2,6 +2,10 @@ class LnurlException(Exception):
     """A LNURL error occurred."""
 
 
+class LnAddressError(LnurlException):
+    """An error ocurred processing LNURL address."""
+
+
 class LnurlResponseException(LnurlException):
     """An error ocurred processing LNURL response."""
 

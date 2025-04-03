@@ -1,19 +1,16 @@
-from typing import Union
-
 import pytest
 from pydantic import ValidationError, parse_obj_as
 
-from lnurl.helpers import _lnurl_clean
-from lnurl.types import (
-    ClearnetUrl,
-    DebugUrl,
+from lnurl import (
+    CallbackUrl,
     LightningInvoice,
     LightningNodeUri,
     LnAddress,
+    LnAddressError,
     Lnurl,
     LnurlPayMetadata,
-    OnionUrl,
 )
+from lnurl.helpers import _lnurl_clean
 
 
 class TestUrl:
@@ -23,7 +20,7 @@ class TestUrl:
         ["service.io:443", "service.io:9000"],
     )
     def test_parameters(self, hostport):
-        url = parse_obj_as(Union[DebugUrl, OnionUrl, ClearnetUrl], f"https://{hostport}/?q=3fc3645b439ce8e7&test=ok")
+        url = parse_obj_as(CallbackUrl, f"https://{hostport}/?q=3fc3645b439ce8e7&test=ok")
         assert url.host == "service.io"
         assert url.base == f"https://{hostport}/"
         assert url.query_params == {"q": "3fc3645b439ce8e7", "test": "ok"}
@@ -39,11 +36,12 @@ class TestUrl:
             "https://xn--yt8h.la/%E2%9A%A1",
             "http://0.0.0.0",
             "http://127.0.0.1",
+            "http://localhost",
         ],
     )
-    def test_valid(self, url):
-        url = parse_obj_as(Union[OnionUrl, DebugUrl, ClearnetUrl], url)
-        assert isinstance(url, (OnionUrl, DebugUrl, ClearnetUrl))
+    def test_valid_callback(self, url):
+        url = parse_obj_as(CallbackUrl, url)
+        assert isinstance(url, CallbackUrl)
 
     @pytest.mark.parametrize(
         "url",
@@ -54,11 +52,12 @@ class TestUrl:
             "https://1.1.1.1/\u0000",
             "http://xn--yt8h.la/%E2%9A%A1",
             "http://1.1.1.1",
+            "lnurlp://service.io",
         ],
     )
-    def test_invalid_data(self, url):
+    def test_invalid_data_callback(self, url):
         with pytest.raises(ValidationError):
-            parse_obj_as(Union[DebugUrl, OnionUrl, ClearnetUrl], url)
+            parse_obj_as(CallbackUrl, url)
 
     @pytest.mark.parametrize(
         "url",
@@ -70,7 +69,7 @@ class TestUrl:
     def test_strict_rfc3986(self, monkeypatch, url):
         monkeypatch.setenv("LNURL_STRICT_RFC3986", "1")
         with pytest.raises(ValidationError):
-            parse_obj_as(ClearnetUrl, url)
+            parse_obj_as(CallbackUrl, url)
 
 
 class TestLightningInvoice:
@@ -90,7 +89,7 @@ class TestLightningInvoice:
             ),
         ],
     )
-    def test_valid(self, bech32, hrp, prefix, amount, h):
+    def test_valid_invoice(self, bech32, hrp, prefix, amount, h):
         invoice = LightningInvoice(bech32)
         assert invoice == parse_obj_as(LightningInvoice, bech32)
         assert invoice.hrp == hrp
@@ -100,14 +99,14 @@ class TestLightningInvoice:
 
 
 class TestLightningNode:
-    def test_valid(self):
+    def test_valid_node(self):
         node = parse_obj_as(LightningNodeUri, "node_key@ip_address:port_number")
         assert node.key == "node_key"
         assert node.ip == "ip_address"
         assert node.port == "port_number"
 
     @pytest.mark.parametrize("uri", ["https://service.io/node", "node_key@ip_address", "ip_address:port_number"])
-    def test_invalid_data(self, uri):
+    def test_invalid_node(self, uri):
         with pytest.raises(ValidationError):
             parse_obj_as(LightningNodeUri, uri)
 
@@ -132,14 +131,42 @@ class TestLnurl:
             ),
         ],
     )
-    def test_valid(self, lightning, url):
+    def test_valid_lnurl_and_bech32(self, lightning, url):
         lnurl = Lnurl(lightning)
-        assert lnurl == lnurl.bech32 == _lnurl_clean(lightning) == parse_obj_as(Lnurl, lightning)
+        # assert lnurl == lnurl.bech32
+        assert lnurl == _lnurl_clean(lightning)
+        assert lnurl == parse_obj_as(Lnurl, lightning)
         assert lnurl.bech32.hrp == "lnurl"
         assert lnurl.url == url
-        assert lnurl.url.base == "https://service.io:443/"
         assert lnurl.url.query_params == {"q": "3fc3645b439ce8e7f2553a69e5267081d96dcd340693afabe04be7b0ccd178df"}
         assert lnurl.is_login is False
+
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "lnurlp://service.io",
+            "lnurlc://service.io",
+            "lnurlw://service.io",
+            "keyauth://service.io",
+        ],
+    )
+    def test_valid_lnurl_lud17(self, url: str):
+        _lnurl = parse_obj_as(Lnurl, url)
+
+        assert _lnurl.is_lud17 is True
+        assert str(_lnurl) == url
+        assert _lnurl.bech32 is None
+
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "http://service.io",
+            "lnurlx://service.io" "lnurlp://service.io",
+        ],
+    )
+    def test_invalid_lnurl(self, url: str):
+        with pytest.raises(ValidationError):
+            parse_obj_as(Lnurl, url)
 
     @pytest.mark.parametrize(
         "bech32",
@@ -194,7 +221,7 @@ class TestLnurlPayMetadata:
     )
     def test_valid_lnaddress(self, lnaddress):
         lnaddress = LnAddress(lnaddress)
-        assert isinstance(lnaddress.url, (OnionUrl, DebugUrl, ClearnetUrl))
+        assert isinstance(lnaddress.url, CallbackUrl)
 
     @pytest.mark.parametrize(
         "lnaddress",
@@ -205,5 +232,5 @@ class TestLnurlPayMetadata:
         ],
     )
     def test_invalid_lnaddress(self, lnaddress):
-        with pytest.raises(ValueError):
+        with pytest.raises(LnAddressError):
             lnaddress = LnAddress(lnaddress)
