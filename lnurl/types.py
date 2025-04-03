@@ -166,11 +166,6 @@ class Lnurl(ReprMixin, str):
         self.bech32 = bech32
 
     @classmethod
-    def __get_bech32__(cls, url: Url) -> Bech32:
-        bech32: str = url_encode(url)
-        return parse_obj_as(Bech32, bech32)
-
-    @classmethod
     def __get_validators__(cls):
         yield str_validator
         yield cls.validate
