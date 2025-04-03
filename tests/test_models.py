@@ -247,7 +247,6 @@ class TestLnurlWithdrawResponse:
         [
             {"callback": "invalid", "k1": "c3RyaW5n", "min_withdrawable": 1000, "max_withdrawable": 2000},
             {"callback": "https://service.io/withdraw", "k1": "c3RyaW5n"},  # missing fields
-            {"callback": "https://service.io/withdraw", "k1": "c3RyaW5n", "min_withdrawable": 0, "max_withdrawable": 0},
             {
                 "callback": "https://service.io/withdraw",
                 "k1": "c3RyaW5n",

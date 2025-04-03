@@ -22,8 +22,8 @@ from .types import (
 
 
 class LnurlPayRouteHop(BaseModel):
-    node_id: str = Field(..., alias="nodeId")
-    channel_update: str = Field(..., alias="channelUpdate")
+    node_id: str = Field(alias="nodeId")
+    channel_update: str = Field(alias="channelUpdate")
 
 
 # LUD-9: Add successAction field to payRequest.
@@ -108,20 +108,20 @@ class LnurlHostedChannelResponse(LnurlResponseModel):
     tag: Literal["hostedChannelRequest"] = "hostedChannelRequest"
     uri: LightningNodeUri
     k1: str
-    alias: Optional[str]
+    alias: Optional[str] = None
 
 
 class LnurlPayResponse(LnurlResponseModel):
     tag: Literal["payRequest"] = "payRequest"
     callback: CallbackUrl
-    min_sendable: MilliSatoshi = Field(..., alias="minSendable", gt=0)
-    max_sendable: MilliSatoshi = Field(..., alias="maxSendable", gt=0)
+    min_sendable: MilliSatoshi = Field(alias="minSendable", gt=0)
+    max_sendable: MilliSatoshi = Field(alias="maxSendable", gt=0)
     metadata: LnurlPayMetadata
 
     # Adds the optional comment_allowed field to the LnurlPayResponse
     # ref LUD-12: Comments in payRequest.
     comment_allowed: Optional[int] = Field(
-        None,
+        default=None,
         description="Length of comment which can be sent",
         alias="commentAllowed",
     )
@@ -147,7 +147,7 @@ class LnurlPayResponse(LnurlResponseModel):
 class LnurlPayActionResponse(LnurlResponseModel):
     pr: LightningInvoice
     # LUD-9: successAction field for payRequest.
-    success_action: Optional[Union[MessageAction, UrlAction, AesAction]] = Field(None, alias="successAction")
+    success_action: Optional[Union[MessageAction, UrlAction, AesAction]] = Field(default=None, alias="successAction")
     routes: List[List[LnurlPayRouteHop]] = []
     # LUD-11: Disposable and storeable payRequests.
     # If disposable is null, it should be interpreted as true,
@@ -160,14 +160,18 @@ class LnurlWithdrawResponse(LnurlResponseModel):
     tag: Literal["withdrawRequest"] = "withdrawRequest"
     callback: CallbackUrl
     k1: str
-    min_withdrawable: MilliSatoshi = Field(..., alias="minWithdrawable", gt=0)
-    max_withdrawable: MilliSatoshi = Field(..., alias="maxWithdrawable", gt=0)
-    default_description: str = Field("", alias="defaultDescription")
+    min_withdrawable: MilliSatoshi = Field(alias="minWithdrawable", ge=0)
+    max_withdrawable: MilliSatoshi = Field(alias="maxWithdrawable", ge=0)
+    default_description: str = Field(default="", alias="defaultDescription")
     # LUD-14: balanceCheck: reusable withdrawRequests
-    balance_check: CallbackUrl = Field(None, alias="balanceCheck")
-    current_balance: Optional[MilliSatoshi] = Field(None, alias="currentBalance")
+    balance_check: Optional[CallbackUrl] = Field(
+        default=None, alias="balanceCheck", description="URL to check balance, (LUD-14)"
+    )
+    current_balance: Optional[MilliSatoshi] = Field(default=None, alias="currentBalance")
     # LUD-19: Pay link discoverable from withdraw link.
-    pay_link: Optional[Union[LnAddress, Lnurl]] = Field(None, alias="payLink")
+    pay_link: Optional[Union[LnAddress, Lnurl]] = Field(
+        default=None, alias="payLink", description="Pay link discoverable from withdraw link. (LUD-19)"
+    )
 
     @validator("max_withdrawable")
     def max_less_than_min(cls, value, values):
