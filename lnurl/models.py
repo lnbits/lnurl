@@ -88,6 +88,13 @@ class LnurlSuccessResponse(LnurlResponseModel):
     status: Literal["OK"] = "OK"
 
 
+# LUD-21: verify base spec.
+class LnurlPayVerifyResponse(LnurlSuccessResponse):
+    pr: LightningInvoice = Field(description="Payment request")
+    settled: bool = Field(description="Settled status of the payment")
+    preimage: Optional[str] = Field(default=None, description="Preimage of the payment")
+
+
 # LUD-04: auth base spec.
 class LnurlAuthResponse(LnurlResponseModel):
     tag: Literal["login"] = "login"
@@ -150,10 +157,11 @@ class LnurlPayActionResponse(LnurlResponseModel):
     success_action: Optional[Union[MessageAction, UrlAction, AesAction]] = Field(default=None, alias="successAction")
     routes: List[List[LnurlPayRouteHop]] = []
     # LUD-11: Disposable and storeable payRequests.
-    # If disposable is null, it should be interpreted as true,
-    # so if SERVICE intends its LNURL links to be stored it must return disposable: false.
-    disposable: Optional[bool] = None
-    verify: Optional[str] = None
+    # If disposable is null, it should be interpreted as true.
+    # so if SERVICE intends its LNURL links to be stored it must return disposable=False.
+    disposable: Optional[bool] = Field(default=None, description="LUD-11: Disposable and storeable payRequests.")
+    # LUD-21: verify base spec.
+    verify: Optional[CallbackUrl] = Field(default=None, description="LUD-21: verify base spec.")
 
 
 class LnurlWithdrawResponse(LnurlResponseModel):
@@ -167,7 +175,9 @@ class LnurlWithdrawResponse(LnurlResponseModel):
     balance_check: Optional[CallbackUrl] = Field(
         default=None, alias="balanceCheck", description="URL to check balance, (LUD-14)"
     )
-    current_balance: Optional[MilliSatoshi] = Field(default=None, alias="currentBalance")
+    current_balance: Optional[MilliSatoshi] = Field(
+        default=None, alias="currentBalance", description="Current balance, (LUD-14)"
+    )
     # LUD-19: Pay link discoverable from withdraw link.
     pay_link: Optional[Union[LnAddress, Lnurl]] = Field(
         default=None, alias="payLink", description="Pay link discoverable from withdraw link. (LUD-19)"

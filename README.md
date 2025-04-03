@@ -37,7 +37,7 @@ Check out the LUDS repository: [luds](https://github.com/lnurl/luds/)
 - [ ] LUD-18
 - [x] LUD-19
 - [x] LUD-20
-- [ ] LUD-21
+- [x] LUD-21
 
 
 Configuration
