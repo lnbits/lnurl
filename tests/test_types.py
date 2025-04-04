@@ -8,7 +8,13 @@ from lnurl import (
     LnAddress,
     LnAddressError,
     Lnurl,
+    LnurlPayerData,
+    LnurlPayerDataAuth,
     LnurlPayMetadata,
+    LnurlPayResponsePayerData,
+    LnurlPayResponsePayerDataExtra,
+    LnurlPayResponsePayerDataOption,
+    LnurlPayResponsePayerDataOptionAuth,
 )
 from lnurl.helpers import _lnurl_clean
 
@@ -188,6 +194,7 @@ class TestLnurlPayMetadata:
             ('[["text/plain", "main text"]]', None),
             ('[["text/plain", "main text"], ["image/jpeg;base64", "base64encodedimage"]]', "jpeg"),
             ('[["text/plain", "main text"], ["image/png;base64", "base64encodedimage"]]', "png"),
+            ('[["text/plain", "main text"], ["text/indentifier", "alan@lnbits.com"]]', None),
         ],
     )
     def test_valid(self, metadata, image_type):
@@ -234,3 +241,103 @@ class TestLnurlPayMetadata:
     def test_invalid_lnaddress(self, lnaddress):
         with pytest.raises(LnAddressError):
             lnaddress = LnAddress(lnaddress)
+
+
+class TestPayerData:
+
+    def test_valid_pay_response_payer_data(self):
+        data = {
+            "name": {"mandatory": True},
+            "pubkey": {"mandatory": True},
+            "auth": {"mandatory": True, "k1": "0" * 32},
+            "extras": [
+                {
+                    "name": "extra_field",
+                    "field": {"mandatory": True},
+                },
+            ],
+        }
+        payer_data = parse_obj_as(LnurlPayResponsePayerData, data)
+        assert payer_data.name is not None
+        assert payer_data.name.mandatory is True
+        assert payer_data.pubkey is not None
+        assert payer_data.pubkey.mandatory is True
+        assert payer_data.auth is not None
+        assert payer_data.auth.mandatory is True
+        assert payer_data.auth.k1 == "0" * 32
+        assert payer_data.extras is not None
+        assert len(payer_data.extras) == 1
+        assert payer_data.extras[0].name == "extra_field"
+        assert payer_data.extras[0].field is not None
+
+    def test_valid_pay_response_payer_data_models(self):
+        data_option = LnurlPayResponsePayerDataOption(
+            mandatory=True,
+        )
+        payer_data = LnurlPayResponsePayerData(
+            name=data_option,
+            pubkey=data_option,
+            auth=LnurlPayResponsePayerDataOptionAuth(
+                mandatory=True,
+                k1="0" * 32,
+            ),
+            extras=[
+                LnurlPayResponsePayerDataExtra(
+                    name="extra_field",
+                    field=LnurlPayResponsePayerDataOption(
+                        mandatory=True,
+                    ),
+                ),
+            ],
+        )
+        assert payer_data.name is not None
+        assert payer_data.name.mandatory is True
+        assert payer_data.pubkey is not None
+        assert payer_data.pubkey.mandatory is True
+        assert payer_data.auth is not None
+        assert payer_data.auth.mandatory is True
+        assert payer_data.auth.k1 == "0" * 32
+        assert payer_data.extras is not None
+        assert len(payer_data.extras) == 1
+        assert payer_data.extras[0].name == "extra_field"
+        assert payer_data.extras[0].field is not None
+
+    def test_valid_payer_data(self):
+        data = {
+            "name": "John Doe",
+            "pubkey": "03a3xxxxxxxxxxxx",
+            "auth": {
+                "key": "key",
+                "k1": "0" * 32,
+                "sig": "0" * 64,
+            },
+        }
+        payer_data = parse_obj_as(LnurlPayerData, data)
+        assert payer_data.name == "John Doe"
+        assert payer_data.pubkey == "03a3xxxxxxxxxxxx"
+        assert payer_data.auth is not None
+        assert payer_data.auth.key == "key"
+        assert payer_data.auth.k1 == "0" * 32
+        assert payer_data.auth.sig == "0" * 64
+
+    def test_valid_pay_response_payer_model(self):
+        data = LnurlPayerData(
+            name="John Doe",
+            pubkey="03a3xxxxxxxxxxxx",
+            auth=LnurlPayerDataAuth(
+                key="key",
+                k1="0" * 32,
+                sig="0" * 64,
+            ),
+            extras={
+                "extra_field": "extra_value",
+            },
+        )
+        assert data.name == "John Doe"
+        assert data.pubkey == "03a3xxxxxxxxxxxx"
+        assert data.auth is not None
+        assert data.auth.key == "key"
+        assert data.auth.k1 == "0" * 32
+        assert data.auth.sig == "0" * 64
+        assert data.extras is not None
+        assert data.extras["extra_field"] == "extra_value"
