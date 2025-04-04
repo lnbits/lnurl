@@ -343,6 +343,7 @@ class Max144Str(ConstrainedStr):
 # LUD-04: auth base spec.
 class LnurlAuthActions(Enum):
     """Enum for auth actions"""
+
     login = "login"
     register = "register"
     link = "link"
