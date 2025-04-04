@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from enum import Enum
 from hashlib import sha256
 from typing import Generator, Optional
 from urllib.parse import parse_qs
@@ -337,3 +338,13 @@ class CiphertextBase64(ConstrainedStr):
 
 class Max144Str(ConstrainedStr):
     max_length = 144
+
+
+# LUD-04: auth base spec.
+class LnurlAuthActions(Enum):
+    """Enum for auth actions"""
+
+    login = "login"
+    register = "register"
+    link = "link"
+    auth = "auth"

@@ -55,6 +55,7 @@ from .types import (
     LightningNodeUri,
     LnAddress,
     Lnurl,
+    LnurlAuthActions,
     LnurlPayMetadata,
     Url,
 )
@@ -73,6 +74,7 @@ __all__ = [
     "get",
     "handle",
     "Lnurl",
+    "LnurlAuthActions",
     "LnurlAuthResponse",
     "LnurlChannelResponse",
     "LnurlErrorResponse",
