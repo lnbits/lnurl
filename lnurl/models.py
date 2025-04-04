@@ -163,7 +163,7 @@ class LnurlPayResponse(LnurlResponseModel):
     max_sendable: MilliSatoshi = Field(alias="maxSendable", gt=0)
     metadata: LnurlPayMetadata
     # LUD-18: Payer identity in payRequest protocol.
-    payer_data: Optional[LnurlPayResponsePayerData] = Field(None, alias="payerData")
+    payer_data: Optional[LnurlPayResponsePayerData] = Field(alias="payerData")
 
     # Adds the optional comment_allowed field to the LnurlPayResponse
     # ref LUD-12: Comments in payRequest.
