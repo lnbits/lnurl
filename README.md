@@ -17,27 +17,27 @@ LUDS support
 
 Check out the LUDS repository: [luds](https://github.com/lnurl/luds/)
 
-- [x] LUD-01
-- [x] LUD-02
-- [x] LUD-03
-- [x] LUD-04
-- [x] LUD-05
-- [x] LUD-06
-- [x] LUD-07
-- [x] LUD-08
-- [x] LUD-09
-- [x] LUD-10
-- [x] LUD-11
-- [x] LUD-12
-- [x] LUD-13
-- [x] LUD-14
-- [x] LUD-15
-- [x] LUD-16
-- [x] LUD-17
-- [ ] LUD-18
-- [x] LUD-19
-- [x] LUD-20
-- [x] LUD-21
+- [x] LUD-01 - Base LNURL encoding and decoding
+- [x] LUD-02 - channelRequest base spec
+- [x] LUD-03 - withdrawRequest base spec
+- [x] LUD-04 - Auth base spec
+- [x] LUD-05 - BIP32-based seed generation for auth protocol
+- [x] LUD-06 - payRequest base spec
+- [x] LUD-07 - hostedChannelRequest base spec
+- [x] LUD-08 - Fast withdrawRequest
+- [x] LUD-09 - successAction field for payRequest
+- [x] LUD-10 - aes success action in payRequest
+- [x] LUD-11 - Disposable and storeable payRequests
+- [x] LUD-12 - Comments in payRequest
+- [x] LUD-13 - signMessage-based seed generation for auth protocol
+- [x] LUD-14 - balanceCheck: reusable withdrawRequests
+- [x] LUD-15 - balanceNotify: services hurrying up the withdraw process
+- [x] LUD-16 - Paying to static internet identifiers
+- [x] LUD-17 - Scheme prefixes and raw (non bech32-encoded) URLs
+- [x] LUD-18 - Payer identity in payRequest protocol
+- [x] LUD-19 - Pay link discoverable from withdraw link
+- [x] LUD-20 - Long payment description for pay protocol
+- [x] LUD-21 - verify LNURL-pay payments
 
 
 Configuration
