@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import math
+from abc import ABC
 from typing import List, Literal, Optional, Union
 
 from bolt11 import MilliSatoshi
-from pydantic import BaseModel, Field, ValidationError, validator, parse_obj_as
+from pydantic import BaseModel, Field, ValidationError, parse_obj_as, validator
 
 from .exceptions import LnurlResponseException
 from .types import (
@@ -27,6 +28,10 @@ class LnurlPayRouteHop(BaseModel):
     channel_update: str = Field(alias="channelUpdate")
 
 
+class LnurlPaySuccessAction(BaseModel, ABC):
+    tag: LnurlPaySuccessActions
+
+
 class MessageAction(BaseModel):
     tag: LnurlPaySuccessActions = LnurlPaySuccessActions.message
     message: Max144Str
@@ -44,8 +49,6 @@ class AesAction(BaseModel):
     description: Max144Str
     ciphertext: CiphertextBase64
     iv: InitializationVectorBase64
-
-LnurlPaySuccessAction = Union[MessageAction, UrlAction, AesAction]
 
 
 class LnurlResponseModel(BaseModel):
@@ -192,7 +195,9 @@ class LnurlPayResponse(LnurlResponseModel):
 class LnurlPayActionResponse(LnurlResponseModel):
     pr: LightningInvoice
     # LUD-9: successAction field for payRequest.
-    success_action: Optional[LnurlPaySuccessAction] = Field(default=None, alias="successAction")
+    success_action: Optional[Union[AesAction, MessageAction, UrlAction, LnurlPaySuccessAction]] = Field(
+        default=None, alias="successAction"
+    )
     routes: List[List[LnurlPayRouteHop]] = []
     # LUD-11: Disposable and storeable payRequests.
     # If disposable is null, it should be interpreted as true.

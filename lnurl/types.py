@@ -352,7 +352,7 @@ class LnurlAuthActions(Enum):
 
 class LnurlPaySuccessActions(Enum):
     """Enum for success actions"""
+
     aes = "aes"
     message = "message"
     url = "url"
-
