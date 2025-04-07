@@ -8,6 +8,7 @@ from lnurl import (
     LnurlErrorResponse,
     LnurlPayActionResponse,
     LnurlPayResponse,
+    LnurlPaySuccessAction,
     LnurlPaySuccessActions,
     LnurlResponse,
     LnurlSuccessResponse,
@@ -80,6 +81,7 @@ class TestLnurlResponse:
         res = LnurlResponse.from_dict(self.pay_res_action_aes)
         assert isinstance(res, LnurlPayActionResponse)
         assert isinstance(res.success_action, AesAction)
+        assert isinstance(res.success_action, LnurlPaySuccessAction)
         assert res.ok
         assert res.success_action
         assert res.success_action.tag == LnurlPaySuccessActions.aes

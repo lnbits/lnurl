@@ -5,7 +5,7 @@ from abc import ABC
 from typing import List, Literal, Optional, Union
 
 from bolt11 import MilliSatoshi
-from pydantic import BaseModel, Field, ValidationError, parse_obj_as, validator
+from pydantic import BaseModel, Field, ValidationError, validator
 
 from .exceptions import LnurlResponseException
 from .types import (
@@ -32,19 +32,19 @@ class LnurlPaySuccessAction(BaseModel, ABC):
     tag: LnurlPaySuccessActions
 
 
-class MessageAction(BaseModel):
+class MessageAction(LnurlPaySuccessAction):
     tag: LnurlPaySuccessActions = LnurlPaySuccessActions.message
     message: Max144Str
 
 
-class UrlAction(BaseModel):
+class UrlAction(LnurlPaySuccessAction):
     tag: LnurlPaySuccessActions = LnurlPaySuccessActions.url
     url: Url
     description: Max144Str
 
 
 # LUD-10: Add support for AES encrypted messages in payRequest.
-class AesAction(BaseModel):
+class AesAction(LnurlPaySuccessAction):
     tag: LnurlPaySuccessActions = LnurlPaySuccessActions.aes
     description: Max144Str
     ciphertext: CiphertextBase64
@@ -268,7 +268,7 @@ class LnurlResponse:
             if tag == "withdrawRequest":
                 return LnurlWithdrawResponse(**data)
             if "successAction" in data:
-                return parse_obj_as(LnurlPayActionResponse, data)
+                return LnurlPayActionResponse(**data)
 
         except ValidationError as exc:
             raise LnurlResponseException(str(exc)) from exc
