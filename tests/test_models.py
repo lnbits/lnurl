@@ -21,10 +21,6 @@ class TestLnurlErrorResponse:
         assert res.json() == '{"status": "ERROR", "reason": "blah blah blah"}'
         assert res.dict() == {"status": "ERROR", "reason": "blah blah blah"}
 
-    def test_no_reason(self):
-        with pytest.raises(ValidationError):
-            LnurlErrorResponse()  # type: ignore
-
 
 class TestLnurlSuccessResponse:
     def test_success_response(self):

@@ -350,9 +350,26 @@ class LnurlAuthActions(Enum):
     auth = "auth"
 
 
-class LnurlPaySuccessActions(Enum):
-    """Enum for success actions"""
+class LnurlPaySuccessActionTag(Enum):
+    """Enum for success action tags"""
 
     aes = "aes"
     message = "message"
     url = "url"
+
+
+class LnurlStatus(Enum):
+    """Enum for status"""
+
+    ok = "OK"
+    error = "ERROR"
+
+
+class LnurlResponseTag(Enum):
+    """Enum for response tags"""
+
+    login = "login"
+    channelRequest = "channelRequest"
+    hostedChannelRequest = "hostedChannelRequest"
+    payRequest = "payRequest"
+    withdrawRequest = "withdrawRequest"
