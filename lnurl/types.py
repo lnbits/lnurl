@@ -348,3 +348,11 @@ class LnurlAuthActions(Enum):
     register = "register"
     link = "link"
     auth = "auth"
+
+
+class LnurlPaySuccessActions(Enum):
+    """Enum for success actions"""
+    aes = "aes"
+    message = "message"
+    url = "url"
+

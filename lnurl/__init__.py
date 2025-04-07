@@ -58,6 +58,7 @@ from .types import (
     Lnurl,
     LnurlAuthActions,
     LnurlPayMetadata,
+    LnurlPaySuccessActions,
     Max144Str,
     Url,
 )
@@ -85,6 +86,7 @@ __all__ = [
     "LnurlPayResponse",
     "LnurlPayMetadata",
     "LnurlPaySuccessAction",
+    "LnurlPaySuccessActions",
     "LnurlPayVerifyResponse",
     "LnurlResponse",
     "LnurlSuccessResponse",

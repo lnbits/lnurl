@@ -4,7 +4,7 @@ import math
 from typing import List, Literal, Optional, Union
 
 from bolt11 import MilliSatoshi
-from pydantic import BaseModel, Field, ValidationError, validator
+from pydantic import BaseModel, Field, ValidationError, validator, parse_obj_as
 
 from .exceptions import LnurlResponseException
 from .types import (
@@ -16,6 +16,7 @@ from .types import (
     LnAddress,
     Lnurl,
     LnurlPayMetadata,
+    LnurlPaySuccessActions,
     Max144Str,
     Url,
 )
@@ -26,28 +27,25 @@ class LnurlPayRouteHop(BaseModel):
     channel_update: str = Field(alias="channelUpdate")
 
 
-# LUD-9: Add successAction field to payRequest.
-class LnurlPaySuccessAction(BaseModel):
-    """Base class for all success actions"""
-
-
-class MessageAction(LnurlPaySuccessAction):
-    tag: Literal["message"] = "message"
+class MessageAction(BaseModel):
+    tag: LnurlPaySuccessActions = LnurlPaySuccessActions.message
     message: Max144Str
 
 
-class UrlAction(LnurlPaySuccessAction):
-    tag: Literal["url"] = "url"
+class UrlAction(BaseModel):
+    tag: LnurlPaySuccessActions = LnurlPaySuccessActions.url
     url: Url
     description: Max144Str
 
 
 # LUD-10: Add support for AES encrypted messages in payRequest.
-class AesAction(LnurlPaySuccessAction):
-    tag: Literal["aes"] = "aes"
+class AesAction(BaseModel):
+    tag: LnurlPaySuccessActions = LnurlPaySuccessActions.aes
     description: Max144Str
     ciphertext: CiphertextBase64
     iv: InitializationVectorBase64
+
+LnurlPaySuccessAction = Union[MessageAction, UrlAction, AesAction]
 
 
 class LnurlResponseModel(BaseModel):
@@ -265,7 +263,8 @@ class LnurlResponse:
             if tag == "withdrawRequest":
                 return LnurlWithdrawResponse(**data)
             if "successAction" in data:
-                return LnurlPayActionResponse(**data)
+                return parse_obj_as(LnurlPayActionResponse, data)
+
         except ValidationError as exc:
             raise LnurlResponseException(str(exc)) from exc
 
