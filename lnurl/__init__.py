@@ -57,6 +57,7 @@ from .types import (
     Lnurl,
     LnurlAuthActions,
     LnurlPayMetadata,
+    Max144Str,
     Url,
 )
 
@@ -119,4 +120,5 @@ __all__ = [
     "LnurlPayResponsePayerDataOption",
     "LnurlPayResponsePayerDataOptionAuth",
     "LnurlPayResponsePayerDataExtra",
+    "Max144Str",
 ]
