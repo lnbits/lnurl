@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from abc import ABC
 from typing import List, Literal, Optional, Union
 
 from bolt11 import MilliSatoshi
@@ -16,6 +17,7 @@ from .types import (
     LnAddress,
     Lnurl,
     LnurlPayMetadata,
+    LnurlPaySuccessActions,
     Max144Str,
     Url,
 )
@@ -26,25 +28,24 @@ class LnurlPayRouteHop(BaseModel):
     channel_update: str = Field(alias="channelUpdate")
 
 
-# LUD-9: Add successAction field to payRequest.
-class LnurlPaySuccessAction(BaseModel):
-    """Base class for all success actions"""
+class LnurlPaySuccessAction(BaseModel, ABC):
+    tag: LnurlPaySuccessActions
 
 
 class MessageAction(LnurlPaySuccessAction):
-    tag: Literal["message"] = "message"
+    tag: LnurlPaySuccessActions = LnurlPaySuccessActions.message
     message: Max144Str
 
 
 class UrlAction(LnurlPaySuccessAction):
-    tag: Literal["url"] = "url"
+    tag: LnurlPaySuccessActions = LnurlPaySuccessActions.url
     url: Url
     description: Max144Str
 
 
 # LUD-10: Add support for AES encrypted messages in payRequest.
 class AesAction(LnurlPaySuccessAction):
-    tag: Literal["aes"] = "aes"
+    tag: LnurlPaySuccessActions = LnurlPaySuccessActions.aes
     description: Max144Str
     ciphertext: CiphertextBase64
     iv: InitializationVectorBase64
@@ -194,7 +195,9 @@ class LnurlPayResponse(LnurlResponseModel):
 class LnurlPayActionResponse(LnurlResponseModel):
     pr: LightningInvoice
     # LUD-9: successAction field for payRequest.
-    success_action: Optional[Union[MessageAction, UrlAction, AesAction]] = Field(default=None, alias="successAction")
+    success_action: Optional[Union[AesAction, MessageAction, UrlAction, LnurlPaySuccessAction]] = Field(
+        default=None, alias="successAction"
+    )
     routes: List[List[LnurlPayRouteHop]] = []
     # LUD-11: Disposable and storeable payRequests.
     # If disposable is null, it should be interpreted as true.
@@ -266,6 +269,7 @@ class LnurlResponse:
                 return LnurlWithdrawResponse(**data)
             if "successAction" in data:
                 return LnurlPayActionResponse(**data)
+
         except ValidationError as exc:
             raise LnurlResponseException(str(exc)) from exc
 

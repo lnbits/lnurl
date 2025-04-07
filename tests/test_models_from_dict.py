@@ -4,9 +4,12 @@ from base64 import b64encode
 import pytest
 
 from lnurl import (
+    AesAction,
     LnurlErrorResponse,
     LnurlPayActionResponse,
     LnurlPayResponse,
+    LnurlPaySuccessAction,
+    LnurlPaySuccessActions,
     LnurlResponse,
     LnurlSuccessResponse,
     LnurlWithdrawResponse,
@@ -77,9 +80,11 @@ class TestLnurlResponse:
     def test_pay_action_aes(self):
         res = LnurlResponse.from_dict(self.pay_res_action_aes)
         assert isinstance(res, LnurlPayActionResponse)
+        assert isinstance(res.success_action, AesAction)
+        assert isinstance(res.success_action, LnurlPaySuccessAction)
         assert res.ok
         assert res.success_action
-        assert res.success_action.tag == "aes"
+        assert res.success_action.tag == LnurlPaySuccessActions.aes
         assert res.success_action.description == "your will receive a secret message"
         assert len(res.success_action.iv) == 24
         assert len(res.success_action.ciphertext) == 44
