@@ -9,7 +9,7 @@ from lnurl import (
     LnurlPayActionResponse,
     LnurlPayResponse,
     LnurlPaySuccessAction,
-    LnurlPaySuccessActions,
+    LnurlPaySuccessActionTag,
     LnurlResponse,
     LnurlSuccessResponse,
     LnurlWithdrawResponse,
@@ -84,7 +84,7 @@ class TestLnurlResponse:
         assert isinstance(res.success_action, LnurlPaySuccessAction)
         assert res.ok
         assert res.success_action
-        assert res.success_action.tag == LnurlPaySuccessActions.aes
+        assert res.success_action.tag == LnurlPaySuccessActionTag.aes
         assert res.success_action.description == "your will receive a secret message"
         assert len(res.success_action.iv) == 24
         assert len(res.success_action.ciphertext) == 44

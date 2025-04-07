@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from abc import ABC
-from typing import List, Literal, Optional, Union
+from typing import Optional, Union
 
 from bolt11 import MilliSatoshi
 from pydantic import BaseModel, Field, ValidationError, validator
@@ -17,7 +17,9 @@ from .types import (
     LnAddress,
     Lnurl,
     LnurlPayMetadata,
-    LnurlPaySuccessActions,
+    LnurlPaySuccessActionTag,
+    LnurlResponseTag,
+    LnurlStatus,
     Max144Str,
     Url,
 )
@@ -29,23 +31,23 @@ class LnurlPayRouteHop(BaseModel):
 
 
 class LnurlPaySuccessAction(BaseModel, ABC):
-    tag: LnurlPaySuccessActions
+    tag: LnurlPaySuccessActionTag
 
 
 class MessageAction(LnurlPaySuccessAction):
-    tag: LnurlPaySuccessActions = LnurlPaySuccessActions.message
+    tag: LnurlPaySuccessActionTag = LnurlPaySuccessActionTag.message
     message: Max144Str
 
 
 class UrlAction(LnurlPaySuccessAction):
-    tag: LnurlPaySuccessActions = LnurlPaySuccessActions.url
+    tag = LnurlPaySuccessActionTag.url
     url: Url
     description: Max144Str
 
 
 # LUD-10: Add support for AES encrypted messages in payRequest.
 class AesAction(LnurlPaySuccessAction):
-    tag: LnurlPaySuccessActions = LnurlPaySuccessActions.aes
+    tag = LnurlPaySuccessActionTag.aes
     description: Max144Str
     ciphertext: CiphertextBase64
     iv: InitializationVectorBase64
@@ -56,6 +58,7 @@ class LnurlResponseModel(BaseModel):
     class Config:
         allow_population_by_field_name = True
         by_alias = True
+        use_enum_values = True
 
     def dict(self, **kwargs):
         kwargs.setdefault("by_alias", True)
@@ -73,7 +76,7 @@ class LnurlResponseModel(BaseModel):
 
 
 class LnurlErrorResponse(LnurlResponseModel):
-    status: Literal["ERROR"] = "ERROR"
+    status: LnurlStatus = LnurlStatus.error
     reason: str
 
     @property
@@ -86,7 +89,7 @@ class LnurlErrorResponse(LnurlResponseModel):
 
 
 class LnurlSuccessResponse(LnurlResponseModel):
-    status: Literal["OK"] = "OK"
+    status: LnurlStatus = LnurlStatus.ok
 
 
 # LUD-21: verify base spec.
@@ -98,14 +101,14 @@ class LnurlPayVerifyResponse(LnurlSuccessResponse):
 
 # LUD-04: auth base spec.
 class LnurlAuthResponse(LnurlResponseModel):
-    tag: Literal["login"] = "login"
+    tag: LnurlResponseTag = LnurlResponseTag.login
     callback: CallbackUrl
     k1: str
 
 
 # LUD-2: channelRequest base spec.
 class LnurlChannelResponse(LnurlResponseModel):
-    tag: Literal["channelRequest"] = "channelRequest"
+    tag: LnurlResponseTag = LnurlResponseTag.channelRequest
     uri: LightningNodeUri
     callback: CallbackUrl
     k1: str
@@ -113,7 +116,7 @@ class LnurlChannelResponse(LnurlResponseModel):
 
 # LUD-07: hostedChannelRequest base spec.
 class LnurlHostedChannelResponse(LnurlResponseModel):
-    tag: Literal["hostedChannelRequest"] = "hostedChannelRequest"
+    tag: LnurlResponseTag = LnurlResponseTag.hostedChannelRequest
     uri: LightningNodeUri
     k1: str
     alias: Optional[str] = None
@@ -158,7 +161,7 @@ class LnurlPayerData(BaseModel):
 
 
 class LnurlPayResponse(LnurlResponseModel):
-    tag: Literal["payRequest"] = "payRequest"
+    tag: LnurlResponseTag = LnurlResponseTag.payRequest
     callback: CallbackUrl
     min_sendable: MilliSatoshi = Field(alias="minSendable", gt=0)
     max_sendable: MilliSatoshi = Field(alias="maxSendable", gt=0)
@@ -198,7 +201,7 @@ class LnurlPayActionResponse(LnurlResponseModel):
     success_action: Optional[Union[AesAction, MessageAction, UrlAction, LnurlPaySuccessAction]] = Field(
         default=None, alias="successAction"
     )
-    routes: List[List[LnurlPayRouteHop]] = []
+    routes: list[list[LnurlPayRouteHop]] = []
     # LUD-11: Disposable and storeable payRequests.
     # If disposable is null, it should be interpreted as true.
     # so if SERVICE intends its LNURL links to be stored it must return disposable=False.
@@ -208,7 +211,7 @@ class LnurlPayActionResponse(LnurlResponseModel):
 
 
 class LnurlWithdrawResponse(LnurlResponseModel):
-    tag: Literal["withdrawRequest"] = "withdrawRequest"
+    tag: LnurlResponseTag = LnurlResponseTag.withdrawRequest
     callback: CallbackUrl
     k1: str
     min_withdrawable: MilliSatoshi = Field(alias="minWithdrawable", ge=0)
@@ -281,10 +284,10 @@ class LnurlResponse:
         status = status.upper()
 
         if status == "OK":
-            return LnurlSuccessResponse(status=status)
+            return LnurlSuccessResponse(status=LnurlStatus.ok)
 
         if status == "ERROR":
-            return LnurlErrorResponse(status=status, reason=data.get("reason", "Unknown error"))
+            return LnurlErrorResponse(status=LnurlStatus.error, reason=data.get("reason", "Unknown error"))
 
         # if we reach here, it's an unknown response
         raise LnurlResponseException(f"Unknown response: {data}")
