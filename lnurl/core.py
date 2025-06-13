@@ -26,9 +26,9 @@ USER_AGENT = "lnbits/lnurl"
 TIMEOUT = 5
 
 
-def decode(bech32_lnurl: str) -> Lnurl:
+def decode(lnurl: str) -> Lnurl:
     try:
-        return Lnurl(bech32_lnurl)
+        return Lnurl(lnurl)
     except (ValidationError, ValueError):
         raise InvalidLnurl
 
@@ -63,16 +63,16 @@ async def get(
 
 
 async def handle(
-    bech32_lnurl: str,
+    lnurl: str,
     response_class: Optional[LnurlResponseModel] = None,
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
 ) -> LnurlResponseModel:
     try:
-        if "@" in bech32_lnurl:
-            lnaddress = LnAddress(bech32_lnurl)
+        if "@" in lnurl:
+            lnaddress = LnAddress(lnurl)
             return await get(lnaddress.url, response_class=response_class, user_agent=user_agent, timeout=timeout)
-        lnurl = Lnurl(bech32_lnurl)
+        lnurl = Lnurl(lnurl)
     except (ValidationError, ValueError):
         raise InvalidLnurl
 
