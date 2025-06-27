@@ -222,9 +222,9 @@ class Lnurl(ReprMixin, str):
 
 
 class LnAddress(ReprMixin, str):
-    """Lightning address of form `user@host`"""
+    """Lightning address of form `user+tag@host`"""
 
-    slots = ("address", "url")
+    slots = ("address", "url", "tag")
 
     def __new__(cls, address: str) -> LnAddress:
         return str.__new__(cls, address)
@@ -233,8 +233,13 @@ class LnAddress(ReprMixin, str):
         str.__init__(address)
         if not self.is_valid_lnaddress(address):
             raise LnAddressError("Invalid Lightning address.")
-        self.address = address
         self.url = self.__get_url__(address)
+        if "+" in address:
+            self.tag: Optional[str] = address.split("+", 1)[1].split("@", 1)[0]
+            self.address = address.replace(f"+{self.tag}", "", 1)
+        else:
+            self.tag = None
+            self.address = address
 
     # LUD-16: Paying to static internet identifiers.
     @validator("address")
@@ -253,7 +258,7 @@ class LnAddress(ReprMixin, str):
 
 
 class LnurlPayMetadata(ReprMixin, str):
-    # LUD-16: Paying to static internet identifiers. "text/identifier", "text/email"
+    # LUD-16: Paying to static internet identifiers. "text/identifier", "text/email", "text/tag"
     # LUD-20: Long payment description for pay protocol. "text/long-desc"
     valid_metadata_mime_types = {
         "text/plain",
@@ -261,6 +266,7 @@ class LnurlPayMetadata(ReprMixin, str):
         "image/jpeg;base64",
         "text/identifier",
         "text/email",
+        "text/tag",
         "text/long-desc",
     }
 

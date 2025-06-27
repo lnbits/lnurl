@@ -194,7 +194,7 @@ class TestLnurlPayMetadata:
             ('[["text/plain", "main text"]]', None),
             ('[["text/plain", "main text"], ["image/jpeg;base64", "base64encodedimage"]]', "jpeg"),
             ('[["text/plain", "main text"], ["image/png;base64", "base64encodedimage"]]', "png"),
-            ('[["text/plain", "main text"], ["text/indentifier", "alan@lnbits.com"]]', None),
+            ('[["text/plain", "main text"], ["text/indentifier", "alan@lnbits.com"], ["text/tag", "tag"]]', None),
         ],
     )
     def test_valid(self, metadata, image_type):
@@ -229,6 +229,18 @@ class TestLnurlPayMetadata:
     def test_valid_lnaddress(self, lnaddress):
         lnaddress = LnAddress(lnaddress)
         assert isinstance(lnaddress.url, CallbackUrl)
+        assert lnaddress.tag is None
+
+    @pytest.mark.parametrize(
+        "lnaddress",
+        [
+            "donate+lud16tag@legend.lnbits.com",
+        ],
+    )
+    def test_valid_lnaddress_with_tag(self, lnaddress):
+        lnaddress = LnAddress(lnaddress)
+        assert isinstance(lnaddress.url, CallbackUrl)
+        assert lnaddress.tag == "lud16tag"
 
     @pytest.mark.parametrize(
         "lnaddress",
