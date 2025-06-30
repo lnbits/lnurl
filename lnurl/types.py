@@ -115,7 +115,7 @@ class Url(AnyUrl):
 
 
 class CallbackUrl(Url):
-    """URL for callbacks. exlude lud17 schemes."""
+    """URL for callbacks. exclude lud17 schemes."""
 
     allowed_schemes = {"https", "http"}
 
