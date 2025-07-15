@@ -29,7 +29,7 @@ pytest = "^7.4.0"
 pytest-cov = "^4.1.0"
 types-requests = "^2.31.0.2"
 mypy = "^1.5.1"
-ruff = "^0.0.284"
+ruff = "^0.12.3"
 pre-commit = "^3.3.3"
 pytest-asyncio = "^0.23.6"
 
@@ -53,15 +53,6 @@ preview = true
 [tool.ruff]
 # Same as Black. but black has a 10% overflow rule
 line-length = 120
-
-# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
-# (`I`) means isorting
-select = ["E", "F", "I"]
-ignore = []
-
-# Allow autofix for all enabled rules (when `--fix`) is provided.
-fixable = ["ALL"]
-unfixable = []
 
 # Exclude a variety of commonly ignored directories.
 exclude = [
@@ -88,11 +79,19 @@ exclude = [
     "venv",
 ]
 
+[tool.ruff.lint]
+# Enable pycodestyle (`E`) and Pyflakes (`F`) codes by default.
+# (`I`) means isorting
+select = ["E", "F", "I"]
+ignore = []
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
-target-version = "py39"
-
-[tool.ruff.mccabe]
+[tool.ruff.lint.mccabe]
 # Unlike Flake8, default to a complexity level of 10.
 max-complexity = 10
