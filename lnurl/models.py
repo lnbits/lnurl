@@ -198,9 +198,7 @@ class LnurlPayResponse(LnurlResponseModel):
 class LnurlPayActionResponse(LnurlResponseModel):
     pr: LightningInvoice
     # LUD-9: successAction field for payRequest.
-    success_action: Optional[Union[AesAction, MessageAction, UrlAction, LnurlPaySuccessAction]] = Field(
-        default=None, alias="successAction"
-    )
+    success_action: Optional[LnurlPaySuccessAction] = Field(default=None, alias="successAction")
     routes: list[list[LnurlPayRouteHop]] = []
     # LUD-11: Disposable and storeable payRequests.
     # If disposable is null, it should be interpreted as true.
@@ -252,25 +250,31 @@ class LnurlWithdrawResponse(LnurlResponseModel):
         return self.min_withdrawable <= amount <= self.max_withdrawable
 
 
+def is_pay_action_response(data: dict) -> bool:
+    return "pr" in data and "routes" in data
+
+
 class LnurlResponse:
+
     @staticmethod
     def from_dict(data: dict) -> LnurlResponseModel:
         tag = data.get("tag")
 
-        # some services return `status` here, but it is not in the spec
-        if tag or "successAction" in data:
+        # drop status field from all responses with a tag
+        # some services return `status` in responses with a tag
+        if tag or is_pay_action_response(data):
             data.pop("status", None)
 
         try:
             if tag == "channelRequest":
                 return LnurlChannelResponse(**data)
-            if tag == "hostedChannelRequest":
+            elif tag == "hostedChannelRequest":
                 return LnurlHostedChannelResponse(**data)
-            if tag == "payRequest":
+            elif tag == "payRequest":
                 return LnurlPayResponse(**data)
-            if tag == "withdrawRequest":
+            elif tag == "withdrawRequest":
                 return LnurlWithdrawResponse(**data)
-            if "successAction" in data:
+            elif is_pay_action_response(data):
                 return LnurlPayActionResponse(**data)
 
         except ValidationError as exc:

@@ -1,7 +1,11 @@
 import json
 
 import pytest
-from pydantic import ValidationError
+from pydantic import ValidationError, parse_obj_as
+
+from lnurl.types import (
+    LightningInvoice
+)
 
 from lnurl.models import (
     LnurlChannelResponse,
@@ -10,6 +14,7 @@ from lnurl.models import (
     LnurlPayResponse,
     LnurlSuccessResponse,
     LnurlWithdrawResponse,
+    LnurlPayActionResponse,
 )
 
 
@@ -255,3 +260,12 @@ class TestLnurlWithdrawResponse:
     def test_invalid_data(self, d):
         with pytest.raises(ValidationError):
             LnurlWithdrawResponse(**d)
+
+
+class TestLnurlPayActionResponse:
+    def test_success_response(self):
+        pr = parse_obj_as(LightningInvoice, "lnbc1u1p0g5q4pp5sdp5sdp5sdp5sdp5sdp5sdp5sdp5sdp5sdp5sd")
+
+        res = LnurlPayActionResponse(pr=pr)
+        assert res.ok
+
