@@ -198,9 +198,7 @@ class LnurlPayResponse(LnurlResponseModel):
 class LnurlPayActionResponse(LnurlResponseModel):
     pr: LightningInvoice
     # LUD-9: successAction field for payRequest.
-    success_action: Optional[Union[AesAction, MessageAction, UrlAction]] = Field(
-        default=None, alias="successAction"
-    )
+    success_action: Optional[Union[AesAction, MessageAction, UrlAction]] = Field(default=None, alias="successAction")
     routes: list[list[LnurlPayRouteHop]] = []
     # LUD-11: Disposable and storeable payRequests.
     # If disposable is null, it should be interpreted as true.
