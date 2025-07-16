@@ -162,6 +162,7 @@ class TestLnurl:
         assert _lnurl.is_lud17 is True
         assert str(_lnurl) == url
         assert _lnurl.bech32 is None
+        assert _lnurl.callback_url == "https://service.io"
 
     @pytest.mark.parametrize(
         "url",
