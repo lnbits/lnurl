@@ -357,7 +357,6 @@ class TestPayerData:
         assert data.extras["extra_field"] == "extra_value"
 
 
-
 class TestLnurlErrorResponse:
     def test_error_res_details(self):
         res = LnurlErrorResponse(reason="detail")
