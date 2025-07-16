@@ -79,7 +79,7 @@ async def handle(
     if lnurl.is_login:
         return LnurlAuthResponse(callback=lnurl.callback_url, k1=lnurl.url.query_params["k1"])
 
-    return await get(lnurl.url, response_class=response_class, user_agent=user_agent, timeout=timeout)
+    return await get(lnurl.callback_url, response_class=response_class, user_agent=user_agent, timeout=timeout)
 
 
 async def execute(

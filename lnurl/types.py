@@ -106,8 +106,11 @@ class Url(AnyUrl):
 
     @property
     def base(self) -> str:
+        scheme = self.scheme
+        if self.is_lud17:
+            scheme = "https"
         hostport = f"{self.host}:{self.port}" if self.port else self.host
-        return f"{self.scheme}://{hostport}{self.path}"
+        return f"{scheme}://{hostport}{self.path}"
 
     @property
     def query_params(self) -> dict:
@@ -195,7 +198,7 @@ class Lnurl(ReprMixin, str):
 
     @property
     def callback_url(self) -> CallbackUrl:
-        return parse_obj_as(CallbackUrl, self.url)
+        return parse_obj_as(CallbackUrl, self.url.base)
 
     # LUD-04: auth base spec.
     @property
