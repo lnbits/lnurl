@@ -8,6 +8,7 @@ from lnurl import (
     LnAddress,
     LnAddressError,
     Lnurl,
+    LnurlErrorResponse,
     LnurlPayerData,
     LnurlPayerDataAuth,
     LnurlPayMetadata,
@@ -354,3 +355,15 @@ class TestPayerData:
         assert data.auth.sig == "0" * 64
         assert data.extras is not None
         assert data.extras["extra_field"] == "extra_value"
+
+
+
+class TestLnurlErrorResponse:
+    def test_error_res_details(self):
+        res = LnurlErrorResponse(reason="detail")
+        _dict = res.dict()
+        assert "status" in _dict
+        assert _dict["status"] == "ERROR"
+        assert "reason" in _dict
+        assert _dict["reason"] == "detail"
+        assert res.json() == '{"status": "ERROR", "reason": "detail"}'
