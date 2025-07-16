@@ -110,7 +110,7 @@ class Url(AnyUrl):
         if self.is_lud17:
             scheme = "https"
         hostport = f"{self.host}:{self.port}" if self.port else self.host
-        return f"{scheme}://{hostport}{self.path}"
+        return f"{scheme}://{hostport}{self.path or ''}"
 
     @property
     def query_params(self) -> dict:
