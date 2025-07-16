@@ -1,3 +1,4 @@
+from json import JSONDecodeError
 from typing import Any, Optional
 
 import httpx
@@ -55,11 +56,17 @@ async def get(
         except Exception as exc:
             raise LnurlResponseException(str(exc)) from exc
 
-        if response_class:
-            assert issubclass(response_class, LnurlResponseModel), "Use a valid `LnurlResponseModel` subclass."
-            return response_class(**res.json())
+        try:
+            _json = res.json()
+        except JSONDecodeError as exc:
+            raise LnurlResponseException(f"Invalid JSON response from {url}") from exc
 
-        return LnurlResponse.from_dict(res.json())
+        if response_class:
+            if not issubclass(response_class, LnurlResponseModel):
+                raise LnurlResponseException("response_class must be a subclass of LnurlResponseModel")
+            return response_class(**_json)
+
+        return LnurlResponse.from_dict(_json)
 
 
 async def handle(
