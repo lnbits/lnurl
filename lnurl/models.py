@@ -168,14 +168,13 @@ class LnurlPayResponse(LnurlResponseModel):
     metadata: LnurlPayMetadata
     # LUD-18: Payer identity in payRequest protocol.
     payer_data: Optional[LnurlPayResponsePayerData] = Field(alias="payerData")
-
     # Adds the optional comment_allowed field to the LnurlPayResponse
     # ref LUD-12: Comments in payRequest.
-    comment_allowed: Optional[int] = Field(
-        default=None,
-        description="Length of comment which can be sent",
-        alias="commentAllowed",
-    )
+    comment_allowed: Optional[int] = Field(alias="commentAllowed")
+
+    # NIP-57 Lightning Zaps
+    allows_nostr: Optional[bool] = Field(alias="allowsNostr")
+    nostr_pubkey: Optional[str] = Field(alias="nostrPubkey")
 
     @validator("max_sendable")
     def max_less_than_min(cls, value, values):  # noqa
