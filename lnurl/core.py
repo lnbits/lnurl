@@ -115,7 +115,7 @@ async def execute_pay_request(
     msat: str,
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
-) -> LnurlResponseModel:
+) -> LnurlPayActionResponse:
     if not res.min_sendable <= MilliSatoshi(msat) <= res.max_sendable:
         raise LnurlResponseException(f"Amount {msat} not in range {res.min_sendable} - {res.max_sendable}")
 
@@ -131,7 +131,8 @@ async def execute_pay_request(
             )
             res2.raise_for_status()
             pay_res = LnurlResponse.from_dict(res2.json())
-            assert isinstance(pay_res, LnurlPayActionResponse), "Invalid response in execute_pay_request."
+            if not isinstance(pay_res, LnurlPayActionResponse):
+                raise LnurlResponseException(f"Expected LnurlPayActionResponse, got {type(pay_res)}")
             invoice = bolt11_decode(pay_res.pr)
             if invoice.amount_msat != int(msat):
                 raise LnurlResponseException(
