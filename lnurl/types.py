@@ -110,7 +110,7 @@ class Url(AnyUrl):
         if self.is_lud17:
             scheme = "https"
         hostport = f"{self.host}:{self.port}" if self.port else self.host
-        return f"{scheme}://{hostport}{self.path or ''}"
+        return f"{scheme}://{hostport}{self.path or ''}{self.query}"
 
     @property
     def query_params(self) -> dict:
@@ -158,7 +158,7 @@ class LightningNodeUri(ReprMixin, str):
 
 
 class Lnurl(ReprMixin, str):
-    __slots__ = ("url", "bech32")
+    __slots__ = ("url", "bech32", "lud17")
 
     def __new__(cls, lightning: str) -> Lnurl:
         url, bech32 = cls.clean(lightning)
