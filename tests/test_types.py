@@ -17,7 +17,6 @@ from lnurl import (
     LnurlPayResponsePayerDataOption,
     LnurlPayResponsePayerDataOptionAuth,
 )
-from lnurl.helpers import _lnurl_clean
 
 
 class TestUrl:
@@ -29,7 +28,7 @@ class TestUrl:
     def test_parameters(self, hostport):
         url = parse_obj_as(CallbackUrl, f"https://{hostport}/?q=3fc3645b439ce8e7&test=ok")
         assert url.host == "service.io"
-        assert url.base == f"https://{hostport}/"
+        assert url == f"https://{hostport}/?q=3fc3645b439ce8e7&test=ok"
         assert url.query_params == {"q": "3fc3645b439ce8e7", "test": "ok"}
 
     @pytest.mark.parametrize(
@@ -130,28 +129,34 @@ class TestLnurl:
                 "lightning:LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98PJNWE3JX56NXCFK89JN2V3K"
                 "XUCRSVTY8YMXGCMYXV6RQD3EXDSKVCTZV5CRGCN9XA3RQCMRVSCNWWRYVCYAE0UU"
             ),
-            "https://service.io",
-            "lnurlp://service.io",
+            "https://service.io?a=1&b=2",
+            "lnurlp://service.io?a=1&b=2",
         ],
     )
     def test_valid_lnurl_and_bech32(self, lightning):
         lnurl = Lnurl(lightning)
         assert lnurl == parse_obj_as(Lnurl, lightning)
-        assert lnurl.bech32 == _lnurl_clean(lightning) or lnurl.url == _lnurl_clean(lightning)
         if lnurl.is_lud17:
             assert lnurl.bech32 is None
-            assert lnurl == lnurl.url
+            assert lnurl.lud17 == lightning
+            assert lnurl.lud17_prefix == lightning.split("://")[0]
+            assert lnurl.is_lud17 is True
+            assert lnurl.url == lightning.replace("lnurlp://", "https://")
+            assert lnurl == lightning.replace("lnurlp://", "https://")
         else:
             assert lnurl.bech32 is not None
             assert lnurl.bech32.hrp == "lnurl"
-            assert lnurl == lnurl.bech32
+            assert lnurl.bech32 == lnurl or lnurl.url == lnurl
+            assert lnurl.lud17 is None
+            assert lnurl.lud17_prefix is None
+            assert lnurl.is_lud17 is False
 
         assert lnurl.is_login is False
 
     @pytest.mark.parametrize(
         "url",
         [
-            "lnurlp://service.io",
+            "lnurlp://service.io?a=1&b=2",
             "lnurlc://service.io",
             "lnurlw://service.io",
             "keyauth://service.io",
@@ -160,10 +165,17 @@ class TestLnurl:
     def test_valid_lnurl_lud17(self, url: str):
         _lnurl = parse_obj_as(Lnurl, url)
 
+        _prefix = url.split("://")[0]
+        assert _lnurl.lud17 == url
+        assert _lnurl.lud17_prefix == _prefix
         assert _lnurl.is_lud17 is True
-        assert str(_lnurl) == url
         assert _lnurl.bech32 is None
-        assert _lnurl.callback_url == "https://service.io"
+        _url = url.replace("lnurlp://", "https://")
+        _url = _url.replace("lnurlc://", "https://")
+        _url = _url.replace("lnurlw://", "https://")
+        _url = _url.replace("keyauth://", "https://")
+        assert str(_lnurl.url) == _url
+        assert str(_lnurl) == _url
 
     @pytest.mark.parametrize(
         "url",
