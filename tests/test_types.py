@@ -171,9 +171,9 @@ class TestLnurl:
         assert _lnurl.is_lud17 is True
         assert _lnurl.bech32 is None
         _url = url.replace("lnurlp://", "https://")
-        _url =_url.replace("lnurlc://", "https://")
-        _url =_url.replace("lnurlw://", "https://")
-        _url =_url.replace("keyauth://", "https://")
+        _url = _url.replace("lnurlc://", "https://")
+        _url = _url.replace("lnurlw://", "https://")
+        _url = _url.replace("keyauth://", "https://")
         assert str(_lnurl.url) == _url
         assert str(_lnurl) == _url
 

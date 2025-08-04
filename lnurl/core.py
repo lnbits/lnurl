@@ -4,7 +4,7 @@ from typing import Any, Optional
 import httpx
 from bolt11 import Bolt11Exception, MilliSatoshi
 from bolt11 import decode as bolt11_decode
-from pydantic import ValidationError
+from pydantic import ValidationError, parse_obj_as
 
 from .exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
 from .helpers import (
@@ -21,7 +21,7 @@ from .models import (
     LnurlResponseModel,
     LnurlWithdrawResponse,
 )
-from .types import LnAddress, Lnurl
+from .types import CallbackUrl, LnAddress, Lnurl
 
 USER_AGENT = "lnbits/lnurl"
 TIMEOUT = 5
@@ -84,9 +84,10 @@ async def handle(
         raise InvalidLnurl
 
     if lnurl.is_login:
-        return LnurlAuthResponse(callback=lnurl.callback_url, k1=lnurl.url.query_params["k1"])
+        callback_url = parse_obj_as(CallbackUrl, lnurl.url)
+        return LnurlAuthResponse(callback=callback_url, k1=lnurl.url.query_params["k1"])
 
-    return await get(lnurl.callback_url, response_class=response_class, user_agent=user_agent, timeout=timeout)
+    return await get(lnurl.url, response_class=response_class, user_agent=user_agent, timeout=timeout)
 
 
 async def execute(
