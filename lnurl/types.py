@@ -105,21 +105,12 @@ class Url(AnyUrl):
         yield cls.validate
 
     @property
-    def base(self) -> str:
-        scheme = self.scheme
-        if self.is_lud17:
-            scheme = "https"
-        hostport = f"{self.host}:{self.port}" if self.port else self.host
-        return f"{scheme}://{hostport}{self.path or ''}{self.query}"
-
-    @property
     def query_params(self) -> dict:
         return {k: v[0] for k, v in parse_qs(self.query).items()}
 
 
 class CallbackUrl(Url):
     """URL for callbacks. exclude lud17 schemes."""
-
     allowed_schemes = {"https", "http"}
 
 
@@ -158,16 +149,24 @@ class LightningNodeUri(ReprMixin, str):
 
 
 class Lnurl(ReprMixin, str):
-    __slots__ = ("url", "bech32", "lud17")
+    __slots__ = ("url", "bech32", "lud17_prefix")
 
     def __new__(cls, lightning: str) -> Lnurl:
         url, bech32 = cls.clean(lightning)
+        if url.is_lud17:
+            url = url.replace(url.scheme, "https")
         return str.__new__(cls, bech32 or url)
 
     def __init__(self, lightning: str):
         url, bech32 = self.clean(lightning)
+        if url.is_lud17:
+            self.bech32 = None
+            self.lud17_prefix = url.scheme
+            url = parse_obj_as(Url, url.replace(url.scheme, "https"))
+        else:
+            self.bech32 = bech32
+            self.lud17_prefix = None
         self.url = url
-        self.bech32 = bech32
         return str.__init__(bech32 or url)
 
     @classmethod
@@ -181,24 +180,19 @@ class Lnurl(ReprMixin, str):
         if lightning.lower().startswith("lnurl1"):
             bech32 = parse_obj_as(Bech32, lightning)
             url = parse_obj_as(Url, url_decode(lightning))
+            return url, bech32
+        url = parse_obj_as(Url, lightning)
+        if url.is_lud17:
+            # LUD-17: Protocol schemes and raw (non bech32-encoded) URLs.
+            bech32 = None
         else:
-            url = parse_obj_as(Url, lightning)
-            if url.is_lud17:
-                # LUD-17: Protocol schemes and raw (non bech32-encoded) URLs.
-                # no bech32 encoding for lud17
-                bech32 = None
-            else:
-                bech32 = parse_obj_as(Bech32, url_encode(url))
+            bech32 = parse_obj_as(Bech32, url_encode(url))
         return url, bech32
 
     @classmethod
     def validate(cls, lightning: str) -> Lnurl:
         _ = cls.clean(lightning)
         return cls(lightning)
-
-    @property
-    def callback_url(self) -> CallbackUrl:
-        return parse_obj_as(CallbackUrl, self.url.base)
 
     # LUD-04: auth base spec.
     @property
@@ -221,7 +215,14 @@ class Lnurl(ReprMixin, str):
     # LUD-17: Protocol schemes and raw (non bech32-encoded) URLs.
     @property
     def is_lud17(self) -> bool:
-        return self.url.is_lud17
+        return self.lud17_prefix is not None
+
+    @property
+    def lud17(self) -> Optional[str]:
+        if not self.lud17_prefix:
+            return None
+        url = self.url.replace(self.url.scheme, self.lud17_prefix)
+        return url
 
 
 class LnAddress(ReprMixin, str):
