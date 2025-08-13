@@ -124,20 +124,23 @@ Building your own LNURL responses
 For LNURL services, the `lnurl` package can be used to build **valid** responses.
 
 ```python
-from lnurl import LnurlWithdrawResponse
-
-res = LnurlWithdrawResponse(
-    callback="https://lnurl.bigsun.xyz/lnurl-withdraw/callback/9702808",
-    k1="38d304051c1b76dcd8c5ee17ee15ff0ebc02090c0afbc6c98100adfa3f920874",
-    min_withdrawable=551000,
-    max_withdrawable=551000,
-    default_description="sample withdraw",
-)
-res.json()  # str
-res.dict()  # dict
+from lnurl import CallbackUrl, LnurlWithdrawResponse, MilliSatoshi
+from pydantic import parse_obj_as, ValidationError
+try:
+    res = LnurlWithdrawResponse(
+        callback=parse_obj_as(CallbackUrl, "https://lnurl.bigsun.xyz/lnurl-withdraw/callback/9702808"),
+        k1="38d304051c1b76dcd8c5ee17ee15ff0ebc02090c0afbc6c98100adfa3f920874",
+        minWithdrawable=MilliSatoshi(1000),
+        maxWithdrawable=MilliSatoshi(1000000),
+        defaultDescription="sample withdraw",
+    )
+    res.json()  # str
+    res.dict()  # dict
+except ValidationError as e:
+    print(e.json())
 ```
 
-All responses are [`pydantic`][pydantic] models, so the information you provide will be validated and you have
+All responses are `pydantic` models, so the information you provide will be validated and you have
 access to `.json()` and `.dict()` methods to export the data.
 
 **Data is exported using :camel: camelCase keys by default, as per spec.**
@@ -146,6 +149,8 @@ Python code nicer.
 
 If you want to export the data using :snake: snake_case (in your Python code, for example), you can change
 the `by_alias` parameter: `res.dict(by_alias=False)` (it is `True` by default).
+
+Will throw and ValidationError if the data is not valid, so you can catch it and return an error response.
 
 
 [github-tests]: https://github.com/lnbits/lnurl/actions?query=workflow%3Atests
