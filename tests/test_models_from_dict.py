@@ -21,7 +21,7 @@ class TestLnurlResponse:
     pay_res = json.loads(
         r'{"tag":"payRequest","metadata":"[[\"text/plain\",\"lorem ipsum blah blah\"]]",'
         '"callback":"https://lnurl.bigsun.xyz/lnurl-pay/callback/","maxSendable":300980,'
-        '"minSendable":100980,"defaultDescription":"sample pay"}'
+        '"minSendable":100980}'
     )  # noqa
     pay_res_invalid = json.loads(r'{"tag":"payRequest","metadata":"[\"text\"\"plain\"]"}')
     withdraw_res = json.loads(

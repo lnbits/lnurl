@@ -40,14 +40,14 @@ class MessageAction(LnurlPaySuccessAction):
 
 
 class UrlAction(LnurlPaySuccessAction):
-    tag = LnurlPaySuccessActionTag.url
+    tag: LnurlPaySuccessActionTag = LnurlPaySuccessActionTag.url
     url: Url
     description: Max144Str
 
 
 # LUD-10: Add support for AES encrypted messages in payRequest.
 class AesAction(LnurlPaySuccessAction):
-    tag = LnurlPaySuccessActionTag.aes
+    tag: LnurlPaySuccessActionTag = LnurlPaySuccessActionTag.aes
     description: Max144Str
     ciphertext: CiphertextBase64
     iv: InitializationVectorBase64
@@ -56,9 +56,9 @@ class AesAction(LnurlPaySuccessAction):
 class LnurlResponseModel(BaseModel):
 
     class Config:
-        allow_population_by_field_name = True
         by_alias = True
         use_enum_values = True
+        extra = "forbid"
 
     def dict(self, **kwargs):
         kwargs.setdefault("by_alias", True)
@@ -167,14 +167,14 @@ class LnurlPayResponse(LnurlResponseModel):
     max_sendable: MilliSatoshi = Field(alias="maxSendable", gt=0)
     metadata: LnurlPayMetadata
     # LUD-18: Payer identity in payRequest protocol.
-    payer_data: Optional[LnurlPayResponsePayerData] = Field(alias="payerData")
+    payer_data: Optional[LnurlPayResponsePayerData] = Field(default=None, alias="payerData")
     # Adds the optional comment_allowed field to the LnurlPayResponse
     # ref LUD-12: Comments in payRequest.
-    comment_allowed: Optional[int] = Field(alias="commentAllowed")
+    comment_allowed: Optional[int] = Field(default=None, alias="commentAllowed")
 
     # NIP-57 Lightning Zaps
-    allows_nostr: Optional[bool] = Field(alias="allowsNostr")
-    nostr_pubkey: Optional[str] = Field(alias="nostrPubkey")
+    allows_nostr: Optional[bool] = Field(default=None, alias="allowsNostr")
+    nostr_pubkey: Optional[str] = Field(default=None, alias="nostrPubkey")
 
     @validator("max_sendable")
     def max_less_than_min(cls, value, values):  # noqa
