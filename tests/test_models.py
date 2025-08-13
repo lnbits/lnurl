@@ -1,8 +1,9 @@
 import json
 
 import pytest
-from pydantic import ValidationError
+from pydantic import ValidationError, parse_obj_as
 
+from lnurl import CallbackUrl, LnurlPayMetadata, MilliSatoshi
 from lnurl.models import (
     LnurlChannelResponse,
     LnurlErrorResponse,
@@ -72,14 +73,25 @@ metadata = '[["text/plain","lorem ipsum blah blah"]]'
 
 class TestLnurlPayResponse:
     @pytest.mark.parametrize(
-        "d",
+        "callback, min_sendable, max_sendable, metadata",
         [
-            {"callback": "https://service.io/pay", "min_sendable": 1000, "max_sendable": 2000, "metadata": metadata},
-            {"callback": "https://service.io/pay", "minSendable": 1000, "maxSendable": 2000, "metadata": metadata},
+            (
+                "https://service.io/pay",
+                1000,
+                2000,
+                metadata,
+            ),
         ],
     )
-    def test_success_response(self, d):
-        res = LnurlPayResponse(**d)
+    def test_success_response(self, callback: str, min_sendable: int, max_sendable: int, metadata: str):
+        callback_url = parse_obj_as(CallbackUrl, callback)
+        data = parse_obj_as(LnurlPayMetadata, metadata)
+        res = LnurlPayResponse(
+            callback=callback_url,
+            minSendable=MilliSatoshi(min_sendable),
+            maxSendable=MilliSatoshi(max_sendable),
+            metadata=data,
+        )
         assert res.ok
         assert (
             res.json() == res.json(by_alias=True) == '{"tag": "payRequest", "callback": "https://service.io/pay", '
@@ -107,9 +119,9 @@ class TestLnurlPayResponse:
     @pytest.mark.parametrize(
         "d",
         [
-            {"callback": "invalid", "min_sendable": 1000, "max_sendable": 2000, "metadata": metadata},
+            {"callback": "invalid", "minSendable": 1000, "maxSendable": 2000, "metadata": metadata},
             {"callback": "https://service.io/pay"},  # missing fields
-            {"callback": "https://service.io/pay", "min_sendable": 0, "max_sendable": 0, "metadata": metadata},  # 0
+            {"callback": "https://service.io/pay", "minSendable": 0, "maxSendable": 0, "metadata": metadata},  # 0
             {"callback": "https://service.io/pay", "minSendable": 100, "maxSendable": 10, "metadata": metadata},  # max
             {"callback": "https://service.io/pay", "minSendable": -90, "maxSendable": -10, "metadata": metadata},
         ],
@@ -121,26 +133,27 @@ class TestLnurlPayResponse:
 
 class TestLnurlPayResponseComment:
     @pytest.mark.parametrize(
-        "d",
+        "callback, min_sendable, max_sendable, metadata, comment_allowed",
         [
-            {
-                "callback": "https://service.io/pay",
-                "min_sendable": 1000,
-                "max_sendable": 2000,
-                "metadata": metadata,
-                "comment_allowed": 555,
-            },
-            {
-                "callback": "https://service.io/pay",
-                "minSendable": 1000,
-                "maxSendable": 2000,
-                "metadata": metadata,
-                "comment_allowed": 555,
-            },
+            (
+                "https://service.io/pay",
+                1000,
+                2000,
+                metadata,
+                555,  # comment allowed
+            ),
         ],
     )
-    def test_success_response(self, d):
-        res = LnurlPayResponse(**d)
+    def test_success_response(
+        self, callback: str, min_sendable: int, max_sendable: int, metadata: str, comment_allowed: int
+    ):
+        res = LnurlPayResponse(
+            callback=parse_obj_as(CallbackUrl, callback),
+            minSendable=MilliSatoshi(min_sendable),
+            maxSendable=MilliSatoshi(max_sendable),
+            metadata=parse_obj_as(LnurlPayMetadata, metadata),
+            commentAllowed=comment_allowed,
+        )
         assert res.ok
         assert (
             res.json() == res.json(by_alias=True) == '{"tag": "payRequest", "callback": "https://service.io/pay", '
@@ -171,9 +184,9 @@ class TestLnurlPayResponseComment:
     @pytest.mark.parametrize(
         "d",
         [
-            {"callback": "invalid", "min_sendable": 1000, "max_sendable": 2000, "metadata": metadata},
+            {"callback": "invalid", "minSendable": 1000, "maxSendable": 2000, "metadata": metadata},
             {"callback": "https://service.io/pay"},  # missing fields
-            {"callback": "https://service.io/pay", "min_sendable": 0, "max_sendable": 0, "metadata": metadata},  # 0
+            {"callback": "https://service.io/pay", "minSendable": 0, "maxSendable": 0, "metadata": metadata},  # 0
             {"callback": "https://service.io/pay", "minSendable": 100, "maxSendable": 10, "metadata": metadata},  # max
             {"callback": "https://service.io/pay", "minSendable": -90, "maxSendable": -10, "metadata": metadata},
             {
@@ -181,7 +194,7 @@ class TestLnurlPayResponseComment:
                 "minSendable": 100,
                 "maxSendable": 1000,
                 "metadata": metadata,
-                "comment_allowed": "Yes",  # str should be int
+                "commentAllowed": "Yes",  # str should be int
             },
         ],
     )
@@ -192,24 +205,23 @@ class TestLnurlPayResponseComment:
 
 class TestLnurlWithdrawResponse:
     @pytest.mark.parametrize(
-        "d",
+        "callback, k1, min_withdrawable, max_withdrawable",
         [
-            {
-                "callback": "https://service.io/withdraw",
-                "k1": "c3RyaW5n",
-                "min_withdrawable": 100,
-                "max_withdrawable": 200,
-            },
-            {
-                "callback": "https://service.io/withdraw",
-                "k1": "c3RyaW5n",
-                "minWithdrawable": 100,
-                "maxWithdrawable": 200,
-            },
+            (
+                "https://service.io/withdraw",
+                "c3RyaW5n",
+                100,
+                200,
+            ),
         ],
     )
-    def test_success_response(self, d):
-        res = LnurlWithdrawResponse(**d)
+    def test_success_response(self, callback: str, k1: str, min_withdrawable: int, max_withdrawable: int):
+        res = LnurlWithdrawResponse(
+            callback=parse_obj_as(CallbackUrl, callback),
+            k1=k1,
+            minWithdrawable=MilliSatoshi(min_withdrawable),
+            maxWithdrawable=MilliSatoshi(max_withdrawable),
+        )
         assert res.ok
         assert (
             res.json()
@@ -241,7 +253,7 @@ class TestLnurlWithdrawResponse:
     @pytest.mark.parametrize(
         "d",
         [
-            {"callback": "invalid", "k1": "c3RyaW5n", "min_withdrawable": 1000, "max_withdrawable": 2000},
+            {"callback": "invalid", "k1": "c3RyaW5n", "minWithdrawable": 1000, "maxWithdrawable": 2000},
             {"callback": "https://service.io/withdraw", "k1": "c3RyaW5n"},  # missing fields
             {
                 "callback": "https://service.io/withdraw",

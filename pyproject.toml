@@ -28,7 +28,7 @@ black = "^24.3.0"
 pytest = "^7.4.0"
 pytest-cov = "^4.1.0"
 types-requests = "^2.31.0.2"
-mypy = "^1.5.1"
+mypy = "^1.17.1"
 ruff = "^0.12.3"
 pre-commit = "^3.3.3"
 pytest-asyncio = "^0.23.6"
@@ -40,6 +40,13 @@ build-backend = "poetry.core.masonry.api"
 [tool.mypy]
 ignore_missing_imports = "True"
 files = "lnurl"
+plugins = "pydantic.mypy"
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+warn_untyped_fields = true
 
 [tool.pytest.ini_options]
 testpaths = [
