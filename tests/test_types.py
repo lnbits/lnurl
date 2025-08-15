@@ -137,7 +137,6 @@ class TestLnurl:
         lnurl = Lnurl(lightning)
         assert lnurl == parse_obj_as(Lnurl, lightning)
         if lnurl.is_lud17:
-            assert lnurl.bech32 is None
             assert lnurl.lud17 == lightning
             assert lnurl.lud17_prefix == lightning.split("://")[0]
             assert lnurl.is_lud17 is True
@@ -169,7 +168,6 @@ class TestLnurl:
         assert _lnurl.lud17 == url
         assert _lnurl.lud17_prefix == _prefix
         assert _lnurl.is_lud17 is True
-        assert _lnurl.bech32 is None
         _url = url.replace("lnurlp://", "https://")
         _url = _url.replace("lnurlc://", "https://")
         _url = _url.replace("lnurlw://", "https://")

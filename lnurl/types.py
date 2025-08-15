@@ -190,8 +190,6 @@ class Lnurl(ReprMixin, str):
     @property
     def bech32(self) -> Optional[Bech32]:
         """Returns Bech32 representation of the Lnurl if it is a Bech32 encoded URL."""
-        if self.lud17_prefix:
-            return None
         return parse_obj_as(Bech32, url_encode(self.url))
 
     # LUD-04: auth base spec.
