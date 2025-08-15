@@ -15,10 +15,12 @@ from .helpers import (
 )
 from .models import (
     LnurlAuthResponse,
+    LnurlErrorResponse,
     LnurlPayActionResponse,
     LnurlPayResponse,
     LnurlResponse,
     LnurlResponseModel,
+    LnurlSuccessResponse,
     LnurlWithdrawResponse,
 )
 from .types import CallbackUrl, LnAddress, Lnurl
@@ -102,36 +104,44 @@ async def execute(
         raise LnurlResponseException(str(exc))
 
     if isinstance(res, LnurlPayResponse) and res.tag == "payRequest":
-        return await execute_pay_request(res, value, user_agent=user_agent, timeout=timeout)
+        return await execute_pay_request(res, int(value), user_agent=user_agent, timeout=timeout)
     elif isinstance(res, LnurlAuthResponse) and res.tag == "login":
         return await execute_login(res, value, user_agent=user_agent, timeout=timeout)
     elif isinstance(res, LnurlWithdrawResponse) and res.tag == "withdrawRequest":
         return await execute_withdraw(res, value, user_agent=user_agent, timeout=timeout)
 
-    raise LnurlResponseException(f"{res.tag} not implemented")  # type: ignore
+    raise LnurlResponseException("tag not implemented")
 
 
 async def execute_pay_request(
     res: LnurlPayResponse,
-    msat: str,
+    msat: int,
+    comment: Optional[str] = None,
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
 ) -> LnurlPayActionResponse:
     if not res.min_sendable <= MilliSatoshi(msat) <= res.max_sendable:
         raise LnurlResponseException(f"Amount {msat} not in range {res.min_sendable} - {res.max_sendable}")
 
+    params: dict[str, str | int] = {"amount": msat}
+
+    if res.comment_allowed and comment:
+        if len(comment) > res.comment_allowed:
+            raise LnurlResponseException(f"Comment length {len(comment)} exceeds allowed length {res.comment_allowed}")
+        params["comment"] = comment
+
     try:
         headers = {"User-Agent": user_agent or USER_AGENT}
         async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
             res2 = await client.get(
                 url=res.callback,
-                params={
-                    "amount": msat,
-                },
+                params=params,
                 timeout=timeout or TIMEOUT,
             )
             res2.raise_for_status()
             pay_res = LnurlResponse.from_dict(res2.json())
+            if isinstance(pay_res, LnurlErrorResponse):
+                raise LnurlResponseException(pay_res.reason)
             if not isinstance(pay_res, LnurlPayActionResponse):
                 raise LnurlResponseException(f"Expected LnurlPayActionResponse, got {type(pay_res)}")
             invoice = bolt11_decode(pay_res.pr)
@@ -186,7 +196,7 @@ async def execute_withdraw(
     pr: str,
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
-) -> LnurlResponseModel:
+) -> LnurlSuccessResponse:
     try:
         invoice = bolt11_decode(pr)
     except Bolt11Exception as exc:
@@ -207,6 +217,11 @@ async def execute_withdraw(
                 timeout=timeout or TIMEOUT,
             )
             res2.raise_for_status()
-            return LnurlResponse.from_dict(res2.json())
+            withdraw_res = LnurlResponse.from_dict(res2.json())
+            if isinstance(withdraw_res, LnurlErrorResponse):
+                raise LnurlResponseException(withdraw_res.reason)
+            if not isinstance(withdraw_res, LnurlSuccessResponse):
+                raise LnurlResponseException(f"Expected LnurlSuccessResponse, got {type(withdraw_res)}")
+            return withdraw_res
     except Exception as exc:
         raise LnurlResponseException(str(exc))
