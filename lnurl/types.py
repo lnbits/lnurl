@@ -188,7 +188,7 @@ class Lnurl(ReprMixin, str):
         return cls(lightning)
 
     @property
-    def bech32(self) -> Optional[Bech32]:
+    def bech32(self) -> Bech32:
         """Returns Bech32 representation of the Lnurl if it is a Bech32 encoded URL."""
         return parse_obj_as(Bech32, url_encode(self.url))
 
