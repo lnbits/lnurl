@@ -155,14 +155,14 @@ class Lnurl(ReprMixin, str):
 
     def __new__(cls, lightning: str) -> Lnurl:
         url = cls.clean(lightning)
-        _url = url.replace(url.scheme, "https")
+        _url = url.replace(url.scheme, "https", 1)
         return str.__new__(cls, _url)
 
     def __init__(self, lightning: str):
         url = self.clean(lightning)
         if url.is_lud17:
             self.lud17_prefix = url.scheme
-            _url = parse_obj_as(Url, url.replace(url.scheme, "https"))
+            _url = parse_obj_as(Url, url.replace(url.scheme, "https", 1))
             self.url = _url
             return str.__init__(_url)
         self.url = url
@@ -219,7 +219,7 @@ class Lnurl(ReprMixin, str):
     def lud17(self) -> Optional[str]:
         if not self.lud17_prefix:
             return None
-        url = self.url.replace(self.url.scheme, self.lud17_prefix)
+        url = self.url.replace(self.url.scheme, self.lud17_prefix, 1)
         return url
 
 
