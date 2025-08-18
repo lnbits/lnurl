@@ -131,6 +131,7 @@ class TestLnurl:
             ),
             "https://service.io?a=1&b=2",
             "lnurlp://service.io?a=1&b=2",
+            "lnurlp://service.io/lnurlp?a=1&b=2",
         ],
     )
     def test_valid_lnurl_and_bech32(self, lightning):
