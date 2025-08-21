@@ -94,12 +94,12 @@ class TestLnurlPayResponse:
         )
         assert res.ok
         assert (
-            res.json() == res.json(by_alias=True) == '{"tag": "payRequest", "callback": "https://service.io/pay", '
+            res.json() == res.json() == '{"tag": "payRequest", "callback": "https://service.io/pay", '
             f'"minSendable": 1000, "maxSendable": 2000, "metadata": {json.dumps(metadata)}}}'
         )
         assert (
             res.dict()
-            == res.dict(by_alias=True)
+            == res.dict()
             == {
                 "tag": "payRequest",
                 "callback": "https://service.io/pay",
@@ -108,13 +108,6 @@ class TestLnurlPayResponse:
                 "metadata": metadata,
             }
         )
-        assert res.dict(by_alias=False) == {
-            "tag": "payRequest",
-            "callback": "https://service.io/pay",
-            "min_sendable": 1000,
-            "max_sendable": 2000,
-            "metadata": metadata,
-        }
 
     @pytest.mark.parametrize(
         "d",
@@ -156,13 +149,13 @@ class TestLnurlPayResponseComment:
         )
         assert res.ok
         assert (
-            res.json() == res.json(by_alias=True) == '{"tag": "payRequest", "callback": "https://service.io/pay", '
+            res.json() == res.json() == '{"tag": "payRequest", "callback": "https://service.io/pay", '
             f'"minSendable": 1000, "maxSendable": 2000, "metadata": {json.dumps(metadata)}, '
             '"commentAllowed": 555}'
         )
         assert (
             res.dict()
-            == res.dict(by_alias=True)
+            == res.dict()
             == {
                 "tag": "payRequest",
                 "callback": "https://service.io/pay",
@@ -172,14 +165,6 @@ class TestLnurlPayResponseComment:
                 "commentAllowed": 555,
             }
         )
-        assert res.dict(by_alias=False) == {
-            "tag": "payRequest",
-            "callback": "https://service.io/pay",
-            "min_sendable": 1000,
-            "max_sendable": 2000,
-            "metadata": metadata,
-            "comment_allowed": 555,
-        }
 
     @pytest.mark.parametrize(
         "d",
@@ -225,13 +210,13 @@ class TestLnurlWithdrawResponse:
         assert res.ok
         assert (
             res.json()
-            == res.json(by_alias=True)
+            == res.json()
             == '{"tag": "withdrawRequest", "callback": "https://service.io/withdraw", "k1": "c3RyaW5n", '
             '"minWithdrawable": 100, "maxWithdrawable": 200, "defaultDescription": ""}'
         )
         assert (
             res.dict()
-            == res.dict(by_alias=True)
+            == res.dict()
             == {
                 "tag": "withdrawRequest",
                 "callback": "https://service.io/withdraw",
@@ -241,14 +226,6 @@ class TestLnurlWithdrawResponse:
                 "defaultDescription": "",
             }
         )
-        assert res.dict(by_alias=False) == {
-            "tag": "withdrawRequest",
-            "callback": "https://service.io/withdraw",
-            "k1": "c3RyaW5n",
-            "min_withdrawable": 100,
-            "max_withdrawable": 200,
-            "default_description": "",
-        }
 
     @pytest.mark.parametrize(
         "d",

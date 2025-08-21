@@ -120,14 +120,14 @@ async def execute_pay_request(
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
 ) -> LnurlPayActionResponse:
-    if not res.min_sendable <= MilliSatoshi(msat) <= res.max_sendable:
-        raise LnurlResponseException(f"Amount {msat} not in range {res.min_sendable} - {res.max_sendable}")
+    if not res.minSendable <= MilliSatoshi(msat) <= res.maxSendable:
+        raise LnurlResponseException(f"Amount {msat} not in range {res.minSendable} - {res.maxSendable}")
 
     params: dict[str, str | int] = {"amount": msat}
 
-    if res.comment_allowed and comment:
-        if len(comment) > res.comment_allowed:
-            raise LnurlResponseException(f"Comment length {len(comment)} exceeds allowed length {res.comment_allowed}")
+    if res.commentAllowed and comment:
+        if len(comment) > res.commentAllowed:
+            raise LnurlResponseException(f"Comment length {len(comment)} exceeds allowed length {res.commentAllowed}")
         params["comment"] = comment
 
     try:
@@ -202,9 +202,9 @@ async def execute_withdraw(
     except Bolt11Exception as exc:
         raise LnurlResponseException(str(exc))
     # if invoice does not have amount use the min withdrawable amount
-    amount = invoice.amount_msat or res.min_withdrawable
-    if not res.min_withdrawable <= MilliSatoshi(amount) <= res.max_withdrawable:
-        raise LnurlResponseException(f"Amount {amount} not in range {res.min_withdrawable} - {res.max_withdrawable}")
+    amount = invoice.amount_msat or res.minWithdrawable
+    if not res.minWithdrawable <= MilliSatoshi(amount) <= res.maxWithdrawable:
+        raise LnurlResponseException(f"Amount {amount} not in range {res.minWithdrawable} - {res.maxWithdrawable}")
     try:
         headers = {"User-Agent": user_agent or USER_AGENT}
         async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
