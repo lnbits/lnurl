@@ -92,7 +92,7 @@ try:
     r = await client.get(lnurl.url)
     res = LnurlResponse.from_dict(r.json())  # LnurlPayResponse
     res.ok  # bool
-    res.max_sendable  # int
+    res.maxSendable  # int
     res.max_sats  # int
     res.callback.base  # str
     res.callback.query_params # dict
@@ -109,7 +109,7 @@ It will return the appropriate response for a LNURL.
 ```python
 >>> import lnurl
 >>> lnurl.handle('lightning:LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94CXZ7FLWDJHXUMFDAHR6V33XCUNSVE38QV6UF')
-LnurlPayResponse(tag='payRequest', callback=WebUrl('https://lnurl.bigsun.xyz/lnurl-pay/callback/2169831', scheme='https', host='lnurl.bigsun.xyz', tld='xyz', host_type='domain', path='/lnurl-pay/callback/2169831'), min_sendable=10000, max_sendable=10000, metadata=LnurlPayMetadata('[["text/plain","NgHaEyaZNDnW iI DsFYdkI"],["image/png;base64","iVBOR...uQmCC"]]'))
+LnurlPayResponse(tag='payRequest', callback=WebUrl('https://lnurl.bigsun.xyz/lnurl-pay/callback/2169831', scheme='https', host='lnurl.bigsun.xyz', tld='xyz', host_type='domain', path='/lnurl-pay/callback/2169831'), minSendable=10000, maxSendable=10000, metadata=LnurlPayMetadata('[["text/plain","NgHaEyaZNDnW iI DsFYdkI"],["image/png;base64","iVBOR...uQmCC"]]'))
 ```
 
 You can execute and LNURL with either payRequest, withdrawRequest or login tag using the `execute` function.
@@ -146,9 +146,6 @@ access to `.json()` and `.dict()` methods to export the data.
 **Data is exported using :camel: camelCase keys by default, as per spec.**
 You can also use camelCases when you parse the data, and it will be converted to snake_case to make your
 Python code nicer.
-
-If you want to export the data using :snake: snake_case (in your Python code, for example), you can change
-the `by_alias` parameter: `res.dict(by_alias=False)` (it is `True` by default).
 
 Will throw and ValidationError if the data is not valid, so you can catch it and return an error response.
 

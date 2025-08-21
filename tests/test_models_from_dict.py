@@ -80,19 +80,19 @@ class TestLnurlResponse:
     def test_pay_action_aes(self):
         res = LnurlResponse.from_dict(self.pay_res_action_aes)
         assert isinstance(res, LnurlPayActionResponse)
-        assert isinstance(res.success_action, AesAction)
-        assert isinstance(res.success_action, LnurlPaySuccessAction)
+        assert isinstance(res.successAction, AesAction)
+        assert isinstance(res.successAction, LnurlPaySuccessAction)
         assert res.ok
-        assert res.success_action
-        assert res.success_action.tag == LnurlPaySuccessActionTag.aes
-        assert res.success_action.description == "your will receive a secret message"
-        assert len(res.success_action.iv) == 24
-        assert len(res.success_action.ciphertext) == 44
+        assert res.successAction
+        assert res.successAction.tag == LnurlPaySuccessActionTag.aes
+        assert res.successAction.description == "your will receive a secret message"
+        assert len(res.successAction.iv) == 24
+        assert len(res.successAction.ciphertext) == 44
 
     def test_withdraw(self):
         res = LnurlResponse.from_dict(self.withdraw_res)
         assert isinstance(res, LnurlWithdrawResponse)
         assert res.ok
-        assert res.max_withdrawable == 478980
+        assert res.maxWithdrawable == 478980
         assert res.max_sats == 478
         assert res.min_sats == 479

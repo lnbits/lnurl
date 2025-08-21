@@ -26,8 +26,8 @@ from .types import (
 
 
 class LnurlPayRouteHop(BaseModel):
-    node_id: str = Field(alias="nodeId")
-    channel_update: str = Field(alias="channelUpdate")
+    nodeId: str
+    channelUpdate: str
 
 
 class LnurlPaySuccessAction(BaseModel, ABC):
@@ -56,17 +56,14 @@ class AesAction(LnurlPaySuccessAction):
 class LnurlResponseModel(BaseModel):
 
     class Config:
-        by_alias = True
         use_enum_values = True
         extra = "forbid"
 
     def dict(self, **kwargs):
-        kwargs.setdefault("by_alias", True)
         kwargs["exclude_none"] = True
         return super().dict(**kwargs)
 
     def json(self, **kwargs):
-        kwargs.setdefault("by_alias", True)
         kwargs["exclude_none"] = True
         return super().json(**kwargs)
 
@@ -163,41 +160,41 @@ class LnurlPayerData(BaseModel):
 class LnurlPayResponse(LnurlResponseModel):
     tag: LnurlResponseTag = LnurlResponseTag.payRequest
     callback: CallbackUrl
-    min_sendable: MilliSatoshi = Field(alias="minSendable", gt=0)
-    max_sendable: MilliSatoshi = Field(alias="maxSendable", gt=0)
+    minSendable: MilliSatoshi = Field(gt=0)
+    maxSendable: MilliSatoshi = Field(gt=0)
     metadata: LnurlPayMetadata
     # LUD-18: Payer identity in payRequest protocol.
-    payer_data: Optional[LnurlPayResponsePayerData] = Field(default=None, alias="payerData")
+    payerData: Optional[LnurlPayResponsePayerData] = None
     # Adds the optional comment_allowed field to the LnurlPayResponse
     # ref LUD-12: Comments in payRequest.
-    comment_allowed: Optional[int] = Field(default=None, alias="commentAllowed")
+    commentAllowed: Optional[int] = None
 
     # NIP-57 Lightning Zaps
-    allows_nostr: Optional[bool] = Field(default=None, alias="allowsNostr")
-    nostr_pubkey: Optional[str] = Field(default=None, alias="nostrPubkey")
+    allowsNostr: Optional[bool] = None
+    nostrPubkey: Optional[str] = None
 
-    @validator("max_sendable")
+    @validator("maxSendable")
     def max_less_than_min(cls, value, values):  # noqa
-        if "min_sendable" in values and value < values["min_sendable"]:
-            raise ValueError("`max_sendable` cannot be less than `min_sendable`.")
+        if "minSendable" in values and value < values["minSendable"]:
+            raise ValueError("`maxSendable` cannot be less than `minSendable`.")
         return value
 
     @property
     def min_sats(self) -> int:
-        return int(math.ceil(self.min_sendable / 1000))
+        return int(math.ceil(self.minSendable / 1000))
 
     @property
     def max_sats(self) -> int:
-        return int(math.floor(self.max_sendable / 1000))
+        return int(math.floor(self.maxSendable / 1000))
 
     def is_valid_amount(self, amount_msat: int) -> bool:
-        return self.min_sendable <= amount_msat <= self.max_sendable
+        return self.minSendable <= amount_msat <= self.maxSendable
 
 
 class LnurlPayActionResponse(LnurlResponseModel):
     pr: LightningInvoice
     # LUD-9: successAction field for payRequest.
-    success_action: Optional[Union[AesAction, MessageAction, UrlAction]] = Field(default=None, alias="successAction")
+    successAction: Optional[Union[AesAction, MessageAction, UrlAction]] = None
     routes: list[list[LnurlPayRouteHop]] = []
     # LUD-11: Disposable and storeable payRequests.
     # If disposable is null, it should be interpreted as true.
@@ -211,25 +208,19 @@ class LnurlWithdrawResponse(LnurlResponseModel):
     tag: LnurlResponseTag = LnurlResponseTag.withdrawRequest
     callback: CallbackUrl
     k1: str
-    min_withdrawable: MilliSatoshi = Field(alias="minWithdrawable", ge=0)
-    max_withdrawable: MilliSatoshi = Field(alias="maxWithdrawable", ge=0)
-    default_description: str = Field(default="", alias="defaultDescription")
+    minWithdrawable: MilliSatoshi = Field(ge=0)
+    maxWithdrawable: MilliSatoshi = Field(ge=0)
+    defaultDescription: str = ""
     # LUD-14: balanceCheck: reusable withdrawRequests
-    balance_check: Optional[CallbackUrl] = Field(
-        default=None, alias="balanceCheck", description="URL to check balance, (LUD-14)"
-    )
-    current_balance: Optional[MilliSatoshi] = Field(
-        default=None, alias="currentBalance", description="Current balance, (LUD-14)"
-    )
+    balanceCheck: Optional[CallbackUrl] = None
+    currentBalance: Optional[MilliSatoshi] = None
     # LUD-19: Pay link discoverable from withdraw link.
-    pay_link: Optional[Union[LnAddress, Lnurl]] = Field(
-        default=None, alias="payLink", description="Pay link discoverable from withdraw link. (LUD-19)"
-    )
+    payLink: Optional[Union[LnAddress, Lnurl]] = None
 
-    @validator("max_withdrawable")
+    @validator("maxWithdrawable")
     def max_less_than_min(cls, value, values):
-        if "min_withdrawable" in values and value < values["min_withdrawable"]:
-            raise ValueError("`max_withdrawable` cannot be less than `min_withdrawable`.")
+        if "minWithdrawable" in values and value < values["minWithdrawable"]:
+            raise ValueError("`maxWithdrawable` cannot be less than `minWithdrawable`.")
         return value
 
     # LUD-08: Fast withdrawRequest.
@@ -239,14 +230,14 @@ class LnurlWithdrawResponse(LnurlResponseModel):
 
     @property
     def min_sats(self) -> int:
-        return int(math.ceil(self.min_withdrawable / 1000))
+        return int(math.ceil(self.minWithdrawable / 1000))
 
     @property
     def max_sats(self) -> int:
-        return int(math.floor(self.max_withdrawable / 1000))
+        return int(math.floor(self.maxWithdrawable / 1000))
 
     def is_valid_amount(self, amount: int) -> bool:
-        return self.min_withdrawable <= amount <= self.max_withdrawable
+        return self.minWithdrawable <= amount <= self.maxWithdrawable
 
 
 def is_pay_action_response(data: dict) -> bool:
