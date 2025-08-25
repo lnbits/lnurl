@@ -3,7 +3,7 @@ import json
 import pytest
 from pydantic import ValidationError, parse_obj_as
 
-from lnurl import CallbackUrl, LnurlPayMetadata, MilliSatoshi
+from lnurl import CallbackUrl, Lnurl, LnurlPayMetadata, MilliSatoshi, encode
 from lnurl.models import (
     LnurlChannelResponse,
     LnurlErrorResponse,
@@ -244,3 +244,33 @@ class TestLnurlWithdrawResponse:
     def test_invalid_data(self, d):
         with pytest.raises(ValidationError):
             LnurlWithdrawResponse(**d)
+
+    @pytest.mark.parametrize(
+        "payLink",
+        [
+            "https://service.io/withdraw",
+            "lnurlw://service.io/withdraw",  # wrong LUD17
+            str(encode("https://service.io/withdraw").bech32),  # bech32
+        ],
+    )
+    def test_invalid_pay_link(self, payLink: str):
+        with pytest.raises(ValidationError):
+            _ = LnurlWithdrawResponse(
+                callback=parse_obj_as(CallbackUrl, "https://service.io/withdraw/cb"),
+                k1="c3RyaW5n",
+                minWithdrawable=MilliSatoshi(100),
+                maxWithdrawable=MilliSatoshi(200),
+                payLink=parse_obj_as(Lnurl, payLink),
+            )
+
+    def test_valid_pay_link(self):
+        payLink = parse_obj_as(Lnurl, "lnurlp://service.io/pay")
+        assert payLink.is_lud17
+        assert payLink.lud17_prefix == "lnurlp"
+        _ = LnurlWithdrawResponse(
+            callback=parse_obj_as(CallbackUrl, "https://service.io/withdraw/cb"),
+            k1="c3RyaW5n",
+            minWithdrawable=MilliSatoshi(100),
+            maxWithdrawable=MilliSatoshi(200),
+            payLink=payLink,
+        )
