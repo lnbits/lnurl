@@ -160,13 +160,14 @@ class Lnurl(ReprMixin, str):
 
     def __init__(self, lightning: str):
         url = self.clean(lightning)
-        if url.is_lud17:
-            self.lud17_prefix = url.scheme
-            _url = parse_obj_as(Url, url.replace(url.scheme, "https", 1))
-            self.url = _url
-            return str.__init__(_url)
-        self.url = url
-        return str.__init__(url)
+        if not url.is_lud17:
+            self.url = url
+            self.lud17_prefix = None
+            return str.__init__(url)
+        self.lud17_prefix = url.scheme
+        _url = parse_obj_as(Url, url.replace(url.scheme, "https", 1))
+        self.url = _url
+        return str.__init__(_url)
 
     @classmethod
     def __get_validators__(cls):

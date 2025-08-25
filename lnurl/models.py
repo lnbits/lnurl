@@ -14,7 +14,6 @@ from .types import (
     InitializationVectorBase64,
     LightningInvoice,
     LightningNodeUri,
-    LnAddress,
     Lnurl,
     LnurlPayMetadata,
     LnurlPaySuccessActionTag,
@@ -215,7 +214,15 @@ class LnurlWithdrawResponse(LnurlResponseModel):
     balanceCheck: Optional[CallbackUrl] = None
     currentBalance: Optional[MilliSatoshi] = None
     # LUD-19: Pay link discoverable from withdraw link.
-    payLink: Optional[Union[LnAddress, Lnurl]] = None
+    payLink: Optional[Lnurl] = None
+
+    @validator("payLink", pre=True)
+    def paylink_must_be_lud17(cls, value: Optional[Lnurl] = None) -> Lnurl | None:
+        if not value:
+            return None
+        if value.is_lud17 and value.lud17_prefix == "lnurlp":
+            return value
+        raise ValueError("`payLink` must be a valid LUD17 URL (lnurlp://).")
 
     @validator("maxWithdrawable")
     def max_less_than_min(cls, value, values):
