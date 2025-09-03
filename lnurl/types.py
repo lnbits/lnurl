@@ -21,6 +21,8 @@ from pydantic.validators import str_validator
 from .exceptions import InvalidLnurlPayMetadata, InvalidUrl, LnAddressError
 from .helpers import _bech32_decode, _lnurl_clean, url_decode, url_encode
 
+INSECURE_HOSTS = ["127.0.0.1", "0.0.0.0", "localhost"]
+
 
 class ReprMixin:
     def __repr__(self) -> str:
@@ -81,7 +83,7 @@ def valid_lnurl_host(url: str) -> AnyUrl:
     if not _url.host:
         raise InvalidUrl("URL host is required.")
     if _url.scheme == "http":
-        if _url.host not in ["127.0.0.1", "0.0.0.0", "localhost"] and not _url.host.endswith(".onion"):
+        if _url.host not in INSECURE_HOSTS and not _url.host.endswith(".onion"):
             raise InvalidUrl("HTTP scheme is only allowed for localhost or onion addresses.")
     return _url
 
@@ -107,6 +109,12 @@ class Url(AnyUrl):
     @property
     def query_params(self) -> dict:
         return {k: v[0] for k, v in parse_qs(self.query).items()}
+
+    @property
+    def insecure(self) -> bool:
+        if not self.host:
+            return True
+        return self.scheme == "http" or self.host in INSECURE_HOSTS or self.host.endswith(".onion")
 
 
 class CallbackUrl(Url):
@@ -155,7 +163,7 @@ class Lnurl(ReprMixin, str):
 
     def __new__(cls, lightning: str) -> Lnurl:
         url = cls.clean(lightning)
-        _url = url.replace(url.scheme, "https", 1)
+        _url = url.replace(url.scheme, "http" if url.insecure else "https", 1)
         return str.__new__(cls, _url)
 
     def __init__(self, lightning: str):
@@ -165,7 +173,7 @@ class Lnurl(ReprMixin, str):
             self.lud17_prefix = None
             return str.__init__(url)
         self.lud17_prefix = url.scheme
-        _url = parse_obj_as(Url, url.replace(url.scheme, "https", 1))
+        _url = parse_obj_as(Url, url.replace(url.scheme, "http" if url.insecure else "https", 1))
         self.url = _url
         return str.__init__(_url)
 

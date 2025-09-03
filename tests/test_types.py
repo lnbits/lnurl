@@ -199,6 +199,19 @@ class TestLnurl:
         with pytest.raises(ValidationError):
             parse_obj_as(Lnurl, bech32)
 
+    @pytest.mark.parametrize(
+        "url",
+        [
+            "lnurlp://localhost",
+            "http://localhost",
+        ],
+    )
+    def test_insecure_lnurl(self, url: str):
+        lnurl = parse_obj_as(Lnurl, url)
+        assert lnurl.url.insecure is True
+        assert lnurl.url.host == "localhost"
+        assert lnurl.url.startswith("http://")
+
 
 class TestLnurlPayMetadata:
     @pytest.mark.parametrize(
