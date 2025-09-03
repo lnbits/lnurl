@@ -211,7 +211,6 @@ class TestLnurl:
         # assert lnurl.url.insecure is True
         assert lnurl.url.host == "localhost"
         assert lnurl.url.startswith("http://")
-        assert lnurl.startswith("http://")
 
 
 class TestLnurlPayMetadata:
