@@ -260,7 +260,7 @@ class TestLnurlWithdrawResponse:
                 k1="c3RyaW5n",
                 minWithdrawable=MilliSatoshi(100),
                 maxWithdrawable=MilliSatoshi(200),
-                payLink=parse_obj_as(Lnurl, payLink),
+                payLink=payLink,
             )
 
     def test_valid_pay_link(self):
@@ -272,5 +272,5 @@ class TestLnurlWithdrawResponse:
             k1="c3RyaW5n",
             minWithdrawable=MilliSatoshi(100),
             maxWithdrawable=MilliSatoshi(200),
-            payLink=payLink,
+            payLink=payLink.lud17,
         )
