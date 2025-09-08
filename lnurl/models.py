@@ -214,13 +214,14 @@ class LnurlWithdrawResponse(LnurlResponseModel):
     balanceCheck: Optional[CallbackUrl] = None
     currentBalance: Optional[MilliSatoshi] = None
     # LUD-19: Pay link discoverable from withdraw link.
-    payLink: Optional[Lnurl] = None
+    payLink: Optional[str] = None
 
     @validator("payLink", pre=True)
-    def paylink_must_be_lud17(cls, value: Optional[Lnurl] = None) -> Lnurl | None:
+    def paylink_must_be_lud17(cls, value: Optional[str] = None) -> str | None:
         if not value:
             return None
-        if value.is_lud17 and value.lud17_prefix == "lnurlp":
+        lnurl = Lnurl(value)
+        if lnurl.is_lud17 and lnurl.lud17_prefix == "lnurlp":
             return value
         raise ValueError("`payLink` must be a valid LUD17 URL (lnurlp://).")
 
