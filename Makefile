@@ -4,19 +4,19 @@ lint: ruff mypy
 check: checkblack checkruff
 
 black:
-	poetry run black .
+	uv run black .
 
 ruff:
-	poetry run ruff check . --fix
+	uv run ruff check . --fix
 
 checkruff:
-	poetry run ruff check .
+	uv run ruff check .
 
 checkblack:
-	poetry run black --check .
+	uv run black --check .
 
 mypy:
-	poetry run mypy .
+	uv run mypy .
 
 test:
-	poetry run pytest tests --cov=lnurl --cov-report=xml
+	uv run pytest tests --cov=lnurl --cov-report=xml

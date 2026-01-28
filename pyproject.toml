@@ -1,41 +1,43 @@
-[tool.poetry]
+[project]
 name = "lnurl"
-version = "0.8.3"
+version = "0.9.0"
+requires-python = ">=3.10,<3.13"
 description = "LNURL implementation for Python."
-authors = ["Alan Bits <alan@lnbits.com>"]
-license = "MIT"
+authors = [{ name = "Alan Bits", email = "alan@lnbits.com" }]
+urls = { Repository = "https://github.com/lnbits/lnurl" }
 readme = "README.md"
-packages = [
-  {include = "lnurl"},
-  {include = "lnurl/py.typed"},
+license = "MIT"
+dependencies = [
+  "pydantic>=1.10.0,<2.0.0",
+  "pycryptodomex>=3.21.0",
+  "bip32>=5.0.0",
+  "bech32",
+  "ecdsa",
+  "bolt11",
+  "httpx",
 ]
 
-[tool.poetry.scripts]
+[dependency-groups]
+dev = [
+  "black>=24.3.0",
+  "pytest>=7.4.0",
+  "pytest-cov>=4.1.0",
+  "types-requests",
+  "mypy>=1.17.1",
+  "ruff>=0.12.3",
+  "pre-commit>=3.3.3",
+  "pytest-asyncio>=0.23.6",
+]
+
+[project.scripts]
 lnurl = "lnurl.cli:main"
 
-[tool.poetry.dependencies]
-python = ">=3.10"
-pydantic = "^1"
-bech32 = "*"
-ecdsa = "*"
-bolt11 = "*"
-httpx = "*"
-pycryptodomex = "^3.21.0"
-bip32 = "^4.0"
-
-[tool.poetry.group.dev.dependencies]
-black = "^24.3.0"
-pytest = "^7.4.0"
-pytest-cov = "^4.1.0"
-types-requests = "^2.31.0.2"
-mypy = "^1.17.1"
-ruff = "^0.12.3"
-pre-commit = "^3.3.3"
-pytest-asyncio = "^0.23.6"
-
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["lnurl"]
 
 [tool.mypy]
 ignore_missing_imports = "True"
