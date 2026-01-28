@@ -165,7 +165,7 @@ Will throw and ValidationError if the data is not valid, so you can catch it and
 CLI
 ---------
 ```console
-$ poetry run lnurl
+$ uv run lnurl
 Usage: lnurl [OPTIONS] COMMAND [ARGS]...
 
   Python CLI for LNURL decode and encode lnurls
