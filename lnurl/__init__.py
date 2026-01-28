@@ -1,6 +1,3 @@
-# backward compatibility, MilliSatoshi is now imported from bolt11
-from bolt11 import MilliSatoshi
-
 from .core import decode, encode, execute, execute_login, execute_pay_request, execute_withdraw, get, handle
 from .exceptions import (
     InvalidLnurl,
@@ -63,6 +60,7 @@ from .types import (
     LnurlResponseTag,
     LnurlStatus,
     Max144Str,
+    MilliSatoshi,
     Url,
 )
 

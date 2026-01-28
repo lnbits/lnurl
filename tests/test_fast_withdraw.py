@@ -1,5 +1,5 @@
 import pytest
-from pydantic import parse_obj_as
+from pydantic import TypeAdapter
 
 from lnurl import encode
 from lnurl.models import LnurlWithdrawResponse
@@ -27,8 +27,7 @@ class TestFastWithdraw:
         assert lnurl.is_fast_withdraw == expected
 
     def test_set_lnurl_fast_withdraw(self):
-        response = parse_obj_as(
-            LnurlWithdrawResponse,
+        response = TypeAdapter(LnurlWithdrawResponse).validate_python(
             {
                 "tag": "withdrawRequest",
                 "k1": "0" * 16,

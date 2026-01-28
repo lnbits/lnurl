@@ -1,13 +1,14 @@
 import json
 
 import pytest
-from pydantic import ValidationError, parse_obj_as
+from pydantic import TypeAdapter, ValidationError
 
 from lnurl import CallbackUrl, Lnurl, LnurlPayMetadata, MilliSatoshi, encode
 from lnurl.models import (
     LnurlChannelResponse,
     LnurlErrorResponse,
     LnurlHostedChannelResponse,
+    LnurlPayResponsePayerDataOption,
     LnurlPayResponse,
     LnurlSuccessResponse,
     LnurlWithdrawResponse,
@@ -19,16 +20,20 @@ class TestLnurlErrorResponse:
         res = LnurlErrorResponse(reason="blah blah blah")
         assert res.ok is False
         assert res.error_msg == "blah blah blah"
-        assert res.json() == '{"status": "ERROR", "reason": "blah blah blah"}'
-        assert res.dict() == {"status": "ERROR", "reason": "blah blah blah"}
+        assert res.json() == res.model_dump_json()
+        assert res.dict() == res.model_dump(mode="json")
+        assert res.model_dump_json() == '{"status":"ERROR","reason":"blah blah blah"}'
+        assert res.model_dump(mode="json") == {"status": "ERROR", "reason": "blah blah blah"}
 
 
 class TestLnurlSuccessResponse:
     def test_success_response(self):
         res = LnurlSuccessResponse()
         assert res.ok
-        assert res.json() == '{"status": "OK"}'
-        assert res.dict() == {"status": "OK"}
+        assert res.json() == res.model_dump_json()
+        assert res.dict() == res.model_dump(mode="json")
+        assert res.model_dump_json() == '{"status":"OK"}'
+        assert res.model_dump(mode="json") == {"status": "OK"}
 
 
 class TestLnurlChannelResponse:
@@ -38,7 +43,7 @@ class TestLnurlChannelResponse:
     def test_channel_response(self, d):
         res = LnurlChannelResponse(**d)
         assert res.ok
-        assert res.dict() == {**{"tag": "channelRequest"}, **d}
+        assert res.model_dump(mode="json") == {**{"tag": "channelRequest"}, **d}
 
     @pytest.mark.parametrize(
         "d",
@@ -58,7 +63,7 @@ class TestLnurlHostedChannelResponse:
     def test_channel_response(self, d):
         res = LnurlHostedChannelResponse(**d)
         assert res.ok
-        assert res.dict() == {**{"tag": "hostedChannelRequest"}, **d}
+        assert res.model_dump(mode="json") == {**{"tag": "hostedChannelRequest"}, **d}
 
     @pytest.mark.parametrize(
         "d", [{"uri": "invalid", "k1": "c3RyaW5n"}, {"uri": "node_key@ip_address:port_number", "k1": None}]
@@ -84,8 +89,8 @@ class TestLnurlPayResponse:
         ],
     )
     def test_success_response(self, callback: str, min_sendable: int, max_sendable: int, metadata: str):
-        callback_url = parse_obj_as(CallbackUrl, callback)
-        data = parse_obj_as(LnurlPayMetadata, metadata)
+        callback_url = TypeAdapter(CallbackUrl).validate_python(callback)
+        data = TypeAdapter(LnurlPayMetadata).validate_python(metadata)
         res = LnurlPayResponse(
             callback=callback_url,
             minSendable=MilliSatoshi(min_sendable),
@@ -93,21 +98,19 @@ class TestLnurlPayResponse:
             metadata=data,
         )
         assert res.ok
+        assert res.json() == res.model_dump_json()
+        assert res.dict() == res.model_dump(mode="json")
         assert (
-            res.json() == res.json() == '{"tag": "payRequest", "callback": "https://service.io/pay", '
-            f'"minSendable": 1000, "maxSendable": 2000, "metadata": {json.dumps(metadata)}}}'
+            res.model_dump_json() == '{"tag":"payRequest","callback":"https://service.io/pay",'
+            f'"minSendable":1000,"maxSendable":2000,"metadata":{json.dumps(metadata)}}}'
         )
-        assert (
-            res.dict()
-            == res.dict()
-            == {
-                "tag": "payRequest",
-                "callback": "https://service.io/pay",
-                "minSendable": 1000,
-                "maxSendable": 2000,
-                "metadata": metadata,
-            }
-        )
+        assert res.model_dump(mode="json") == {
+            "tag": "payRequest",
+            "callback": "https://service.io/pay",
+            "minSendable": 1000,
+            "maxSendable": 2000,
+            "metadata": metadata,
+        }
 
     @pytest.mark.parametrize(
         "d",
@@ -141,30 +144,27 @@ class TestLnurlPayResponseComment:
         self, callback: str, min_sendable: int, max_sendable: int, metadata: str, comment_allowed: int
     ):
         res = LnurlPayResponse(
-            callback=parse_obj_as(CallbackUrl, callback),
+            callback=TypeAdapter(CallbackUrl).validate_python(callback),
             minSendable=MilliSatoshi(min_sendable),
             maxSendable=MilliSatoshi(max_sendable),
-            metadata=parse_obj_as(LnurlPayMetadata, metadata),
+            metadata=TypeAdapter(LnurlPayMetadata).validate_python(metadata),
             commentAllowed=comment_allowed,
         )
         assert res.ok
+        assert res.json() == res.model_dump_json()
+        assert res.dict() == res.model_dump(mode="json")
         assert (
-            res.json() == res.json() == '{"tag": "payRequest", "callback": "https://service.io/pay", '
-            f'"minSendable": 1000, "maxSendable": 2000, "metadata": {json.dumps(metadata)}, '
-            '"commentAllowed": 555}'
+            res.model_dump_json() == '{"tag":"payRequest","callback":"https://service.io/pay",'
+            f'"minSendable":1000,"maxSendable":2000,"metadata":{json.dumps(metadata)},"commentAllowed":555}}'
         )
-        assert (
-            res.dict()
-            == res.dict()
-            == {
-                "tag": "payRequest",
-                "callback": "https://service.io/pay",
-                "minSendable": 1000,
-                "maxSendable": 2000,
-                "metadata": metadata,
-                "commentAllowed": 555,
-            }
-        )
+        assert res.model_dump(mode="json") == {
+            "tag": "payRequest",
+            "callback": "https://service.io/pay",
+            "minSendable": 1000,
+            "maxSendable": 2000,
+            "metadata": metadata,
+            "commentAllowed": 555,
+        }
 
     @pytest.mark.parametrize(
         "d",
@@ -202,30 +202,27 @@ class TestLnurlWithdrawResponse:
     )
     def test_success_response(self, callback: str, k1: str, min_withdrawable: int, max_withdrawable: int):
         res = LnurlWithdrawResponse(
-            callback=parse_obj_as(CallbackUrl, callback),
+            callback=TypeAdapter(CallbackUrl).validate_python(callback),
             k1=k1,
             minWithdrawable=MilliSatoshi(min_withdrawable),
             maxWithdrawable=MilliSatoshi(max_withdrawable),
         )
         assert res.ok
+        assert res.json() == res.model_dump_json()
+        assert res.dict() == res.model_dump(mode="json")
         assert (
-            res.json()
-            == res.json()
-            == '{"tag": "withdrawRequest", "callback": "https://service.io/withdraw", "k1": "c3RyaW5n", '
-            '"minWithdrawable": 100, "maxWithdrawable": 200, "defaultDescription": ""}'
+            res.model_dump_json()
+            == '{"tag":"withdrawRequest","callback":"https://service.io/withdraw","k1":"c3RyaW5n",'
+            '"minWithdrawable":100,"maxWithdrawable":200,"defaultDescription":""}'
         )
-        assert (
-            res.dict()
-            == res.dict()
-            == {
-                "tag": "withdrawRequest",
-                "callback": "https://service.io/withdraw",
-                "k1": "c3RyaW5n",
-                "minWithdrawable": 100,
-                "maxWithdrawable": 200,
-                "defaultDescription": "",
-            }
-        )
+        assert res.model_dump(mode="json") == {
+            "tag": "withdrawRequest",
+            "callback": "https://service.io/withdraw",
+            "k1": "c3RyaW5n",
+            "minWithdrawable": 100,
+            "maxWithdrawable": 200,
+            "defaultDescription": "",
+        }
 
     @pytest.mark.parametrize(
         "d",
@@ -256,7 +253,7 @@ class TestLnurlWithdrawResponse:
     def test_invalid_pay_link(self, payLink: str):
         with pytest.raises(ValidationError):
             _ = LnurlWithdrawResponse(
-                callback=parse_obj_as(CallbackUrl, "https://service.io/withdraw/cb"),
+                callback=TypeAdapter(CallbackUrl).validate_python("https://service.io/withdraw/cb"),
                 k1="c3RyaW5n",
                 minWithdrawable=MilliSatoshi(100),
                 maxWithdrawable=MilliSatoshi(200),
@@ -264,13 +261,20 @@ class TestLnurlWithdrawResponse:
             )
 
     def test_valid_pay_link(self):
-        payLink = parse_obj_as(Lnurl, "lnurlp://service.io/pay")
+        payLink = TypeAdapter(Lnurl).validate_python("lnurlp://service.io/pay")
         assert payLink.is_lud17
         assert payLink.lud17_prefix == "lnurlp"
         _ = LnurlWithdrawResponse(
-            callback=parse_obj_as(CallbackUrl, "https://service.io/withdraw/cb"),
+            callback=TypeAdapter(CallbackUrl).validate_python("https://service.io/withdraw/cb"),
             k1="c3RyaW5n",
             minWithdrawable=MilliSatoshi(100),
             maxWithdrawable=MilliSatoshi(200),
             payLink=payLink.lud17,
         )
+
+
+class TestLnurlBaseModelCompatibility:
+    def test_nested_models_support_dict_and_json(self):
+        option = LnurlPayResponsePayerDataOption(mandatory=True)
+        assert option.dict() == option.model_dump()
+        assert option.json() == option.model_dump_json()
