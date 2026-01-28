@@ -12,9 +12,9 @@ dependencies = [
   "pycryptodomex>=3.21.0",
   "bip32>=5.0.0",
   "bech32",
-  "ecdsa",
   "bolt11",
   "httpx",
+  "coincurve>=20.0.0",
 ]
 
 [dependency-groups]

@@ -5,10 +5,9 @@ from typing import List, Optional, Set, Tuple
 
 from bech32 import bech32_decode, bech32_encode, convertbits
 from bip32 import BIP32
+from coincurve import PrivateKey, PublicKey
 from Cryptodome import Random
 from Cryptodome.Cipher import AES
-from ecdsa import SECP256k1, SigningKey, VerifyingKey
-from ecdsa.util import sigdecode_der, sigencode_der
 
 from .exceptions import InvalidLnurl, InvalidUrl
 
@@ -67,11 +66,9 @@ def lnurlauth_signature(k1: str, linking_key: bytes) -> tuple[str, str]:
 
     Obtain the linking_key from lnurlauth_derive_linking_key or lnurlauth_derive_linking_key_sign_message.
     """
-    auth_key = SigningKey.from_string(linking_key, curve=SECP256k1, hashfunc=sha256)
-    sig = auth_key.sign_digest_deterministic(bytes.fromhex(k1), sigencode=sigencode_der)
-    if not auth_key.verifying_key:
-        raise ValueError("LNURLauth verifying_key does not exist")
-    key = auth_key.verifying_key.to_string("compressed")
+    auth_key = PrivateKey(linking_key)
+    sig = auth_key.sign(bytes.fromhex(k1), hasher=None)
+    key = auth_key.public_key.format(compressed=True)
     return key.hex(), sig.hex()
 
 
@@ -80,12 +77,13 @@ def lnurlauth_verify(k1: str, key: str, sig: str) -> bool:
     Verify a k1 with a key and a signature.
     """
     try:
-        verifying_key = VerifyingKey.from_string(bytes.fromhex(key), hashfunc=sha256, curve=SECP256k1)
-        verifying_key.verify_digest(bytes.fromhex(sig), bytes.fromhex(k1), sigdecode=sigdecode_der)
-        return True
-    except Exception as exc:
-        print(exc)
+        key_bytes = bytes.fromhex(key)
+        sig_bytes = bytes.fromhex(sig)
+        digest = bytes.fromhex(k1)
+    except ValueError:
         return False
+    verifying_key = PublicKey(key_bytes)
+    return verifying_key.verify(sig_bytes, digest, hasher=None)
 
 
 # LUD-05: BIP32-based seed generation for auth protocol.
@@ -138,13 +136,10 @@ def lnurlauth_derive_linking_key_sign_message(domain: str, sig: bytes) -> tuple[
     Derive a key from a from signMessage from a node.
     param `sig` is a RFC6979 deterministic signature.
     """
-    hashing_key = SigningKey.from_string(sha256(sig).digest(), curve=SECP256k1, hashfunc=sha256)
-    linking_key = SigningKey.from_string(
-        hmac.digest(hashing_key.to_string(), domain.encode(), "sha256"), curve=SECP256k1, hashfunc=sha256
-    )
-    assert linking_key.privkey and linking_key.verifying_key
-    pubkey = linking_key.verifying_key.to_string("compressed")
-    return linking_key.privkey, pubkey
+    hashing_key = PrivateKey(sha256(sig).digest())
+    linking_key = PrivateKey(hmac.digest(hashing_key.secret, domain.encode(), "sha256"))
+    pubkey = linking_key.public_key.format(compressed=True)
+    return linking_key.secret, pubkey
 
 
 def _bech32_decode(bech32: str, *, allowed_hrp: Optional[Set[str]] = None) -> Tuple[str, List[int]]:
