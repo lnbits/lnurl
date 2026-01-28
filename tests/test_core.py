@@ -11,7 +11,7 @@ from lnurl.models import (
     LnurlSuccessResponse,
     LnurlWithdrawResponse,
 )
-from lnurl.types import Lnurl, Url
+from lnurl.types import Lnurl
 
 
 class TestDecode:
@@ -31,8 +31,7 @@ class TestDecode:
         decoded = decode(bech32)
         assert isinstance(decoded, Lnurl)
         decoded_url = decoded.url
-        assert isinstance(decoded_url, Url)
-        assert decoded_url == str(decoded_url) == url
+        assert str(decoded_url) == url
         assert decoded_url.host == "service.io"
 
     @pytest.mark.parametrize(

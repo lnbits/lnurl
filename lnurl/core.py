@@ -4,7 +4,7 @@ from typing import Any, Optional
 import httpx
 from bolt11 import Bolt11Exception, MilliSatoshi
 from bolt11 import decode as bolt11_decode
-from pydantic import ValidationError, parse_obj_as
+from pydantic import TypeAdapter, ValidationError
 
 from .exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
 from .helpers import (
@@ -80,16 +80,23 @@ async def handle(
     try:
         if "@" in lnurl:
             lnaddress = LnAddress(lnurl)
-            return await get(lnaddress.url, response_class=response_class, user_agent=user_agent, timeout=timeout)
+            return await get(str(lnaddress.url), response_class=response_class, user_agent=user_agent, timeout=timeout)
         lnurl = Lnurl(lnurl)
     except (ValidationError, ValueError):
         raise InvalidLnurl
 
     if lnurl.is_login:
-        callback_url = parse_obj_as(CallbackUrl, lnurl.url)
-        return LnurlAuthResponse(callback=callback_url, k1=lnurl.url.query_params["k1"])
+        callback_url = TypeAdapter(CallbackUrl).validate_python(lnurl.url)
+        k1 = None
+        for param in lnurl.url.query_params():
+            if param[0] == "k1":
+                k1 = param[1]
+                break
+        if not k1:
+            raise LnurlResponseException("k1 parameter not found in LNURLauth URL")
+        return LnurlAuthResponse(callback=callback_url, k1=k1)
 
-    return await get(lnurl.url, response_class=response_class, user_agent=user_agent, timeout=timeout)
+    return await get(str(lnurl.url), response_class=response_class, user_agent=user_agent, timeout=timeout)
 
 
 async def execute(
@@ -134,7 +141,7 @@ async def execute_pay_request(
         headers = {"User-Agent": user_agent or USER_AGENT}
         async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
             res2 = await client.get(
-                url=res.callback,
+                url=str(res.callback),
                 params=params,
                 timeout=timeout or TIMEOUT,
             )
@@ -178,7 +185,7 @@ async def execute_login(
         headers = {"User-Agent": user_agent or USER_AGENT}
         async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
             res2 = await client.get(
-                url=res.callback,
+                url=str(res.callback),
                 params={
                     "key": key,
                     "sig": sig,
@@ -209,7 +216,7 @@ async def execute_withdraw(
         headers = {"User-Agent": user_agent or USER_AGENT}
         async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
             res2 = await client.get(
-                url=res.callback,
+                url=str(res.callback),
                 params={
                     "k1": res.k1,
                     "pr": pr,
