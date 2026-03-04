@@ -249,7 +249,11 @@ class LnurlWithdrawResponse(LnurlResponseModel):
 
 
 def is_pay_action_response(data: dict) -> bool:
-    return "pr" in data and "routes" in data
+    # LUD-06: callback success form is identified by presence of "pr".
+    # "routes" is an (often omitted) empty array; requiring it breaks
+    # otherwise-compliant services that only send "pr" (plus optional
+    # fields like `successAction`, `disposable`).
+    return "pr" in data
 
 
 class LnurlResponse:
