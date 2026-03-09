@@ -42,6 +42,7 @@ def test_from_dict_pay_action_response_pr_only_no_status():
 
     A callback response body that contains only `pr` (no `routes`, no `status`) must
     not raise that exception — it must be parsed as LnurlPayActionResponse.
+    Even though LUD06 specified an required empty `routes` array some services omit it.
     """
     data = {
         "pr": (
