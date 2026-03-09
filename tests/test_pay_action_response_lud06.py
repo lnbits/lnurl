@@ -1,8 +1,6 @@
-import pytest
 
-from lnurl.models import LnurlPayActionResponse, LnurlResponse
-from lnurl.exceptions import LnurlResponseException
 from lnurl import LnurlErrorResponse
+from lnurl.models import LnurlPayActionResponse, LnurlResponse
 
 
 def test_from_dict_pay_action_response_without_routes():
