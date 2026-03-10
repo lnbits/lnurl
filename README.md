@@ -70,8 +70,12 @@ lnurl.bech32.hrp  # "lnurl"
 lnurl.url  # "https://service.io/?q=3fc3645b439ce8e7"
 lnurl.url.host  # "service.io"
 lnurl.url.query  # "q=3fc3645b439ce8e7"
+lnurl.url.query_params()  # [("q", "3fc3645b439ce8e7")]
 dict(lnurl.url.query_params())  # {"q": "3fc3645b439ce8e7"}
 ```
+
+`query_params()` returns a list of `(key, value)` tuples so query parameters stay lossless and ordered.
+Use `dict(...)` when you want convenient mapping-style access and duplicate keys do not matter.
 
 Parsing LNURL responses
 -----------------------
@@ -94,6 +98,7 @@ try:
     res.maxSendable  # int
     res.max_sats  # int
     res.callback.host  # str
+    res.callback.query_params()  # list[tuple] [("amount", "1000")]
     dict(res.callback.query_params())  # dict
     res.metadata  # str
     res.metadata.list()  # list
