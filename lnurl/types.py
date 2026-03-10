@@ -47,6 +47,7 @@ class Bech32(str):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        _ = (source_type, handler)
 
         def validate(value: Any):
             hrp, data = cls.__get_data__(str(value))
@@ -120,37 +121,6 @@ CallbackUrl = Annotated[
     AfterValidator(validate_http_host),
 ]
 
-# class Url(AnyUrl):
-#     max_length = 2047  # https://stackoverflow.com/questions/417142/
-
-#     # LUD-17: Protocol schemes and raw (non bech32-encoded) URLs.
-#     allowed_schemes = {"https", "http", "lnurlc", "lnurlw", "lnurlp", "keyauth"}
-
-#     @property
-#     def is_lud17(self) -> bool:
-#         uris = ["lnurlc", "lnurlw", "lnurlp", "keyauth"]
-#         return any(self.scheme == uri for uri in uris)
-
-#     @property
-#     def query_params(self) -> dict[str, str]:
-#         return {k: v[0] for k, v in parse_qs(self.query).items()}
-
-#     @property
-#     def insecure(self) -> bool:
-#         if not self.host:
-#             return True
-#         return self.scheme == "http" or self.host in INSECURE_HOSTS or self.host.endswith(".onion")
-
-#     @classmethod
-#     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-#         return core_schema.chain_schema(
-#             [
-#                 core_schema.no_info_plain_validator_function(ctrl_characters_validator),
-#                 core_schema.no_info_plain_validator_function(strict_rfc3986_validator),
-#                 core_schema.no_info_plain_validator_function(validate_lnurl_host),
-#             ]
-#         )
-
 
 class LightningInvoice(Bech32):
     """Bech32 Lightning invoice."""
@@ -185,6 +155,7 @@ class LightningNodeUri(str):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        _ = (source_type, handler)
 
         def validate(value: Any):
             username, host, port = cls.__get_parts__(str(value))
@@ -241,6 +212,7 @@ class Lnurl(str):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        _ = (source_type, handler)
 
         def validate(value: Any):
             _ = cls.clean(value)
@@ -379,6 +351,7 @@ class LnurlPayMetadata(str):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        _ = (source_type, handler)
 
         def validate(value: Any):
             return cls(value, json_obj=cls.__validate_metadata__(str(value)))
@@ -442,6 +415,7 @@ class MilliSatoshi(int):
 
     @classmethod
     def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        _ = (source_type, handler)
         return core_schema.no_info_after_validator_function(
             cls,
             core_schema.int_schema(),
