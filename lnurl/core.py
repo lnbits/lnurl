@@ -23,7 +23,7 @@ from .models import (
     LnurlSuccessResponse,
     LnurlWithdrawResponse,
 )
-from .types import CallbackUrl, LnAddress, Lnurl
+from .types import CallbackUrl, LnAddress, Lnurl, Url
 
 USER_AGENT = "lnbits/lnurl"
 TIMEOUT = 5
@@ -44,16 +44,17 @@ def encode(url: str) -> Lnurl:
 
 
 async def get(
-    url: str,
+    url: str | Url | CallbackUrl,
     *,
     response_class: Optional[Any] = None,
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
 ) -> LnurlResponseModel:
+    request_url = str(url)
     headers = {"User-Agent": user_agent or USER_AGENT}
     async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
         try:
-            res = await client.get(url, timeout=timeout or TIMEOUT)
+            res = await client.get(request_url, timeout=timeout or TIMEOUT)
             res.raise_for_status()
         except Exception as exc:
             raise LnurlResponseException(str(exc)) from exc
@@ -61,7 +62,7 @@ async def get(
         try:
             _json = res.json()
         except JSONDecodeError as exc:
-            raise LnurlResponseException(f"Invalid JSON response from {url}") from exc
+            raise LnurlResponseException(f"Invalid JSON response from {request_url}") from exc
 
         if response_class:
             if not issubclass(response_class, LnurlResponseModel):
@@ -80,7 +81,7 @@ async def handle(
     try:
         if "@" in lnurl:
             lnaddress = LnAddress(lnurl)
-            return await get(str(lnaddress.url), response_class=response_class, user_agent=user_agent, timeout=timeout)
+            return await get(lnaddress.url, response_class=response_class, user_agent=user_agent, timeout=timeout)
         lnurl = Lnurl(lnurl)
     except (ValidationError, ValueError):
         raise InvalidLnurl
@@ -96,7 +97,7 @@ async def handle(
             raise LnurlResponseException("k1 parameter not found in LNURLauth URL")
         return LnurlAuthResponse(callback=callback_url, k1=k1)
 
-    return await get(str(lnurl.url), response_class=response_class, user_agent=user_agent, timeout=timeout)
+    return await get(lnurl.url, response_class=response_class, user_agent=user_agent, timeout=timeout)
 
 
 async def execute(
