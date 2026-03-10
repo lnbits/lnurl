@@ -388,9 +388,9 @@ class TestPayerData:
 class TestLnurlErrorResponse:
     def test_error_res_details(self):
         res = LnurlErrorResponse(reason="detail")
-        _dict = res.model_dump(mode="json")
+        _dict = res.dict()
         assert "status" in _dict
         assert _dict["status"] == "ERROR"
         assert "reason" in _dict
         assert _dict["reason"] == "detail"
-        assert res.model_dump_json() == '{"status":"ERROR","reason":"detail"}'
+        assert res.json() == '{"status":"ERROR","reason":"detail"}'
