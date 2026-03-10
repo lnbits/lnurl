@@ -26,6 +26,11 @@ from .types import (
 
 
 class LnurlBaseModel(BaseModel):
+    model_config = ConfigDict(
+        use_enum_values=True,
+        extra="forbid",
+    )
+
     def dict(self, *args, **kwargs):
         kwargs.setdefault("mode", "json")
         kwargs.setdefault("exclude_none", True)
@@ -65,12 +70,6 @@ class AesAction(LnurlPaySuccessAction):
 
 
 class LnurlResponseModel(LnurlBaseModel):
-
-    model_config = ConfigDict(
-        use_enum_values=True,
-        extra="forbid",
-    )
-
     @property
     def ok(self) -> bool:
         return True
@@ -79,11 +78,6 @@ class LnurlResponseModel(LnurlBaseModel):
 class LnurlErrorResponse(LnurlResponseModel):
     status: LnurlStatus = LnurlStatus.error
     reason: str
-
-    model_config = ConfigDict(
-        use_enum_values=True,
-        extra="forbid",
-    )
 
     @property
     def error_msg(self) -> str:
@@ -235,7 +229,7 @@ class LnurlWithdrawResponse(LnurlResponseModel):
     # LUD-08: Fast withdrawRequest.
     @property
     def fast_withdraw_query(self) -> str:
-        return "&".join([f"{k}={v}" for k, v in self.model_dump().items()])
+        return "&".join([f"{k}={v}" for k, v in self.dict().items()])
 
     @property
     def min_sats(self) -> int:

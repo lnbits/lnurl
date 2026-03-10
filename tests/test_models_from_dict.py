@@ -84,7 +84,7 @@ class TestLnurlResponse:
         assert isinstance(res.successAction, LnurlPaySuccessAction)
         assert res.ok
         assert res.successAction
-        assert res.successAction.tag == LnurlPaySuccessActionTag.aes
+        assert LnurlPaySuccessActionTag.aes.value == res.successAction.tag
         assert res.successAction.description == "your will receive a secret message"
         assert len(res.successAction.iv) == 24
         assert len(res.successAction.ciphertext) == 44
