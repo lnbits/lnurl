@@ -142,7 +142,7 @@ async def execute_pay_request(
         headers = {"User-Agent": user_agent or USER_AGENT}
         async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
             res2 = await client.get(
-                url=res.callback,
+                url=str(res.callback),
                 params=params,
                 timeout=timeout or TIMEOUT,
             )
@@ -186,7 +186,7 @@ async def execute_login(
         headers = {"User-Agent": user_agent or USER_AGENT}
         async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
             res2 = await client.get(
-                url=res.callback,
+                url=str(res.callback),
                 params={
                     "key": key,
                     "sig": sig,
@@ -217,7 +217,7 @@ async def execute_withdraw(
         headers = {"User-Agent": user_agent or USER_AGENT}
         async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
             res2 = await client.get(
-                url=res.callback,
+                url=str(res.callback),
                 params={
                     "k1": res.k1,
                     "pr": pr,
