@@ -8,8 +8,8 @@ from lnurl.models import (
     LnurlChannelResponse,
     LnurlErrorResponse,
     LnurlHostedChannelResponse,
-    LnurlPayResponsePayerDataOption,
     LnurlPayResponse,
+    LnurlPayResponsePayerDataOption,
     LnurlSuccessResponse,
     LnurlWithdrawResponse,
 )
@@ -20,20 +20,16 @@ class TestLnurlErrorResponse:
         res = LnurlErrorResponse(reason="blah blah blah")
         assert res.ok is False
         assert res.error_msg == "blah blah blah"
-        assert res.json() == res.model_dump_json()
-        assert res.dict() == res.model_dump(mode="json")
-        assert res.model_dump_json() == '{"status":"ERROR","reason":"blah blah blah"}'
-        assert res.model_dump(mode="json") == {"status": "ERROR", "reason": "blah blah blah"}
+        assert res.json() == '{"status":"ERROR","reason":"blah blah blah"}'
+        assert res.dict() == {"status": "ERROR", "reason": "blah blah blah"}
 
 
 class TestLnurlSuccessResponse:
     def test_success_response(self):
         res = LnurlSuccessResponse()
         assert res.ok
-        assert res.json() == res.model_dump_json()
-        assert res.dict() == res.model_dump(mode="json")
-        assert res.model_dump_json() == '{"status":"OK"}'
-        assert res.model_dump(mode="json") == {"status": "OK"}
+        assert res.json() == '{"status":"OK"}'
+        assert res.dict() == {"status": "OK"}
 
 
 class TestLnurlChannelResponse:
@@ -43,7 +39,7 @@ class TestLnurlChannelResponse:
     def test_channel_response(self, d):
         res = LnurlChannelResponse(**d)
         assert res.ok
-        assert res.model_dump(mode="json") == {**{"tag": "channelRequest"}, **d}
+        assert res.dict() == {**{"tag": "channelRequest"}, **d}
 
     @pytest.mark.parametrize(
         "d",
@@ -63,7 +59,7 @@ class TestLnurlHostedChannelResponse:
     def test_channel_response(self, d):
         res = LnurlHostedChannelResponse(**d)
         assert res.ok
-        assert res.model_dump(mode="json") == {**{"tag": "hostedChannelRequest"}, **d}
+        assert res.dict() == {**{"tag": "hostedChannelRequest"}, **d}
 
     @pytest.mark.parametrize(
         "d", [{"uri": "invalid", "k1": "c3RyaW5n"}, {"uri": "node_key@ip_address:port_number", "k1": None}]
@@ -98,13 +94,11 @@ class TestLnurlPayResponse:
             metadata=data,
         )
         assert res.ok
-        assert res.json() == res.model_dump_json()
-        assert res.dict() == res.model_dump(mode="json")
         assert (
-            res.model_dump_json() == '{"tag":"payRequest","callback":"https://service.io/pay",'
+            res.json() == '{"tag":"payRequest","callback":"https://service.io/pay",'
             f'"minSendable":1000,"maxSendable":2000,"metadata":{json.dumps(metadata)}}}'
         )
-        assert res.model_dump(mode="json") == {
+        assert res.dict() == {
             "tag": "payRequest",
             "callback": "https://service.io/pay",
             "minSendable": 1000,
@@ -151,13 +145,11 @@ class TestLnurlPayResponseComment:
             commentAllowed=comment_allowed,
         )
         assert res.ok
-        assert res.json() == res.model_dump_json()
-        assert res.dict() == res.model_dump(mode="json")
         assert (
-            res.model_dump_json() == '{"tag":"payRequest","callback":"https://service.io/pay",'
+            res.json() == '{"tag":"payRequest","callback":"https://service.io/pay",'
             f'"minSendable":1000,"maxSendable":2000,"metadata":{json.dumps(metadata)},"commentAllowed":555}}'
         )
-        assert res.model_dump(mode="json") == {
+        assert res.dict() == {
             "tag": "payRequest",
             "callback": "https://service.io/pay",
             "minSendable": 1000,
@@ -208,14 +200,11 @@ class TestLnurlWithdrawResponse:
             maxWithdrawable=MilliSatoshi(max_withdrawable),
         )
         assert res.ok
-        assert res.json() == res.model_dump_json()
-        assert res.dict() == res.model_dump(mode="json")
         assert (
-            res.model_dump_json()
-            == '{"tag":"withdrawRequest","callback":"https://service.io/withdraw","k1":"c3RyaW5n",'
+            res.json() == '{"tag":"withdrawRequest","callback":"https://service.io/withdraw","k1":"c3RyaW5n",'
             '"minWithdrawable":100,"maxWithdrawable":200,"defaultDescription":""}'
         )
-        assert res.model_dump(mode="json") == {
+        assert res.dict() == {
             "tag": "withdrawRequest",
             "callback": "https://service.io/withdraw",
             "k1": "c3RyaW5n",
