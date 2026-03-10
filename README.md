@@ -69,10 +69,13 @@ lnurl.bech32  # "LNURL1DP68GURN8GHJ7UM9WFMXJCM99E5K7TELWY7NXENRXVMRGDTZXSENJCM98
 lnurl.bech32.hrp  # "lnurl"
 lnurl.url  # "https://service.io/?q=3fc3645b439ce8e7"
 lnurl.url.host  # "service.io"
-lnurl.url.base  # "https://service.io/"
 lnurl.url.query  # "q=3fc3645b439ce8e7"
-lnurl.url.query_params  # {"q": "3fc3645b439ce8e7"}
+lnurl.url.query_params()  # [("q", "3fc3645b439ce8e7")]
+dict(lnurl.url.query_params())  # {"q": "3fc3645b439ce8e7"}
 ```
+
+`query_params()` returns a list of `(key, value)` tuples so query parameters stay lossless and ordered.
+Use `dict(...)` when you want convenient mapping-style access and duplicate keys do not matter.
 
 Parsing LNURL responses
 -----------------------
@@ -94,8 +97,9 @@ try:
     res.ok  # bool
     res.maxSendable  # int
     res.max_sats  # int
-    res.callback.base  # str
-    res.callback.query_params # dict
+    res.callback.host  # str
+    res.callback.query_params()  # list[tuple] [("amount", "1000")]
+    dict(res.callback.query_params())  # dict
     res.metadata  # str
     res.metadata.list()  # list
     res.metadata.text  # str
@@ -125,10 +129,10 @@ For LNURL services, the `lnurl` package can be used to build **valid** responses
 
 ```python
 from lnurl import CallbackUrl, LnurlWithdrawResponse, MilliSatoshi
-from pydantic import parse_obj_as, ValidationError
+from pydantic import TypeAdapter, ValidationError
 try:
     res = LnurlWithdrawResponse(
-        callback=parse_obj_as(CallbackUrl, "https://lnurl.bigsun.xyz/lnurl-withdraw/callback/9702808"),
+        callback=TypeAdapter(CallbackUrl).validate_python("https://lnurl.bigsun.xyz/lnurl-withdraw/callback/9702808"),
         k1="38d304051c1b76dcd8c5ee17ee15ff0ebc02090c0afbc6c98100adfa3f920874",
         minWithdrawable=MilliSatoshi(1000),
         maxWithdrawable=MilliSatoshi(1000000),
@@ -144,8 +148,7 @@ All responses are `pydantic` models, so the information you provide will be vali
 access to `.json()` and `.dict()` methods to export the data.
 
 **Data is exported using :camel: camelCase keys by default, as per spec.**
-You can also use camelCases when you parse the data, and it will be converted to snake_case to make your
-Python code nicer.
+Use the LNURL spec field names when parsing and exporting response models.
 
 Will throw and ValidationError if the data is not valid, so you can catch it and return an error response.
 

@@ -4,7 +4,7 @@ from typing import Any, Optional
 import httpx
 from bolt11 import Bolt11Exception, MilliSatoshi
 from bolt11 import decode as bolt11_decode
-from pydantic import ValidationError, parse_obj_as
+from pydantic import TypeAdapter, ValidationError
 
 from .exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
 from .helpers import (
@@ -23,7 +23,7 @@ from .models import (
     LnurlSuccessResponse,
     LnurlWithdrawResponse,
 )
-from .types import CallbackUrl, LnAddress, Lnurl
+from .types import CallbackUrl, LnAddress, Lnurl, Url
 
 USER_AGENT = "lnbits/lnurl"
 TIMEOUT = 5
@@ -44,16 +44,17 @@ def encode(url: str) -> Lnurl:
 
 
 async def get(
-    url: str,
+    url: str | Url | CallbackUrl,
     *,
     response_class: Optional[Any] = None,
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
 ) -> LnurlResponseModel:
+    request_url = str(url)
     headers = {"User-Agent": user_agent or USER_AGENT}
     async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
         try:
-            res = await client.get(url, timeout=timeout or TIMEOUT)
+            res = await client.get(request_url, timeout=timeout or TIMEOUT)
             res.raise_for_status()
         except Exception as exc:
             raise LnurlResponseException(str(exc)) from exc
@@ -61,7 +62,7 @@ async def get(
         try:
             _json = res.json()
         except JSONDecodeError as exc:
-            raise LnurlResponseException(f"Invalid JSON response from {url}") from exc
+            raise LnurlResponseException(f"Invalid JSON response from {request_url}") from exc
 
         if response_class:
             if not issubclass(response_class, LnurlResponseModel):
@@ -86,8 +87,15 @@ async def handle(
         raise InvalidLnurl
 
     if lnurl.is_login:
-        callback_url = parse_obj_as(CallbackUrl, lnurl.url)
-        return LnurlAuthResponse(callback=callback_url, k1=lnurl.url.query_params["k1"])
+        callback_url = TypeAdapter(CallbackUrl).validate_python(lnurl.url)
+        k1 = None
+        for param in lnurl.url.query_params():
+            if param[0] == "k1":
+                k1 = param[1]
+                break
+        if not k1:
+            raise LnurlResponseException("k1 parameter not found in LNURLauth URL")
+        return LnurlAuthResponse(callback=callback_url, k1=k1)
 
     return await get(lnurl.url, response_class=response_class, user_agent=user_agent, timeout=timeout)
 
@@ -134,7 +142,7 @@ async def execute_pay_request(
         headers = {"User-Agent": user_agent or USER_AGENT}
         async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
             res2 = await client.get(
-                url=res.callback,
+                url=str(res.callback),
                 params=params,
                 timeout=timeout or TIMEOUT,
             )
@@ -178,7 +186,7 @@ async def execute_login(
         headers = {"User-Agent": user_agent or USER_AGENT}
         async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
             res2 = await client.get(
-                url=res.callback,
+                url=str(res.callback),
                 params={
                     "key": key,
                     "sig": sig,
@@ -209,7 +217,7 @@ async def execute_withdraw(
         headers = {"User-Agent": user_agent or USER_AGENT}
         async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
             res2 = await client.get(
-                url=res.callback,
+                url=str(res.callback),
                 params={
                     "k1": res.k1,
                     "pr": pr,

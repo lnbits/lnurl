@@ -1,6 +1,6 @@
 [project]
 name = "lnurl"
-version = "0.9.0"
+version = "2.0.0"
 requires-python = ">=3.10,<3.13"
 description = "LNURL implementation for Python."
 authors = [{ name = "Alan Bits", email = "alan@lnbits.com" }]
@@ -8,7 +8,7 @@ urls = { Repository = "https://github.com/lnbits/lnurl" }
 readme = "README.md"
 license = "MIT"
 dependencies = [
-  "pydantic>=1.10.0,<2.0.0",
+  "pydantic>=2.10.0,<3.0.0",
   "pycryptodomex>=3.21.0",
   "bip32>=5.0.0",
   "bech32",
