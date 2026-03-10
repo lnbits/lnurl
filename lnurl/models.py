@@ -28,9 +28,11 @@ from .types import (
 class LnurlBaseModel(BaseModel):
     def dict(self, *args, **kwargs):
         kwargs.setdefault("mode", "json")
+        kwargs.setdefault("exclude_none", True)
         return self.model_dump(*args, **kwargs)
 
     def json(self, *args, **kwargs):
+        kwargs.setdefault("exclude_none", True)
         return self.model_dump_json(*args, **kwargs)
 
 
@@ -72,14 +74,6 @@ class LnurlResponseModel(LnurlBaseModel):
     @property
     def ok(self) -> bool:
         return True
-
-    def model_dump(self, *args, **kwargs):
-        kwargs.setdefault("exclude_none", True)
-        return super().model_dump(*args, **kwargs)
-
-    def model_dump_json(self, *args, **kwargs):
-        kwargs.setdefault("exclude_none", True)
-        return super().model_dump_json(*args, **kwargs)
 
 
 class LnurlErrorResponse(LnurlResponseModel):
