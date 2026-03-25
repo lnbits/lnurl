@@ -1,6 +1,6 @@
 [project]
 name = "lnurl"
-version = "0.10.0"
+version = "0.10.1"
 requires-python = ">=3.10,<3.13"
 description = "LNURL implementation for Python."
 authors = [{ name = "Alan Bits", email = "alan@lnbits.com" }]
