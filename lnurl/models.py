@@ -4,8 +4,7 @@ import math
 from abc import ABC
 from typing import Optional, Union
 
-from bolt11 import MilliSatoshi
-from pydantic import BaseModel, Field, ValidationError, validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from .exceptions import LnurlResponseException
 from .types import (
@@ -14,22 +13,40 @@ from .types import (
     InitializationVectorBase64,
     LightningInvoice,
     LightningNodeUri,
-    Lnurl,
+    # Lnurl,
     LnurlPayMetadata,
     LnurlPaySuccessActionTag,
     LnurlResponseTag,
     LnurlStatus,
+    Lud17PayLink,
     Max144Str,
+    MilliSatoshi,
     Url,
 )
 
 
-class LnurlPayRouteHop(BaseModel):
+class LnurlBaseModel(BaseModel):
+    model_config = ConfigDict(
+        use_enum_values=True,
+        extra="forbid",
+    )
+
+    def dict(self, *args, **kwargs):
+        kwargs.setdefault("mode", "json")
+        kwargs.setdefault("exclude_none", True)
+        return self.model_dump(*args, **kwargs)
+
+    def json(self, *args, **kwargs):
+        kwargs.setdefault("exclude_none", True)
+        return self.model_dump_json(*args, **kwargs)
+
+
+class LnurlPayRouteHop(LnurlBaseModel):
     nodeId: str
     channelUpdate: str
 
 
-class LnurlPaySuccessAction(BaseModel, ABC):
+class LnurlPaySuccessAction(LnurlBaseModel, ABC):
     tag: LnurlPaySuccessActionTag
 
 
@@ -52,20 +69,7 @@ class AesAction(LnurlPaySuccessAction):
     iv: InitializationVectorBase64
 
 
-class LnurlResponseModel(BaseModel):
-
-    class Config:
-        use_enum_values = True
-        extra = "forbid"
-
-    def dict(self, **kwargs):
-        kwargs["exclude_none"] = True
-        return super().dict(**kwargs)
-
-    def json(self, **kwargs):
-        kwargs["exclude_none"] = True
-        return super().json(**kwargs)
-
+class LnurlResponseModel(LnurlBaseModel):
     @property
     def ok(self) -> bool:
         return True
@@ -119,7 +123,7 @@ class LnurlHostedChannelResponse(LnurlResponseModel):
 
 
 # LUD-18: Payer identity in payRequest protocol.
-class LnurlPayResponsePayerDataOption(BaseModel):
+class LnurlPayResponsePayerDataOption(LnurlBaseModel):
     mandatory: bool
 
 
@@ -127,12 +131,12 @@ class LnurlPayResponsePayerDataOptionAuth(LnurlPayResponsePayerDataOption):
     k1: str
 
 
-class LnurlPayResponsePayerDataExtra(BaseModel):
+class LnurlPayResponsePayerDataExtra(LnurlBaseModel):
     name: str
     field: LnurlPayResponsePayerDataOption
 
 
-class LnurlPayResponsePayerData(BaseModel):
+class LnurlPayResponsePayerData(LnurlBaseModel):
     name: Optional[LnurlPayResponsePayerDataOption] = None
     pubkey: Optional[LnurlPayResponsePayerDataOption] = None
     identifier: Optional[LnurlPayResponsePayerDataOption] = None
@@ -141,13 +145,13 @@ class LnurlPayResponsePayerData(BaseModel):
     extras: Optional[list[LnurlPayResponsePayerDataExtra]] = None
 
 
-class LnurlPayerDataAuth(BaseModel):
+class LnurlPayerDataAuth(LnurlBaseModel):
     key: str
     k1: str
     sig: str
 
 
-class LnurlPayerData(BaseModel):
+class LnurlPayerData(LnurlBaseModel):
     name: Optional[str] = None
     pubkey: Optional[str] = None
     identifier: Optional[str] = None
@@ -172,11 +176,11 @@ class LnurlPayResponse(LnurlResponseModel):
     allowsNostr: Optional[bool] = None
     nostrPubkey: Optional[str] = None
 
-    @validator("maxSendable")
-    def max_less_than_min(cls, value, values):  # noqa
-        if "minSendable" in values and value < values["minSendable"]:
+    @model_validator(mode="after")
+    def max_less_than_min(self):
+        if self.maxSendable < self.minSendable:
             raise ValueError("`maxSendable` cannot be less than `minSendable`.")
-        return value
+        return self
 
     @property
     def min_sats(self) -> int:
@@ -214,22 +218,13 @@ class LnurlWithdrawResponse(LnurlResponseModel):
     balanceCheck: Optional[CallbackUrl] = None
     currentBalance: Optional[MilliSatoshi] = None
     # LUD-19: Pay link discoverable from withdraw link.
-    payLink: Optional[str] = None
+    payLink: Lud17PayLink | None = None
 
-    @validator("payLink", pre=True)
-    def paylink_must_be_lud17(cls, value: Optional[str] = None) -> str | None:
-        if not value:
-            return None
-        lnurl = Lnurl(value)
-        if lnurl.is_lud17 and lnurl.lud17_prefix == "lnurlp":
-            return value
-        raise ValueError("`payLink` must be a valid LUD17 URL (lnurlp://).")
-
-    @validator("maxWithdrawable")
-    def max_less_than_min(cls, value, values):
-        if "minWithdrawable" in values and value < values["minWithdrawable"]:
+    @model_validator(mode="after")
+    def max_less_than_min(self):
+        if self.maxWithdrawable < self.minWithdrawable:
             raise ValueError("`maxWithdrawable` cannot be less than `minWithdrawable`.")
-        return value
+        return self
 
     # LUD-08: Fast withdrawRequest.
     @property
