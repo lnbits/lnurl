@@ -244,7 +244,10 @@ class LnurlWithdrawResponse(LnurlResponseModel):
 
 
 def is_pay_action_response(data: dict) -> bool:
-    return "pr" in data and "routes" in data
+    # LUD-06: LnurlPayActionResponse is identified by just the presence of "pr".
+    # "routes" is specified as required in the spec as empty array;
+    # some services falsely omit it, so we are only checking for "pr".
+    return "pr" in data
 
 
 class LnurlResponse:
