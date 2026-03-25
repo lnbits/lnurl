@@ -1,4 +1,3 @@
-
 from lnurl import LnurlErrorResponse
 from lnurl.models import LnurlPayActionResponse, LnurlResponse
 
