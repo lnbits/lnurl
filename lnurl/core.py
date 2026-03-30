@@ -53,7 +53,7 @@ async def get(
     tor_socks: Optional[str] = None,
 ) -> LnurlResponseModel:
     headers = {"User-Agent": user_agent or USER_AGENT}
-    proxy = tor_socks or TOR_SOCKS if ".onion" in request_url else None
+    proxy = tor_socks or TOR_SOCKS if ".onion" in url else None
     async with httpx.AsyncClient(headers=headers, follow_redirects=True, proxy=proxy) as client:
         try:
             res = await client.get(url, timeout=timeout or TIMEOUT)
@@ -61,9 +61,9 @@ async def get(
         except httpx.ConnectError as exc:
             if proxy:
                 raise LnurlResponseException(
-                    f"Failed to connect to {request_url} via Tor proxy {proxy}. Is Tor running?"
+                    f"Failed to connect to {url} via Tor proxy {proxy}. Is Tor running?"
                 ) from exc
-            raise LnurlResponseException(f"Failed to connect to {request_url}") from exc
+            raise LnurlResponseException(f"Failed to connect to {url}") from exc
         except Exception as exc:
             raise LnurlResponseException(str(exc)) from exc
 
