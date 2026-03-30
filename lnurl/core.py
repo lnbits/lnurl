@@ -25,6 +25,7 @@ from .models import (
 )
 from .types import CallbackUrl, LnAddress, Lnurl, Url
 
+TOR_SOCKS = "socks5h://127.0.0.1:9050"
 USER_AGENT = "lnbits/lnurl"
 TIMEOUT = 5
 
@@ -49,13 +50,21 @@ async def get(
     response_class: Optional[Any] = None,
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
+    tor_socks: Optional[str] = None,
 ) -> LnurlResponseModel:
     request_url = str(url)
     headers = {"User-Agent": user_agent or USER_AGENT}
-    async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
+    proxy = tor_socks or TOR_SOCKS if ".onion" in request_url else None
+    async with httpx.AsyncClient(headers=headers, follow_redirects=True, proxy=proxy) as client:
         try:
             res = await client.get(request_url, timeout=timeout or TIMEOUT)
             res.raise_for_status()
+        except httpx.ConnectError as exc:
+            if proxy:
+                raise LnurlResponseException(
+                    f"Failed to connect to {request_url} via Tor proxy {proxy}. Is Tor running?"
+                ) from exc
+            raise LnurlResponseException(f"Failed to connect to {request_url}") from exc
         except Exception as exc:
             raise LnurlResponseException(str(exc)) from exc
 
@@ -77,6 +86,7 @@ async def handle(
     response_class: Optional[LnurlResponseModel] = None,
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
+    tor_socks: Optional[str] = None,
 ) -> LnurlResponseModel:
     try:
         if "@" in lnurl:
@@ -97,7 +107,9 @@ async def handle(
             raise LnurlResponseException("k1 parameter not found in LNURLauth URL")
         return LnurlAuthResponse(callback=callback_url, k1=k1)
 
-    return await get(lnurl.url, response_class=response_class, user_agent=user_agent, timeout=timeout)
+    return await get(
+        lnurl.url, response_class=response_class, user_agent=user_agent, timeout=timeout, tor_socks=tor_socks
+    )
 
 
 async def execute(
@@ -105,18 +117,19 @@ async def execute(
     value: str,
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
+    tor_socks: Optional[str] = None,
 ) -> LnurlResponseModel:
     try:
-        res = await handle(bech32_or_address, user_agent=user_agent, timeout=timeout)
+        res = await handle(bech32_or_address, user_agent=user_agent, timeout=timeout, tor_socks=tor_socks)
     except Exception as exc:
         raise LnurlResponseException(str(exc))
 
     if isinstance(res, LnurlPayResponse) and res.tag == "payRequest":
-        return await execute_pay_request(res, int(value), user_agent=user_agent, timeout=timeout)
+        return await execute_pay_request(res, int(value), user_agent=user_agent, timeout=timeout, tor_socks=tor_socks)
     elif isinstance(res, LnurlAuthResponse) and res.tag == "login":
-        return await execute_login(res, value, user_agent=user_agent, timeout=timeout)
+        return await execute_login(res, value, user_agent=user_agent, timeout=timeout, tor_socks=tor_socks)
     elif isinstance(res, LnurlWithdrawResponse) and res.tag == "withdrawRequest":
-        return await execute_withdraw(res, value, user_agent=user_agent, timeout=timeout)
+        return await execute_withdraw(res, value, user_agent=user_agent, timeout=timeout, tor_socks=tor_socks)
 
     raise LnurlResponseException("tag not implemented")
 
@@ -127,6 +140,7 @@ async def execute_pay_request(
     comment: Optional[str] = None,
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
+    tor_socks: Optional[str] = None,
 ) -> LnurlPayActionResponse:
     if not res.minSendable <= MilliSatoshi(msat) <= res.maxSendable:
         raise LnurlResponseException(f"Amount {msat} not in range {res.minSendable} - {res.maxSendable}")
@@ -140,13 +154,24 @@ async def execute_pay_request(
 
     try:
         headers = {"User-Agent": user_agent or USER_AGENT}
-        async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
-            res2 = await client.get(
-                url=str(res.callback),
-                params=params,
-                timeout=timeout or TIMEOUT,
-            )
-            res2.raise_for_status()
+        proxy = tor_socks or TOR_SOCKS if res.callback.host and res.callback.host.endswith(".onion") else None
+        async with httpx.AsyncClient(headers=headers, follow_redirects=True, proxy=proxy) as client:
+            try:
+                res2 = await client.get(
+                    url=str(res.callback),
+                    params=params,
+                    timeout=timeout or TIMEOUT,
+                )
+                res2.raise_for_status()
+            except httpx.ConnectError as exc:
+                if proxy:
+                    raise LnurlResponseException(
+                        f"Failed to connect to {res.callback!s} via Tor proxy {proxy}. Is Tor running?"
+                    ) from exc
+                raise LnurlResponseException(f"Failed to connect to {res.callback!s}") from exc
+            except Exception as exc:
+                raise LnurlResponseException(str(exc))
+
             pay_res = LnurlResponse.from_dict(res2.json())
             if isinstance(pay_res, LnurlErrorResponse):
                 raise LnurlResponseException(pay_res.reason)
@@ -169,6 +194,7 @@ async def execute_login(
     signed_message: str | None = None,
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
+    tor_socks: Optional[str] = None,
 ) -> LnurlResponseModel:
     if not res.callback:
         raise LnurlResponseException("LNURLauth callback does not exist")
@@ -181,10 +207,11 @@ async def execute_login(
         linking_key, _ = lnurlauth_derive_linking_key_sign_message(domain=host, sig=signed_message.encode())
     else:
         raise LnurlResponseException("Seed or signed_message is required for LNURLauth")
-    try:
-        key, sig = lnurlauth_signature(res.k1, linking_key=linking_key)
-        headers = {"User-Agent": user_agent or USER_AGENT}
-        async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
+    key, sig = lnurlauth_signature(res.k1, linking_key=linking_key)
+    headers = {"User-Agent": user_agent or USER_AGENT}
+    proxy = tor_socks or TOR_SOCKS if res.callback.host and res.callback.host.endswith(".onion") else None
+    async with httpx.AsyncClient(headers=headers, follow_redirects=True, proxy=proxy) as client:
+        try:
             res2 = await client.get(
                 url=str(res.callback),
                 params={
@@ -194,9 +221,16 @@ async def execute_login(
                 timeout=timeout or TIMEOUT,
             )
             res2.raise_for_status()
-            return LnurlResponse.from_dict(res2.json())
-    except Exception as e:
-        raise LnurlResponseException(str(e))
+        except httpx.ConnectError as exc:
+            if proxy:
+                raise LnurlResponseException(
+                    f"Failed to connect to {res.callback!s} via Tor proxy {proxy}. Is Tor running?"
+                ) from exc
+            raise LnurlResponseException(f"Failed to connect to {res.callback!s}") from exc
+        except Exception as e:
+            raise LnurlResponseException(str(e))
+
+        return LnurlResponse.from_dict(res2.json())
 
 
 async def execute_withdraw(
@@ -204,6 +238,7 @@ async def execute_withdraw(
     pr: str,
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
+    tor_socks: Optional[str] = None,
 ) -> LnurlSuccessResponse:
     try:
         invoice = bolt11_decode(pr)
@@ -213,9 +248,10 @@ async def execute_withdraw(
     amount = invoice.amount_msat or res.minWithdrawable
     if not res.minWithdrawable <= MilliSatoshi(amount) <= res.maxWithdrawable:
         raise LnurlResponseException(f"Amount {amount} not in range {res.minWithdrawable} - {res.maxWithdrawable}")
-    try:
-        headers = {"User-Agent": user_agent or USER_AGENT}
-        async with httpx.AsyncClient(headers=headers, follow_redirects=True) as client:
+    headers = {"User-Agent": user_agent or USER_AGENT}
+    proxy = tor_socks or TOR_SOCKS if res.callback.host and res.callback.host.endswith(".onion") else None
+    async with httpx.AsyncClient(headers=headers, follow_redirects=True, proxy=proxy) as client:
+        try:
             res2 = await client.get(
                 url=str(res.callback),
                 params={
@@ -225,11 +261,17 @@ async def execute_withdraw(
                 timeout=timeout or TIMEOUT,
             )
             res2.raise_for_status()
-            withdraw_res = LnurlResponse.from_dict(res2.json())
-            if isinstance(withdraw_res, LnurlErrorResponse):
-                raise LnurlResponseException(withdraw_res.reason)
-            if not isinstance(withdraw_res, LnurlSuccessResponse):
-                raise LnurlResponseException(f"Expected LnurlSuccessResponse, got {type(withdraw_res)}")
-            return withdraw_res
-    except Exception as exc:
-        raise LnurlResponseException(str(exc))
+        except httpx.ConnectError as exc:
+            if proxy:
+                raise LnurlResponseException(
+                    f"Failed to connect to {res.callback!s} via Tor proxy {proxy}. Is Tor running?"
+                ) from exc
+            raise LnurlResponseException(f"Failed to connect to {res.callback!s}") from exc
+        except Exception as exc:
+            raise LnurlResponseException(str(exc))
+        withdraw_res = LnurlResponse.from_dict(res2.json())
+        if isinstance(withdraw_res, LnurlErrorResponse):
+            raise LnurlResponseException(withdraw_res.reason)
+        if not isinstance(withdraw_res, LnurlSuccessResponse):
+            raise LnurlResponseException(f"Expected LnurlSuccessResponse, got {type(withdraw_res)}")
+        return withdraw_res

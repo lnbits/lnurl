@@ -13,7 +13,7 @@ dependencies = [
   "bip32>=5.0.0",
   "bech32",
   "bolt11",
-  "httpx",
+  "httpx[socks]",
   "coincurve>=20.0.0",
 ]
 
