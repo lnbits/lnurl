@@ -38,6 +38,7 @@ Check out the LUDS repository: [luds](https://github.com/lnurl/luds/)
 - [x] LUD-19 - Pay link discoverable from withdraw link
 - [x] LUD-20 - Long payment description for pay protocol
 - [x] LUD-21 - verify LNURL-pay payments
+- [x] LUD-23 - addressRequest base spec
 
 
 Configuration
@@ -116,7 +117,7 @@ It will return the appropriate response for a LNURL.
 LnurlPayResponse(tag='payRequest', callback=WebUrl('https://lnurl.bigsun.xyz/lnurl-pay/callback/2169831', scheme='https', host='lnurl.bigsun.xyz', tld='xyz', host_type='domain', path='/lnurl-pay/callback/2169831'), minSendable=10000, maxSendable=10000, metadata=LnurlPayMetadata('[["text/plain","NgHaEyaZNDnW iI DsFYdkI"],["image/png;base64","iVBOR...uQmCC"]]'))
 ```
 
-You can execute and LNURL with either payRequest, withdrawRequest or login tag using the `execute` function.
+You can execute and LNURL with either payRequest, withdrawRequest, addressRequest or login tag using the `execute` function.
 ```python
 >>> import lnurl
 >>> lnurl.execute('lightning:LNURL1DP68GURN8GHJ7MRWW4EXCTNZD9NHXATW9EU8J730D3H82UNV94CXZ7FLWDJHXUMFDAHR6V33XCUNSVE38QV6UF', 100000)

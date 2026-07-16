@@ -459,6 +459,8 @@ class LnurlResponseTag(Enum):
     hostedChannelRequest = "hostedChannelRequest"
     payRequest = "payRequest"
     withdrawRequest = "withdrawRequest"
+    # LUD-23: addressRequest base spec.
+    addressRequest = "addressRequest"
 
 
 def validate_paylink_is_lud17(value: Optional[str] = None) -> str | None:

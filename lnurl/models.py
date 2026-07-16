@@ -122,6 +122,14 @@ class LnurlHostedChannelResponse(LnurlResponseModel):
     alias: Optional[str] = None
 
 
+# LUD-23: addressRequest base spec.
+class LnurlAddressRequestResponse(LnurlResponseModel):
+    tag: LnurlResponseTag = LnurlResponseTag.addressRequest
+    callback: CallbackUrl
+    k1: str
+    description: Optional[str] = None
+
+
 # LUD-18: Payer identity in payRequest protocol.
 class LnurlPayResponsePayerDataOption(LnurlBaseModel):
     mandatory: bool
@@ -270,6 +278,8 @@ class LnurlResponse:
                 return LnurlPayResponse(**data)
             elif tag == "withdrawRequest":
                 return LnurlWithdrawResponse(**data)
+            elif tag == "addressRequest":
+                return LnurlAddressRequestResponse(**data)
             elif is_pay_action_response(data):
                 return LnurlPayActionResponse(**data)
 
