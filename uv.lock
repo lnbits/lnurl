@@ -495,7 +495,7 @@ wheels = [
 
 [[package]]
 name = "lnurl"
-version = "0.10.1"
+version = "0.10.3"
 source = { editable = "." }
 dependencies = [
     { name = "bech32" },
