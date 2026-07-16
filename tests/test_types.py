@@ -271,6 +271,19 @@ class TestLnurlPayMetadata:
     @pytest.mark.parametrize(
         "lnaddress",
         [
+            "@legend.lnbits.com",
+        ],
+    )
+    def test_valid_lnaddress_default_identifier_shorthand(self, lnaddress):
+        lnaddress = LnAddress(lnaddress)
+        assert isinstance(lnaddress.url, HttpUrl)
+        assert lnaddress.tag is None
+        assert lnaddress.address == "_@legend.lnbits.com"
+        assert str(lnaddress.url) == "https://legend.lnbits.com/.well-known/lnurlp/_"
+
+    @pytest.mark.parametrize(
+        "lnaddress",
+        [
             "legend.lnbits.com",
             "donate@donate@legend.lnbits.com",
             "HELLO@lnbits.com",

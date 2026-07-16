@@ -244,13 +244,15 @@ class LnAddress(ReprMixin, str):
         str.__init__(address)
         if not self.is_valid_lnaddress(address):
             raise LnAddressError("Invalid Lightning address.")
-        self.url = self.__get_url__(address)
-        if "+" in address:
-            self.tag: Optional[str] = address.split("+", 1)[1].split("@", 1)[0]
-            self.address = address.replace(f"+{self.tag}", "", 1)
+        # LUD-16 default identifier shorthand: `@domain` is shorthand for `_@domain`.
+        normalized = f"_{address}" if address.startswith("@") else address
+        self.url = self.__get_url__(normalized)
+        if "+" in normalized:
+            self.tag: Optional[str] = normalized.split("+", 1)[1].split("@", 1)[0]
+            self.address = normalized.replace(f"+{self.tag}", "", 1)
         else:
             self.tag = None
-            self.address = address
+            self.address = normalized
 
     # LUD-16: Paying to static internet identifiers.
     @validator("address")
@@ -258,7 +260,9 @@ class LnAddress(ReprMixin, str):
         # A user can then type these on a WALLET. The <username> is limited
         # to a-z-1-9-_.. Please note that this is way more strict than common
         # email addresses as it allows fewer symbols and only lowercase characters.
-        lnaddress_regex = r"[a-z0-9\._%+-]+@[A-Za-z0-9\.-]+\.[A-Za-z]{2,63}"
+        # The username may also be omitted entirely (`@domain`) as shorthand for the
+        # default identifier `_@domain`.
+        lnaddress_regex = r"(?:[a-z0-9\._%+-]+@|@)[A-Za-z0-9\.-]+\.[A-Za-z]{2,63}"
         return re.fullmatch(lnaddress_regex, address) is not None
 
     @classmethod
