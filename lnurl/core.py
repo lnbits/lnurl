@@ -6,7 +6,7 @@ from bolt11 import Bolt11Exception, MilliSatoshi
 from bolt11 import decode as bolt11_decode
 from pydantic import ValidationError, parse_obj_as
 
-from .exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
+from .exceptions import InvalidLnurl, InvalidUrl, LnAddressError, LnurlResponseException
 from .helpers import (
     lnurlauth_derive_linking_key,
     lnurlauth_derive_linking_key_sign_message,
@@ -14,6 +14,7 @@ from .helpers import (
     url_encode,
 )
 from .models import (
+    LnurlAddressRequestResponse,
     LnurlAuthResponse,
     LnurlErrorResponse,
     LnurlPayActionResponse,
@@ -122,6 +123,8 @@ async def execute(
         return await execute_login(res, value, user_agent=user_agent, timeout=timeout, tor_socks=tor_socks)
     elif isinstance(res, LnurlWithdrawResponse) and res.tag == "withdrawRequest":
         return await execute_withdraw(res, value, user_agent=user_agent, timeout=timeout, tor_socks=tor_socks)
+    elif isinstance(res, LnurlAddressRequestResponse) and res.tag == "addressRequest":
+        return await execute_address_request(res, value, user_agent=user_agent, timeout=timeout, tor_socks=tor_socks)
 
     raise LnurlResponseException("tag not implemented")
 
@@ -267,3 +270,45 @@ async def execute_withdraw(
         if not isinstance(withdraw_res, LnurlSuccessResponse):
             raise LnurlResponseException(f"Expected LnurlSuccessResponse, got {type(withdraw_res)}")
         return withdraw_res
+
+
+# LUD-23: addressRequest base spec.
+async def execute_address_request(
+    res: LnurlAddressRequestResponse,
+    address: str,
+    user_agent: Optional[str] = None,
+    timeout: Optional[int] = None,
+    tor_socks: Optional[str] = None,
+) -> LnurlResponseModel:
+    try:
+        lnaddress = LnAddress(address)
+    except (ValidationError, ValueError, LnAddressError) as exc:
+        raise LnurlResponseException("Invalid Lightning address.") from exc
+
+    headers = {"User-Agent": user_agent or USER_AGENT}
+    proxy = tor_socks or TOR_SOCKS if res.callback.host and res.callback.host.endswith(".onion") else None
+    async with httpx.AsyncClient(headers=headers, follow_redirects=True, proxy=proxy) as client:
+        try:
+            res2 = await client.get(
+                url=str(res.callback),
+                params={
+                    "k1": res.k1,
+                    "address": lnaddress.address,
+                },
+                timeout=timeout or TIMEOUT,
+            )
+            res2.raise_for_status()
+        except httpx.ConnectError as exc:
+            if proxy:
+                raise LnurlResponseException(
+                    f"Failed to connect to {res.callback!s} via Tor proxy {proxy}. Is Tor running?"
+                ) from exc
+            raise LnurlResponseException(f"Failed to connect to {res.callback!s}") from exc
+        except Exception as exc:
+            raise LnurlResponseException(str(exc))
+        address_res = LnurlResponse.from_dict(res2.json())
+        if isinstance(address_res, LnurlErrorResponse):
+            raise LnurlResponseException(address_res.reason)
+        if not isinstance(address_res, LnurlSuccessResponse):
+            raise LnurlResponseException(f"Expected LnurlSuccessResponse, got {type(address_res)}")
+        return address_res

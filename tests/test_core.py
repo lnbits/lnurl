@@ -1,9 +1,10 @@
 import httpx
 import pytest
 
-from lnurl.core import decode, encode, execute_login, execute_pay_request, get, handle
+from lnurl.core import decode, encode, execute_address_request, execute_login, execute_pay_request, get, handle
 from lnurl.exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
 from lnurl.models import (
+    LnurlAddressRequestResponse,
     LnurlAuthResponse,
     LnurlPayActionResponse,
     LnurlPayResponse,
@@ -158,3 +159,16 @@ class TestLoginFlow:
 
             res2 = await execute_login(res, "my-secret")
             assert isinstance(res2, LnurlSuccessResponse)
+
+
+class TestAddressRequestFlow:
+    """LUD-23: addressRequest base spec."""
+
+    @pytest.mark.asyncio
+    async def test_execute_address_request_invalid_address(self):
+        res = LnurlAddressRequestResponse(
+            callback="https://lnurl.thisshouldfail.io/receive-address",
+            k1="c67a8aa61f7c6cd457058916356ca80f5bfd00fa78ac2c1b3157391c2e9787de",
+        )
+        with pytest.raises(LnurlResponseException):
+            await execute_address_request(res, "not-a-valid-address")

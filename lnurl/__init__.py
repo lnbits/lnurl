@@ -1,7 +1,17 @@
 # backward compatibility, MilliSatoshi is now imported from bolt11
 from bolt11 import MilliSatoshi
 
-from .core import decode, encode, execute, execute_login, execute_pay_request, execute_withdraw, get, handle
+from .core import (
+    decode,
+    encode,
+    execute,
+    execute_address_request,
+    execute_login,
+    execute_pay_request,
+    execute_withdraw,
+    get,
+    handle,
+)
 from .exceptions import (
     InvalidLnurl,
     InvalidLnurlPayMetadata,
@@ -26,6 +36,7 @@ from .helpers import (
 )
 from .models import (
     AesAction,
+    LnurlAddressRequestResponse,
     LnurlAuthResponse,
     LnurlChannelResponse,
     LnurlErrorResponse,
@@ -74,12 +85,14 @@ __all__ = [
     "decode",
     "encode",
     "execute",
+    "execute_address_request",
     "execute_login",
     "execute_pay_request",
     "execute_withdraw",
     "get",
     "handle",
     "Lnurl",
+    "LnurlAddressRequestResponse",
     "LnurlAuthActions",
     "LnurlAuthResponse",
     "LnurlChannelResponse",

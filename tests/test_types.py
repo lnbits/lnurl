@@ -276,7 +276,7 @@ class TestLnurlPayMetadata:
     )
     def test_valid_lnaddress_default_identifier_shorthand(self, lnaddress):
         lnaddress = LnAddress(lnaddress)
-        assert isinstance(lnaddress.url, HttpUrl)
+        assert isinstance(lnaddress.url, CallbackUrl)
         assert lnaddress.tag is None
         assert lnaddress.address == "_@legend.lnbits.com"
         assert str(lnaddress.url) == "https://legend.lnbits.com/.well-known/lnurlp/_"

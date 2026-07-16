@@ -5,6 +5,7 @@ from pydantic import ValidationError, parse_obj_as
 
 from lnurl import CallbackUrl, Lnurl, LnurlPayMetadata, MilliSatoshi, encode
 from lnurl.models import (
+    LnurlAddressRequestResponse,
     LnurlChannelResponse,
     LnurlErrorResponse,
     LnurlHostedChannelResponse,
@@ -66,6 +67,35 @@ class TestLnurlHostedChannelResponse:
     def test_invalid_data(self, d):
         with pytest.raises(ValidationError):
             LnurlHostedChannelResponse(**d)
+
+
+class TestLnurlAddressRequestResponse:
+    @pytest.mark.parametrize(
+        "d",
+        [
+            {
+                "callback": "https://service.io/receive-address",
+                "k1": "c3RyaW5n",
+                "description": "Share your Lightning address with SERVICE",
+            },
+            {"callback": "https://service.io/receive-address", "k1": "c3RyaW5n"},
+        ],
+    )
+    def test_address_request_response(self, d):
+        res = LnurlAddressRequestResponse(**d)
+        assert res.ok
+        assert res.dict() == {**{"tag": "addressRequest"}, **d}
+
+    @pytest.mark.parametrize(
+        "d",
+        [
+            {"callback": "invalid", "k1": "c3RyaW5n"},
+            {"callback": "https://service.io/receive-address", "k1": None},
+        ],
+    )
+    def test_invalid_data(self, d):
+        with pytest.raises(ValidationError):
+            LnurlAddressRequestResponse(**d)
 
 
 metadata = '[["text/plain","lorem ipsum blah blah"]]'

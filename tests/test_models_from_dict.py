@@ -5,6 +5,7 @@ import pytest
 
 from lnurl import (
     AesAction,
+    LnurlAddressRequestResponse,
     LnurlErrorResponse,
     LnurlPayActionResponse,
     LnurlPayResponse,
@@ -28,6 +29,11 @@ class TestLnurlResponse:
         '{"tag":"withdrawRequest","k1":"c67a8aa61f7c6cd457058916356ca80f5bfd00fa78ac2c1b3157391c2e9787de",'
         '"callback":"https://lnurl.bigsun.xyz/lnurl-withdraw/callback/?param1=1&param2=2",'
         '"maxWithdrawable":478980,"minWithdrawable":478980,"defaultDescription":"sample withdraw"}'
+    )  # noqa
+    address_request_res = json.loads(
+        '{"tag":"addressRequest","k1":"c67a8aa61f7c6cd457058916356ca80f5bfd00fa78ac2c1b3157391c2e9787de",'
+        '"callback":"https://lnurl.bigsun.xyz/lnurl-addressrequest/callback/",'
+        '"description":"Share your Lightning address with SERVICE"}'
     )  # noqa
     pay_res_action_aes = {
         "pr": (
@@ -96,3 +102,12 @@ class TestLnurlResponse:
         assert res.maxWithdrawable == 478980
         assert res.max_sats == 478
         assert res.min_sats == 479
+
+    # LUD-23
+    def test_address_request(self):
+        res = LnurlResponse.from_dict(self.address_request_res)
+        assert isinstance(res, LnurlAddressRequestResponse)
+        assert res.ok
+        assert res.tag == "addressRequest"
+        assert res.callback.host == "lnurl.bigsun.xyz"
+        assert res.description == "Share your Lightning address with SERVICE"
