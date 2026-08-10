@@ -13,6 +13,7 @@ from lnurl.models import (
     LnurlPayResponsePayerDataOption,
     LnurlSuccessResponse,
     LnurlWithdrawResponse,
+    LnurlWithdrawSuccessResponse,
 )
 
 
@@ -149,6 +150,38 @@ class TestLnurlPayResponse:
     def test_invalid_data(self, d):
         with pytest.raises(ValidationError):
             LnurlPayResponse(**d)
+
+    def test_withdraw_link(self):
+        # LUD-25 (draft): `LNURLcash` bearer note extension.
+        data = TypeAdapter(LnurlPayMetadata).validate_python(metadata)
+        res = LnurlPayResponse(
+            callback=TypeAdapter(CallbackUrl).validate_python("https://service.io/pay"),
+            minSendable=MilliSatoshi(1000),
+            maxSendable=MilliSatoshi(2000),
+            metadata=data,
+            withdrawLink="lnurlw://service.io/w",
+        )
+        assert res.withdrawLink == "lnurlw://service.io/w"
+        assert res.dict()["withdrawLink"] == "lnurlw://service.io/w"
+
+    @pytest.mark.parametrize(
+        "withdrawLink",
+        [
+            "https://service.io/w",  # not a raw LUD17 URL
+            "lnurlp://service.io/w",  # wrong LUD17 scheme (payRequest, not withdrawRequest)
+            str(encode("https://service.io/w").bech32),  # bech32
+        ],
+    )
+    def test_invalid_withdraw_link(self, withdrawLink: str):
+        data = TypeAdapter(LnurlPayMetadata).validate_python(metadata)
+        with pytest.raises(ValidationError):
+            LnurlPayResponse(
+                callback=TypeAdapter(CallbackUrl).validate_python("https://service.io/pay"),
+                minSendable=MilliSatoshi(1000),
+                maxSendable=MilliSatoshi(2000),
+                metadata=data,
+                withdrawLink=withdrawLink,
+            )
 
 
 class TestLnurlPayResponseComment:
@@ -290,6 +323,41 @@ class TestLnurlWithdrawResponse:
             maxWithdrawable=MilliSatoshi(200),
             payLink=payLink.lud17,
         )
+
+    def test_mint_pubkey(self):
+        # LUD-25 (draft): `LNURLcash` bearer note extension.
+        res = LnurlWithdrawResponse(
+            callback=TypeAdapter(CallbackUrl).validate_python("https://service.io/withdraw"),
+            k1="c3RyaW5n",
+            minWithdrawable=MilliSatoshi(100),
+            maxWithdrawable=MilliSatoshi(200),
+            mintPubkey="02" + "ab" * 32,
+        )
+        assert res.mintPubkey == "02" + "ab" * 32
+        assert res.dict()["mintPubkey"] == "02" + "ab" * 32
+
+
+class TestLnurlWithdrawSuccessResponse:
+    """LUD-25 (draft): `LNURLcash` withdrawSuccessResponse extension."""
+
+    def test_rotate_response(self):
+        res = LnurlWithdrawSuccessResponse(k1="new-k1", signature="deadbeef")
+        assert res.ok
+        assert res.dict() == {"status": "OK", "k1": "new-k1", "signature": "deadbeef"}
+
+    def test_split_response(self):
+        res = LnurlWithdrawSuccessResponse(k1="new-k1", change="change-k1", changeSignature="beefdead")
+        assert res.ok
+        assert res.dict() == {
+            "status": "OK",
+            "k1": "new-k1",
+            "change": "change-k1",
+            "changeSignature": "beefdead",
+        }
+
+    def test_plain_success_response_has_no_cash_fields(self):
+        res = LnurlWithdrawSuccessResponse()
+        assert res.dict() == {"status": "OK"}
 
 
 class TestLnurlBaseModelCompatibility:
