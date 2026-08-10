@@ -473,3 +473,16 @@ def validate_paylink_is_lud17(value: Optional[str] = None) -> str | None:
 
 
 Lud17PayLink = Annotated[str, AfterValidator(validate_paylink_is_lud17)]
+
+
+# LUD-25 (draft): `LNURLcash` bearer note extension.
+def validate_withdraw_link_is_lud17(value: Optional[str] = None) -> str | None:
+    if not value:
+        return None
+    lnurl = Lnurl(value)
+    if lnurl.is_lud17 and lnurl.lud17_prefix == "lnurlw":
+        return value
+    raise ValueError("`withdrawLink` must be a valid LUD17 URL (lnurlw://).")
+
+
+Lud25WithdrawLink = Annotated[str, AfterValidator(validate_withdraw_link_is_lud17)]

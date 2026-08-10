@@ -39,6 +39,7 @@ Check out the LUDS repository: [luds](https://github.com/lnurl/luds/)
 - [x] LUD-20 - Long payment description for pay protocol
 - [x] LUD-21 - verify LNURL-pay payments
 - [x] LUD-23 - addressRequest base spec
+- [x] LUD-25 (draft, [lnurl/luds#301](https://github.com/lnurl/luds/pull/301)) - `LNURLcash`: bearer assets
 
 
 Configuration

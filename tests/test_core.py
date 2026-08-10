@@ -1,7 +1,18 @@
+from unittest.mock import AsyncMock, patch
+
 import httpx
 import pytest
 
-from lnurl.core import decode, encode, execute_address_request, execute_login, execute_pay_request, get, handle
+from lnurl.core import (
+    decode,
+    encode,
+    execute_address_request,
+    execute_cash_action,
+    execute_login,
+    execute_pay_request,
+    get,
+    handle,
+)
 from lnurl.exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
 from lnurl.models import (
     LnurlAddressRequestResponse,
@@ -11,6 +22,7 @@ from lnurl.models import (
     LnurlPaySuccessAction,
     LnurlSuccessResponse,
     LnurlWithdrawResponse,
+    LnurlWithdrawSuccessResponse,
 )
 from lnurl.types import Lnurl
 
@@ -171,3 +183,66 @@ class TestAddressRequestFlow:
         )
         with pytest.raises(LnurlResponseException):
             await execute_address_request(res, "not-a-valid-address")
+
+
+class TestCashActionFlow:
+    """LUD-25 (draft): `LNURLcash` rotate/split/merge callback."""
+
+    @pytest.mark.asyncio
+    async def test_execute_cash_action_rotate(self):
+        res = LnurlWithdrawResponse(
+            callback="https://service.io/w/cb",
+            k1="a",
+            minWithdrawable=1000,
+            maxWithdrawable=2000,
+        )
+        mock_response = httpx.Response(
+            200,
+            json={"status": "OK", "k1": "b"},
+            request=httpx.Request("GET", "https://service.io/w/cb"),
+        )
+        with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response)) as mock_get:
+            cash_res = await execute_cash_action(res)
+        assert isinstance(cash_res, LnurlWithdrawSuccessResponse)
+        assert cash_res.k1 == "b"
+        assert mock_get.call_args.kwargs["params"] == [("k1", "a")]
+
+    @pytest.mark.asyncio
+    async def test_execute_cash_action_split_with_multiple_k1s(self):
+        # merging several k1s and splitting off `amount` is valid, not just for a single k1.
+        res = LnurlWithdrawResponse(
+            callback="https://service.io/w/cb",
+            k1="a",
+            minWithdrawable=1000,
+            maxWithdrawable=2000,
+        )
+        mock_response = httpx.Response(
+            200,
+            json={"status": "OK", "k1": "new-k1", "change": "change-k1"},
+            request=httpx.Request("GET", "https://service.io/w/cb"),
+        )
+        with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response)) as mock_get:
+            cash_res = await execute_cash_action(res, k1s=["a", "b"], amount=500)
+        assert isinstance(cash_res, LnurlWithdrawSuccessResponse)
+        assert cash_res.k1 == "new-k1"
+        assert cash_res.change == "change-k1"
+        assert mock_get.call_args.kwargs["params"] == [("k1", "a"), ("k1", "b"), ("amount", 500)]
+
+    @pytest.mark.asyncio
+    async def test_execute_cash_action_merge_multiple_k1s(self):
+        res = LnurlWithdrawResponse(
+            callback="https://service.io/w/cb",
+            k1="a",
+            minWithdrawable=1000,
+            maxWithdrawable=2000,
+        )
+        mock_response = httpx.Response(
+            200,
+            json={"status": "OK", "k1": "merged-k1"},
+            request=httpx.Request("GET", "https://service.io/w/cb"),
+        )
+        with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response)) as mock_get:
+            cash_res = await execute_cash_action(res, k1s=["a", "b"])
+        assert isinstance(cash_res, LnurlWithdrawSuccessResponse)
+        assert cash_res.k1 == "merged-k1"
+        assert mock_get.call_args.kwargs["params"] == [("k1", "a"), ("k1", "b")]
