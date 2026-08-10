@@ -56,7 +56,7 @@ class LnurlResponseModel(BaseModel):
 
     class Config:
         use_enum_values = True
-        extra = "forbid"
+        extra = "ignore"
 
     def dict(self, **kwargs):
         kwargs["exclude_none"] = True
