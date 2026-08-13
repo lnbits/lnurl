@@ -1,6 +1,9 @@
+from unittest.mock import AsyncMock
+
 import httpx
 import pytest
 
+import lnurl.core as core
 from lnurl.core import decode, encode, execute_address_request, execute_login, execute_pay_request, get, handle
 from lnurl.exceptions import InvalidLnurl, InvalidUrl, LnurlResponseException
 from lnurl.models import (
@@ -104,6 +107,48 @@ class TestHandle:
     async def test_get_requests_error(self, url):
         with pytest.raises(LnurlResponseException):
             await get(url)
+
+    @pytest.mark.asyncio
+    async def test_handle_uses_provided_client(self):
+        requests = []
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            requests.append(request)
+            return httpx.Response(302, headers={"Location": "http://127.0.0.1"})
+
+        client = httpx.AsyncClient(
+            transport=httpx.MockTransport(handler),
+            follow_redirects=False,
+            timeout=17,
+        )
+        try:
+            with pytest.raises(LnurlResponseException):
+                await handle("https://example.com", client=client)
+
+            assert len(requests) == 1
+            assert set(requests[0].extensions["timeout"].values()) == {17}
+            assert not client.is_closed
+        finally:
+            await client.aclose()
+
+    @pytest.mark.asyncio
+    async def test_execute_passes_provided_client_to_callback(self, monkeypatch):
+        class LoginResponse:
+            tag = "login"
+
+        response = LoginResponse()
+        expected = LnurlSuccessResponse()
+        handle_mock = AsyncMock(return_value=response)
+        login_mock = AsyncMock(return_value=expected)
+
+        async with httpx.AsyncClient() as client:
+            monkeypatch.setattr(core, "LnurlAuthResponse", LoginResponse)
+            monkeypatch.setattr(core, "handle", handle_mock)
+            monkeypatch.setattr(core, "execute_login", login_mock)
+
+            assert await core.execute("lnurl", "secret", client=client) is expected
+            assert handle_mock.await_args.kwargs["client"] is client
+            assert login_mock.await_args.kwargs["client"] is client
 
 
 class TestPayFlow:
