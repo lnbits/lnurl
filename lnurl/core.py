@@ -1,3 +1,5 @@
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from json import JSONDecodeError
 from typing import Any, Optional
 
@@ -31,6 +33,28 @@ USER_AGENT = "lnbits/lnurl"
 TIMEOUT = 5
 
 
+@asynccontextmanager
+async def _http_client(
+    client: Optional[httpx.AsyncClient],
+    *,
+    user_agent: Optional[str],
+    proxy: Optional[str],
+    timeout: Optional[int],
+) -> AsyncIterator[httpx.AsyncClient]:
+    if client is not None:
+        yield client
+        return
+
+    headers = {"User-Agent": user_agent or USER_AGENT}
+    async with httpx.AsyncClient(
+        headers=headers,
+        follow_redirects=True,
+        proxy=proxy,
+        timeout=timeout or TIMEOUT,
+    ) as default_client:
+        yield default_client
+
+
 def decode(lnurl: str) -> Lnurl:
     try:
         return Lnurl(lnurl)
@@ -52,12 +76,12 @@ async def get(
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
     tor_socks: Optional[str] = None,
+    client: Optional[httpx.AsyncClient] = None,
 ) -> LnurlResponseModel:
-    headers = {"User-Agent": user_agent or USER_AGENT}
     proxy = tor_socks or TOR_SOCKS if ".onion" in url else None
-    async with httpx.AsyncClient(headers=headers, follow_redirects=True, proxy=proxy) as client:
+    async with _http_client(client, user_agent=user_agent, proxy=proxy, timeout=timeout) as http_client:
         try:
-            res = await client.get(url, timeout=timeout or TIMEOUT)
+            res = await http_client.get(url)
             res.raise_for_status()
         except httpx.ConnectError as exc:
             if proxy:
@@ -87,11 +111,19 @@ async def handle(
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
     tor_socks: Optional[str] = None,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
 ) -> LnurlResponseModel:
     try:
         if "@" in lnurl:
             lnaddress = LnAddress(lnurl)
-            return await get(lnaddress.url, response_class=response_class, user_agent=user_agent, timeout=timeout)
+            return await get(
+                lnaddress.url,
+                response_class=response_class,
+                user_agent=user_agent,
+                timeout=timeout,
+                client=client,
+            )
         lnurl = Lnurl(lnurl)
     except (ValidationError, ValueError):
         raise InvalidLnurl
@@ -101,7 +133,12 @@ async def handle(
         return LnurlAuthResponse(callback=callback_url, k1=lnurl.url.query_params["k1"])
 
     return await get(
-        lnurl.url, response_class=response_class, user_agent=user_agent, timeout=timeout, tor_socks=tor_socks
+        lnurl.url,
+        response_class=response_class,
+        user_agent=user_agent,
+        timeout=timeout,
+        tor_socks=tor_socks,
+        client=client,
     )
 
 
@@ -111,20 +148,56 @@ async def execute(
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
     tor_socks: Optional[str] = None,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
 ) -> LnurlResponseModel:
     try:
-        res = await handle(bech32_or_address, user_agent=user_agent, timeout=timeout, tor_socks=tor_socks)
+        res = await handle(
+            bech32_or_address,
+            user_agent=user_agent,
+            timeout=timeout,
+            tor_socks=tor_socks,
+            client=client,
+        )
     except Exception as exc:
         raise LnurlResponseException(str(exc))
 
     if isinstance(res, LnurlPayResponse) and res.tag == "payRequest":
-        return await execute_pay_request(res, int(value), user_agent=user_agent, timeout=timeout, tor_socks=tor_socks)
+        return await execute_pay_request(
+            res,
+            int(value),
+            user_agent=user_agent,
+            timeout=timeout,
+            tor_socks=tor_socks,
+            client=client,
+        )
     elif isinstance(res, LnurlAuthResponse) and res.tag == "login":
-        return await execute_login(res, value, user_agent=user_agent, timeout=timeout, tor_socks=tor_socks)
+        return await execute_login(
+            res,
+            value,
+            user_agent=user_agent,
+            timeout=timeout,
+            tor_socks=tor_socks,
+            client=client,
+        )
     elif isinstance(res, LnurlWithdrawResponse) and res.tag == "withdrawRequest":
-        return await execute_withdraw(res, value, user_agent=user_agent, timeout=timeout, tor_socks=tor_socks)
+        return await execute_withdraw(
+            res,
+            value,
+            user_agent=user_agent,
+            timeout=timeout,
+            tor_socks=tor_socks,
+            client=client,
+        )
     elif isinstance(res, LnurlAddressRequestResponse) and res.tag == "addressRequest":
-        return await execute_address_request(res, value, user_agent=user_agent, timeout=timeout, tor_socks=tor_socks)
+        return await execute_address_request(
+            res,
+            value,
+            user_agent=user_agent,
+            timeout=timeout,
+            tor_socks=tor_socks,
+            client=client,
+        )
 
     raise LnurlResponseException("tag not implemented")
 
@@ -136,6 +209,8 @@ async def execute_pay_request(
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
     tor_socks: Optional[str] = None,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
 ) -> LnurlPayActionResponse:
     if not res.minSendable <= MilliSatoshi(msat) <= res.maxSendable:
         raise LnurlResponseException(f"Amount {msat} not in range {res.minSendable} - {res.maxSendable}")
@@ -148,14 +223,12 @@ async def execute_pay_request(
         params["comment"] = comment
 
     try:
-        headers = {"User-Agent": user_agent or USER_AGENT}
         proxy = tor_socks or TOR_SOCKS if res.callback.host and res.callback.host.endswith(".onion") else None
-        async with httpx.AsyncClient(headers=headers, follow_redirects=True, proxy=proxy) as client:
+        async with _http_client(client, user_agent=user_agent, proxy=proxy, timeout=timeout) as http_client:
             try:
-                res2 = await client.get(
+                res2 = await http_client.get(
                     url=str(res.callback),
                     params=params,
-                    timeout=timeout or TIMEOUT,
                 )
                 res2.raise_for_status()
             except httpx.ConnectError as exc:
@@ -190,6 +263,8 @@ async def execute_login(
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
     tor_socks: Optional[str] = None,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
 ) -> LnurlResponseModel:
     if not res.callback:
         raise LnurlResponseException("LNURLauth callback does not exist")
@@ -203,17 +278,15 @@ async def execute_login(
     else:
         raise LnurlResponseException("Seed or signed_message is required for LNURLauth")
     key, sig = lnurlauth_signature(res.k1, linking_key=linking_key)
-    headers = {"User-Agent": user_agent or USER_AGENT}
     proxy = tor_socks or TOR_SOCKS if res.callback.host and res.callback.host.endswith(".onion") else None
-    async with httpx.AsyncClient(headers=headers, follow_redirects=True, proxy=proxy) as client:
+    async with _http_client(client, user_agent=user_agent, proxy=proxy, timeout=timeout) as http_client:
         try:
-            res2 = await client.get(
+            res2 = await http_client.get(
                 url=res.callback,
                 params={
                     "key": key,
                     "sig": sig,
                 },
-                timeout=timeout or TIMEOUT,
             )
             res2.raise_for_status()
         except httpx.ConnectError as exc:
@@ -234,6 +307,8 @@ async def execute_withdraw(
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
     tor_socks: Optional[str] = None,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
 ) -> LnurlSuccessResponse:
     try:
         invoice = bolt11_decode(pr)
@@ -243,17 +318,15 @@ async def execute_withdraw(
     amount = invoice.amount_msat or res.minWithdrawable
     if not res.minWithdrawable <= MilliSatoshi(amount) <= res.maxWithdrawable:
         raise LnurlResponseException(f"Amount {amount} not in range {res.minWithdrawable} - {res.maxWithdrawable}")
-    headers = {"User-Agent": user_agent or USER_AGENT}
     proxy = tor_socks or TOR_SOCKS if res.callback.host and res.callback.host.endswith(".onion") else None
-    async with httpx.AsyncClient(headers=headers, follow_redirects=True, proxy=proxy) as client:
+    async with _http_client(client, user_agent=user_agent, proxy=proxy, timeout=timeout) as http_client:
         try:
-            res2 = await client.get(
+            res2 = await http_client.get(
                 url=res.callback,
                 params={
                     "k1": res.k1,
                     "pr": pr,
                 },
-                timeout=timeout or TIMEOUT,
             )
             res2.raise_for_status()
         except httpx.ConnectError as exc:
@@ -279,23 +352,23 @@ async def execute_address_request(
     user_agent: Optional[str] = None,
     timeout: Optional[int] = None,
     tor_socks: Optional[str] = None,
+    *,
+    client: Optional[httpx.AsyncClient] = None,
 ) -> LnurlResponseModel:
     try:
         lnaddress = LnAddress(address)
     except (ValidationError, ValueError, LnAddressError) as exc:
         raise LnurlResponseException("Invalid Lightning address.") from exc
 
-    headers = {"User-Agent": user_agent or USER_AGENT}
     proxy = tor_socks or TOR_SOCKS if res.callback.host and res.callback.host.endswith(".onion") else None
-    async with httpx.AsyncClient(headers=headers, follow_redirects=True, proxy=proxy) as client:
+    async with _http_client(client, user_agent=user_agent, proxy=proxy, timeout=timeout) as http_client:
         try:
-            res2 = await client.get(
+            res2 = await http_client.get(
                 url=str(res.callback),
                 params={
                     "k1": res.k1,
                     "address": lnaddress.address,
                 },
-                timeout=timeout or TIMEOUT,
             )
             res2.raise_for_status()
         except httpx.ConnectError as exc:

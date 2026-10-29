@@ -113,6 +113,15 @@ It will return the appropriate response for a LNURL.
 LnurlPayResponse(tag='payRequest', callback=WebUrl('https://lnurl.bigsun.xyz/lnurl-pay/callback/2169831', scheme='https', host='lnurl.bigsun.xyz', tld='xyz', host_type='domain', path='/lnurl-pay/callback/2169831'), minSendable=10000, maxSendable=10000, metadata=LnurlPayMetadata('[["text/plain","NgHaEyaZNDnW iI DsFYdkI"],["image/png;base64","iVBOR...uQmCC"]]'))
 ```
 
+All network helpers accept an optional `httpx.AsyncClient` through the `client` argument. The caller owns a provided
+client and the library does not close it. The `user_agent`, `timeout`, and `tor_socks` arguments configure only clients
+created by the library.
+
+```python
+async with httpx.AsyncClient(follow_redirects=False) as client:
+    response = await lnurl.handle(value, client=client)
+```
+
 You can execute and LNURL with either payRequest, withdrawRequest, addressRequest or login tag using the `execute` function.
 ```python
 >>> import lnurl
