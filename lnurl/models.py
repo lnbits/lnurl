@@ -19,6 +19,7 @@ from .types import (
     LnurlResponseTag,
     LnurlStatus,
     Lud17PayLink,
+    Lud25WithdrawLink,
     Max144Str,
     MilliSatoshi,
     Url,
@@ -90,6 +91,14 @@ class LnurlErrorResponse(LnurlResponseModel):
 
 class LnurlSuccessResponse(LnurlResponseModel):
     status: LnurlStatus = LnurlStatus.ok
+
+
+# LUD-25 (draft): `LNURLcash` withdrawSuccessResponse extension, for rotate/split/merge.
+class LnurlWithdrawSuccessResponse(LnurlSuccessResponse):
+    k1: Optional[str] = Field(default=None, description="LUD-25: newly minted bearer secret.")
+    signature: Optional[str] = Field(default=None, description="LUD-25: recoverable signature for the new note.")
+    change: Optional[str] = Field(default=None, description="LUD-25: note carrying the remainder, after a split.")
+    changeSignature: Optional[str] = Field(default=None, description="LUD-25: signature for `change`, iff present.")
 
 
 # LUD-21: verify base spec.
@@ -184,6 +193,11 @@ class LnurlPayResponse(LnurlResponseModel):
     allowsNostr: Optional[bool] = None
     nostrPubkey: Optional[str] = None
 
+    # LUD-25 (draft): `LNURLcash` bearer note extension.
+    withdrawLink: Optional[Lud25WithdrawLink] = Field(
+        default=None, description="LUD-25: withdrawRequest for the bearer note minted by paying this callback."
+    )
+
     @model_validator(mode="after")
     def max_less_than_min(self):
         if self.maxSendable < self.minSendable:
@@ -227,6 +241,10 @@ class LnurlWithdrawResponse(LnurlResponseModel):
     currentBalance: Optional[MilliSatoshi] = None
     # LUD-19: Pay link discoverable from withdraw link.
     payLink: Lud17PayLink | None = None
+    # LUD-25 (draft): `LNURLcash` bearer note extension.
+    mintPubkey: Optional[str] = Field(
+        default=None, description="LUD-25: 33-byte compressed secp256k1 pubkey (hex) for offline note verification."
+    )
 
     @model_validator(mode="after")
     def max_less_than_min(self):
@@ -294,6 +312,13 @@ class LnurlResponse:
         status = status.upper()
 
         if status == "OK":
+            # LUD-25 (draft): rotate/split/merge responses carry a new `k1` (and possibly `change`).
+            cash_fields = {k: data[k] for k in ("k1", "signature", "change", "changeSignature") if k in data}
+            if cash_fields:
+                try:
+                    return LnurlWithdrawSuccessResponse(status=LnurlStatus.ok, **cash_fields)
+                except ValidationError as exc:
+                    raise LnurlResponseException(str(exc)) from exc
             return LnurlSuccessResponse(status=LnurlStatus.ok)
 
         if status == "ERROR":

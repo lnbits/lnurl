@@ -14,6 +14,7 @@ from lnurl import (
     LnurlResponse,
     LnurlSuccessResponse,
     LnurlWithdrawResponse,
+    LnurlWithdrawSuccessResponse,
 )
 from lnurl.exceptions import LnurlResponseException
 
@@ -111,3 +112,27 @@ class TestLnurlResponse:
         assert res.tag == "addressRequest"
         assert res.callback.host == "lnurl.bigsun.xyz"
         assert res.description == "Share your Lightning address with SERVICE"
+
+    # LUD-25 (draft): `LNURLcash` bearer note extension.
+    def test_cash_rotate_response(self):
+        res = LnurlResponse.from_dict({"status": "OK", "k1": "new-bearer-k1"})
+        assert isinstance(res, LnurlWithdrawSuccessResponse)
+        assert res.ok
+        assert res.k1 == "new-bearer-k1"
+        assert res.signature is None
+
+    def test_cash_split_response(self):
+        res = LnurlResponse.from_dict(
+            {"status": "OK", "k1": "new-k1", "signature": "aa", "change": "change-k1", "changeSignature": "bb"}
+        )
+        assert isinstance(res, LnurlWithdrawSuccessResponse)
+        assert res.ok
+        assert res.k1 == "new-k1"
+        assert res.change == "change-k1"
+        assert res.changeSignature == "bb"
+
+    def test_cash_melt_response_is_plain_success(self):
+        # a melt (k1 + pr) response has no k1 in the withdrawSuccessResponse, still a plain LnurlSuccessResponse
+        res = LnurlResponse.from_dict({"status": "OK"})
+        assert isinstance(res, LnurlSuccessResponse)
+        assert not isinstance(res, LnurlWithdrawSuccessResponse)

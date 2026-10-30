@@ -23,6 +23,7 @@ from .models import (
     LnurlResponseModel,
     LnurlSuccessResponse,
     LnurlWithdrawResponse,
+    LnurlWithdrawSuccessResponse,
 )
 from .types import CallbackUrl, LnAddress, Lnurl, Url
 
@@ -278,6 +279,47 @@ async def execute_withdraw(
         if not isinstance(withdraw_res, LnurlSuccessResponse):
             raise LnurlResponseException(f"Expected LnurlSuccessResponse, got {type(withdraw_res)}")
         return withdraw_res
+
+
+# LUD-25 (draft): `LNURLcash` rotate/split/merge callback.
+async def execute_cash_action(
+    res: LnurlWithdrawResponse,
+    k1s: Optional[list[str]] = None,
+    amount: Optional[int] = None,
+    user_agent: Optional[str] = None,
+    timeout: Optional[int] = None,
+    tor_socks: Optional[str] = None,
+) -> LnurlWithdrawSuccessResponse:
+    k1s = k1s or [res.k1]
+
+    params: list[tuple[str, str | int | float | bool | None]] = [("k1", k1) for k1 in k1s]
+    if amount is not None:
+        params.append(("amount", amount))
+
+    headers = {"User-Agent": user_agent or USER_AGENT}
+    proxy = tor_socks or TOR_SOCKS if res.callback.host and res.callback.host.endswith(".onion") else None
+    async with httpx.AsyncClient(headers=headers, follow_redirects=True, proxy=proxy) as client:
+        try:
+            res2 = await client.get(
+                url=str(res.callback),
+                params=params,
+                timeout=timeout or TIMEOUT,
+            )
+            res2.raise_for_status()
+        except httpx.ConnectError as exc:
+            if proxy:
+                raise LnurlResponseException(
+                    f"Failed to connect to {res.callback!s} via Tor proxy {proxy}. Is Tor running?"
+                ) from exc
+            raise LnurlResponseException(f"Failed to connect to {res.callback!s}") from exc
+        except Exception as exc:
+            raise LnurlResponseException(str(exc))
+        cash_res = LnurlResponse.from_dict(res2.json())
+        if isinstance(cash_res, LnurlErrorResponse):
+            raise LnurlResponseException(cash_res.reason)
+        if not isinstance(cash_res, LnurlWithdrawSuccessResponse):
+            raise LnurlResponseException(f"Expected LnurlWithdrawSuccessResponse, got {type(cash_res)}")
+        return cash_res
 
 
 # LUD-23: addressRequest base spec.
